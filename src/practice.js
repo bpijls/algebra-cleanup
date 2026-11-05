@@ -125,7 +125,7 @@ function autoSolve(S) {
   while (k++ < 80) {
     const h = hint(S); let r;
     if (h.k === 'hDone') break;
-    if (h.k === 'hDiv' || h.k === 'hBar') r = opOp(S);
+    if (h.k === 'hDiv' || h.k === 'hBar' || h.k === 'hJoin') r = opOp(S);
     else if (h.k === 'hGroup' || h.k === 'hOpen' || h.k === 'hExplodeVar') r = opExplode(S, h.ids[0]);
     else if (h.k === 'hExplodeCancel') { for (const id of h.ids) { r = opExplode(S, id); normalize(S); if (r && r.no) break; } }
     else if (h.k === 'hExplodeNums') { r = opExplode(S, h.ids[0]); normalize(S); if (r && !r.no) r = opExplode(S, h.ids[1]); }

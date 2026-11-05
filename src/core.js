@@ -437,10 +437,26 @@ function opSplit(S, tid) {
 }
 
 function flipPart(P) { [P.num, P.den] = [P.den, P.num]; return [...P.num, ...P.den].flatMap(t => t.f.map(f => f.id)); }
+// (A/1)·(1/B) or (1/B)·(A/1): every top piece sits in one fraction and every bottom piece in the other
+function joinable(S) {
+  if (S.parts.length !== 2 || S.op !== '·') return null;
+  const [P, Q] = S.parts;
+  if (isUnit(P.den) && isUnit(Q.num)) return { top: P, bottom: Q };
+  if (isUnit(P.num) && isUnit(Q.den)) return { top: Q, bottom: P };
+  return null;
+}
 function opOp(S) {
   if (S.parts.length < 2) return null;
   if (S.op === '/') { S.op = ':'; return { ok: 'toDiv' }; }
   if (S.op === ':') { const born = flipPart(S.parts[1]); S.op = '·'; return { ok: 'flip', born }; }
+  // tops times tops, bottoms times bottoms: with only 1's left to multiply by, the two fractions become one
+  const j = joinable(S);
+  if (j) {
+    const ones = [j.top.den[0], j.bottom.num[0]].filter(t => t.neg).length;
+    S.parts = [F(j.top.num, j.bottom.den)];
+    if (ones % 2) negate(S.parts[0].num);
+    return { ok: 'joined' };
+  }
   const born = flipPart(S.parts[1]); S.op = '/';
   return { ok: 'toBar', born };
 }
@@ -507,6 +523,7 @@ function hint(S) {
       for (const x of a[0].f) for (const y of b[0].f)
         if (cancelCheck(x, y)?.type === 'cancel') return { k: 'hCancel', p: { x: mx(fx(x)), y: mx(fx(y)) }, ids: [x.id, y.id] };
     }
+    if (joinable(S)) return { k: 'hJoin', ids: ['op'] };
     for (const side of SIDES) {
       const src = P2[side], dst = P1[side];
       if (isUnit(src)) continue;

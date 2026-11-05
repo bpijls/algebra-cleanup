@@ -87,3 +87,20 @@ test('multiplying fractions by hand: tops with tops, bottoms with bottoms', () =
   assert.equal(G.autoSolve(S) !== null, true);
   assert.equal(strip(G.stateHTML(S)), '[8/9');
 });
+
+test('tapping · joins one-row fractions in either order: (A/1)·(1/B) and (1/B)·(A/1) both give A/B', () => {
+  const A = () => [G.T([G.N(7), G.N(3), G.V('b', 1), G.V('x', 1)])];
+  const B = () => [G.T([G.V('x', 1), G.N(5), G.V('b', 2), G.N(2)])];
+  const one = () => [G.T([G.N(1)])];
+  const results = [[G.F(A(), one()), G.F(one(), B())], [G.F(one(), B()), G.F(A(), one())]].map(parts => {
+    const S = { parts, op: '·', goal: 'simplify' };
+    assert.equal(G.opOp(S).ok, 'joined'); G.normalize(S);
+    assert.equal(S.parts.length, 1); assert.equal(S.op, null);
+    return strip(G.stateHTML(S));
+  });
+  assert.equal(results[0], results[1]);
+  assert.match(results[0], /^\[7.*\/x/);
+  // with nothing left to cross-cancel, the hint points at the · sign
+  const S = { parts: [G.F([G.T([G.N(1)])], [G.T([G.N(2)])]), G.F([G.T([G.N(3)])])], op: '·', goal: 'simplify' };
+  assert.equal(G.hint(S).k, 'hJoin');
+});
