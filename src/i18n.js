@@ -30,6 +30,7 @@ const I18N = {
     cancelGroup: 'Unpack the brackets first, then cancel.',
     cancelCoprime: '{a} and {b} have no common factor, so there’s nothing to cancel.',
     cancelVar: '{x} on top and {x} below cancel out, because {x} : {x} = 1.',
+    cancelOnes: '1 over 1 is 1, and times 1 changes nothing. That fraction is gone.',
     cancelUnequal: '{x} and {y} aren’t the same, so they can’t cancel each other. Explode {big} and regroup it so it contains {small}. Then {small} can cancel against {small}.',
     cancelUnequalNum: '{a} and {b} aren’t the same number, so they can’t cancel each other. Explode them to find the factor they share, then cancel that.',
     hExplodeCancel: '{x} and {y} can only cancel when they’re exactly the same. Explode the highlighted piece (tap it twice) to see what they share.',
@@ -59,7 +60,7 @@ const I18N = {
     hDiv: 'Tap the : sign to turn it into ·.', hJoin: 'Tap the · sign to join the fractions into one.',
     hGroup: 'Tap {x} twice to explode it.', hMerge: 'Tap {x}, then tap {y} to combine them.',
     hLike: '{x} and {y} are like terms. Tap one, then the other, to add them.',
-    hCancel: 'Tap {x} on top, then {y} below to cancel.', hDone: 'Nothing left to clean up!'
+    hCancel: 'Tap {x} on top, then {y} below to cancel.', hCancelOnes: 'This fraction is 1 over 1. Tap the 1 on top, then the 1 below to cancel it.', hDone: 'Nothing left to clean up!'
   },
   nl: {
     practice: 'Oefenen', practiceTitle: 'Oefenen', newProblem: 'Nieuwe som', topics: 'Onderwerpen', difficulty: 'Niveau', start: 'Begin met oefenen',
@@ -91,6 +92,7 @@ const I18N = {
     cancelGroup: 'Werk eerst de haakjes uit, en streep daarna weg.',
     cancelCoprime: '{a} en {b} hebben geen gemeenschappelijke factor, dus er valt niets weg te strepen.',
     cancelVar: '{x} boven en {x} onder strepen tegen elkaar weg, want {x} : {x} = 1.',
+    cancelOnes: '1 gedeeld door 1 is 1, en keer 1 verandert niets. Die breuk is weg.',
     cancelUnequal: '{x} en {y} zijn niet hetzelfde, dus ze kunnen niet tegen elkaar wegstrepen. Laat {big} ontploffen en groepeer zo dat er {small} in zit. Dan kan {small} tegen {small} wegstrepen.',
     cancelUnequalNum: '{a} en {b} zijn niet hetzelfde getal, dus ze kunnen niet tegen elkaar wegstrepen. Laat ze ontploffen om de factor te vinden die ze delen, en streep die weg.',
     hExplodeCancel: '{x} en {y} kunnen alleen wegstrepen als ze precies hetzelfde zijn. Laat het gemarkeerde stuk ontploffen (twee keer tikken) om te zien wat ze delen.',
@@ -120,6 +122,6 @@ const I18N = {
     hDiv: 'Tik op het deelteken : om er een · van te maken.', hJoin: 'Tik op het keerteken · om er één breuk van te maken.',
     hGroup: 'Tik twee keer op {x} om hem te laten ontploffen.', hMerge: 'Tik op {x} en dan op {y} om ze samen te voegen.',
     hLike: '{x} en {y} zijn gelijksoortige termen. Tik op de ene en dan op de andere om ze op te tellen.',
-    hCancel: 'Tik op {x} boven en dan op {y} onder om weg te strepen.', hDone: 'Er valt niets meer op te ruimen!'
+    hCancel: 'Tik op {x} boven en dan op {y} onder om weg te strepen.', hCancelOnes: 'Deze breuk is 1 gedeeld door 1. Tik op de 1 boven en dan op de 1 onder om hem weg te strepen.', hDone: 'Er valt niets meer op te ruimen!'
   }
 };

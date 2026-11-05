@@ -15,7 +15,7 @@ Concretely:
 - **Factoring is allowed in every mode**, because it is always valid algebra. In simplify levels, factoring two tidy unlike terms is allowed but flagged (`factorUseless`) and those pairs don't glow as suggestions.
 - **Like terms add when you tap matching pieces across a + sign** (`a` then `a` gives `2a`), and the note contrasts `a + a = 2a` with `a · a = a²`. Unlike terms in simplify levels get the `notLike` explanation.
 - **A swipe is accepted only as ONE valid move**: grouping matching pieces inside one term, or adding like terms by sweeping one matching piece per term. Anything else is refused as a whole with an explanation. (An earlier box-select did many operations at once and felt like magic.)
-- **Dividing fractions**: the sign cycles fraction bar → `:` → `·` → fraction bar (each tap). `:`→`·` flips the second fraction. With `·`, the player multiplies **by hand**: tap a piece in one fraction, then a piece in the same row (top/bottom) of the other, and it moves across. Cross-cancelling between the fractions follows the equal-pieces rule. A fraction that becomes 1/1 disappears. There is no automatic join: the only join is the player tapping `·` once one fraction holds only a top and the other only a bottom, `(A/1)·(1/B)` or `(1/B)·(A/1)`, which becomes `A/B` (`joinable`, message `joined`, hint `hJoin`). Without that, the tap would flip `(1/B)·(A/1)` into the dead end `(1/B)/(1/A)`.
+- **Dividing fractions**: the sign cycles fraction bar → `:` → `·` → fraction bar (each tap). `:`→`·` flips the second fraction. With `·`, the player multiplies **by hand**: tap a piece in one fraction, then a piece in the same row (top/bottom) of the other, and it moves across. Cross-cancelling between the fractions follows the equal-pieces rule. A fraction that becomes 1/1 stays on the board; the player taps its top 1 and bottom 1 to cancel it, and only then does it disappear (`pairCheck` type `ones`, message `cancelOnes`, hint `hCancelOnes`; only while the sign is `·`; a −1 passes its minus to the other fraction). There is no automatic join: the only join is the player tapping `·` once one fraction holds only a top and the other only a bottom, `(A/1)·(1/B)` or `(1/B)·(A/1)`, which becomes `A/B` (`joinable`, message `joined`, hint `hJoin`). Without that, the tap would flip `(1/B)·(A/1)` into the dead end `(1/B)/(1/A)`.
 - **Refusals are teaching moments.** An illegal move never silently fails: the tiles shake and the note explains why (e.g. cancelling inside a sum → `cancelSum`).
 
 ## Animation
@@ -49,7 +49,7 @@ Plain browser scripts sharing globals, no framework, no build step needed to run
 - `Fraction = { num: Term[], den: Term[] }` (each side is a sum of terms).
 - `Term = { k:'t', f: Factor[], neg }`.
 - Factors: `N(v)` number, `V(b, e)` letter with exponent, `G(f, e)` bracket around a *product* with exponent, `Pr(terms)` bracket around a *sum*. Every node has a unique `id`; tiles in the DOM carry it as `data-id`.
-- `normalize(S)` cleans up after every move (drops `1`s and `x⁰`, unwraps one-term brackets, drops used-up fractions, collapses `(a/1)/(b/1)`).
+- `normalize(S)` cleans up after every move (drops `1`s and `x⁰`, unwraps one-term brackets, collapses `(a/1)/(b/1)`).
 - `isClean(S)` decides a win. `goal: 'factor'` levels use `isFactored`.
 
 ### Move contract

@@ -88,15 +88,7 @@ function normalize(S) {
     normTerms(P[side]);
     if (!P[side].length) P[side] = [T([N(side === 'num' ? 0 : 1)])];
   }
-  // a fraction that is used up (±1 over ±1) disappears; its sign goes to the other one
-  for (let i = 0; S.parts.length > 1 && i < S.parts.length; i++) {
-    const P = S.parts[i];
-    if (isUnit(P.num) && isUnit(P.den)) {
-      const other = S.parts[1 - i];
-      if (P.num[0].neg !== P.den[0].neg) negate(other.num);
-      S.parts.splice(i, 1); i--;
-    }
-  }
+  // a fraction that is used up (1 over 1) stays on the board: the player cancels the 1's (opPair, 'ones')
   // (a/1) / (b/1) is just a/b
   if (S.parts.length === 2 && S.op === '/' && isOne(S.parts[0].den) && isOne(S.parts[1].den))
     S.parts = [F(S.parts[0].num, S.parts[1].num)];
@@ -240,6 +232,7 @@ function cancelCheck(x, y) {
   }
   return null;
 }
+const usedUp = P => isUnit(P.num) && isUnit(P.den);
 function pairCheck(S, A, B) {
   const x = A.f, y = B.f;
   if (A.p !== B.p) {
@@ -275,6 +268,8 @@ function pairCheck(S, A, B) {
   }
   // across the fraction bar
   const P = S.parts[A.p];
+  // a used-up fraction while multiplying: 1 over 1 cancels away, and the fraction with it
+  if (S.op === '·' && usedUp(P)) return { type: 'ones' };
   const sameVar = x.k === 'v' && y.k === 'v' && x.b === y.b;
   const nums = x.k === 'n' && y.k === 'n';
   const grp = (x.k === 'g' && (y.k === 'g' || (y.k === 'v' && groupHasBase(x, y.b)) || y.k === 'n'))
@@ -318,6 +313,12 @@ function opPair(S, aId, bId) {
   if (r.type === 'fizzle') return { no: r.msg, p: r.p || {}, ids: [aId, bId] };
   if (r.type === 'none') return null;
   if (r.type === 'move') return opMove(S, A, B);
+  if (r.type === 'ones') {
+    const P = S.parts[A.p], other = S.parts[1 - A.p];
+    if (P.num[0].neg !== P.den[0].neg) negate(other.num);   // −1 over 1: the minus goes to the other fraction
+    S.parts.splice(A.p, 1);
+    return { ok: 'cancelOnes', cancel: true };
+  }
   if (r.type === 'factor') {
     const v1 = mx(termHTML(A.term)), v2 = mx(termHTML(B.term));
     const res = opFactor(S, A, B);
@@ -518,6 +519,8 @@ function hint(S) {
     if (S.op === '/') return { k: 'hBar', ids: ['op'] };
     if (S.op === ':') return { k: 'hDiv', ids: ['op'] };
     const [P1, P2] = S.parts;
+    if (S.op === '·') for (const P of S.parts)
+      if (usedUp(P)) return { k: 'hCancelOnes', ids: [P.num[0].f[0].id, P.den[0].f[0].id] };
     for (const [a, b] of [[P1.num, P2.den], [P2.num, P1.den]]) {
       if (a.length !== 1 || b.length !== 1) continue;
       for (const x of a[0].f) for (const y of b[0].f)
