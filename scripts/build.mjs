@@ -9,7 +9,6 @@ const read = p => readFileSync(join(root, p), 'utf8');
 const html = read('index.html');
 
 const head = html.slice(html.indexOf('<head>') + 6, html.indexOf('</head>'))
-  .replace(/<meta charset[^>]*>\s*/, '')
   .replace(/<meta name="viewport"[^>]*>\s*/, '')
   .replace(/<style>[\s\S]*?<\/style>\s*/, '')                       // local-only reset
   .replace('<link rel="stylesheet" href="src/styles.css">', `<style>\n${read('src/styles.css')}</style>`);
