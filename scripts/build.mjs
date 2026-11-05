@@ -11,8 +11,12 @@ const html = read('index.html');
 const head = html.slice(html.indexOf('<head>') + 6, html.indexOf('</head>'))
   .replace(/<meta name="viewport"[^>]*>\s*/, '')
   .replace(/<style>[\s\S]*?<\/style>\s*/, '')                       // local-only reset
+  .replace(/<!-- PWA[^>]*-->\s*/, '')                                // PWA bits make no sense inside an Artifact
+  .replace(/<link rel="(manifest|icon|apple-touch-icon)"[^>]*>\s*/g, '')
+  .replace(/<meta name="(theme-color|mobile-web-app-capable|apple-mobile-web-app-[a-z-]+)"[^>]*>\s*/g, '')
   .replace('<link rel="stylesheet" href="src/styles.css">', `<style>\n${read('src/styles.css')}</style>`);
 const body = html.slice(html.indexOf('<body>') + 6, html.indexOf('</body>'))
+  .replace('<script src="src/pwa.js"></script>', '')
   .replace(/<script src="([^"]+)"><\/script>/g, (_, src) => `<script>\n${read(src)}</script>`);
 
 mkdirSync(join(root, 'dist'), { recursive: true });

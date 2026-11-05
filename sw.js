@@ -1,0 +1,50 @@
+/* Service worker: the game works offline once it has been opened.
+   Own files are network-first (edits on the server show up on the next load; the cache is the fallback),
+   Google Fonts are cache-first (they never change for a given URL). Bump VERSION when SHELL changes. */
+const VERSION = 'v1';
+const SHELL_CACHE = 'alg-shell-' + VERSION, FONT_CACHE = 'alg-fonts-' + VERSION;
+const SHELL = [
+  './', 'index.html', 'manifest.webmanifest',
+  'src/styles.css', 'src/core.js', 'src/practice.js', 'src/i18n.js', 'src/ui.js', 'src/pwa.js',
+  'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png',
+];
+
+self.addEventListener('install', e => {
+  e.waitUntil(caches.open(SHELL_CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
+});
+
+self.addEventListener('activate', e => {
+  e.waitUntil(caches.keys()
+    .then(keys => Promise.all(keys.filter(k => k !== SHELL_CACHE && k !== FONT_CACHE).map(k => caches.delete(k))))
+    .then(() => self.clients.claim()));
+});
+
+self.addEventListener('fetch', e => {
+  const req = e.request;
+  if (req.method !== 'GET') return;
+  const url = new URL(req.url);
+  if (url.origin === location.origin) e.respondWith(networkFirst(req));
+  else if (url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com') e.respondWith(cacheFirst(req));
+});
+
+async function networkFirst(req) {
+  const cache = await caches.open(SHELL_CACHE);
+  try {
+    // don't let a hanging network keep the game from starting: fall back to the cache after 4 s
+    const res = await Promise.race([fetch(req), new Promise((_, no) => setTimeout(no, 4000))]);
+    if (res.ok) cache.put(req, res.clone());
+    return res;
+  } catch {
+    const hit = await cache.match(req, { ignoreSearch: true }) || (req.mode === 'navigate' && await cache.match('index.html'));
+    return hit || Response.error();
+  }
+}
+
+async function cacheFirst(req) {
+  const cache = await caches.open(FONT_CACHE);
+  const hit = await cache.match(req);
+  if (hit) return hit;
+  const res = await fetch(req);
+  if (res.ok || res.type === 'opaque') cache.put(req, res.clone());
+  return res;
+}

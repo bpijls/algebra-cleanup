@@ -33,8 +33,12 @@ Plain browser scripts sharing globals, no framework, no build step needed to run
 | `src/i18n.js` | `I18N.en` / `I18N.nl`: all player-facing text. |
 | `src/ui.js` | Rendering, tap/swipe input, animation, level and practice screens. |
 | `src/styles.css` | All styling. Design tokens (light/dark) at the top. |
-| `index.html` | Loads the above for local development. |
-| `scripts/build.mjs` | Inlines everything into `dist/algebra-cleanup.html` (single file, claude.ai Artifact format). |
+| `src/pwa.js` | Registers the service worker. Left out of the Artifact build. |
+| `index.html` | Loads the above; also the page nginx serves. |
+| `sw.js` | Service worker: precaches `SHELL`, network-first for own files, cache-first for Google Fonts. |
+| `manifest.webmanifest` | PWA manifest (standalone, icons). |
+| `icons/` | `icon.svg` is the source; the PNGs (192, 512, maskable 512, 180 apple-touch) are rendered from it. |
+| `scripts/build.mjs` | Inlines everything into `dist/algebra-cleanup.html` (single file, claude.ai Artifact format), stripping the manifest, icon links and `pwa.js`. |
 | `docker-compose.yml` | One `web` service (nginx) with Caddy labels for `APP_DOMAIN`. |
 | `nginx/default.conf` | Static serving, no-cache, fallback to `index.html`. |
 | `tests/` | `node:test` suite; `tests/load.js` loads core + practice into a VM sandbox. |
@@ -83,6 +87,14 @@ docker compose up -d        # start (needs the external `proxy` network)
 docker compose logs -f web
 docker compose down
 ```
+
+### Progressive web app
+
+Installable and playable offline once opened. `sw.js` is network-first for the game's own files (4 s timeout, then cache), so server edits still show up on the next load; it only falls back to the cache offline. When you add a file that `index.html` loads, add it to `SHELL` in `sw.js` and to the compose mounts, and bump `VERSION`; `tests/pwa.test.js` fails if `SHELL` misses something. nginx serves `manifest.webmanifest` as `application/manifest+json` (it is not in nginx's `mime.types`).
+
+Service workers need a trusted HTTPS origin (or `localhost`). huiswerk.paws.home uses Caddy's local CA, so a phone must trust that CA, or the game still loads but won't install or work offline.
+
+If you change `icons/icon.svg`, re-render the PNGs at the same sizes (headless Chromium with the Google Fonts loaded, so the `a²` uses STIX Two Text and Atkinson Hyperlegible).
 
 Config is in `.env` (copy `.env.example`): `APP_DOMAIN`, `CADDY_NETWORK`, `HOST_PORT` (only for the commented-out `ports:` block).
 
