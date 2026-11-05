@@ -1,0 +1,23 @@
+services:
+  web:
+    image: nginx:1.30-alpine
+    env_file: .env
+    restart: unless-stopped
+    volumes:
+      # Static files are mounted read-only: edits show up on reload, no rebuild.
+      - ./index.html:/usr/share/nginx/html/index.html:ro
+      - ./src:/usr/share/nginx/html/src:ro
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    networks: [caddy_proxy]
+    # Local access without Caddy (http://localhost:${HOST_PORT}):
+    # ports:
+    #   - "${HOST_PORT:-8080}:80"
+    labels:
+      caddy: ${APP_DOMAIN}
+      caddy.reverse_proxy: "{{upstreams 80}}"
+      caddy_docker_network: ${CADDY_NETWORK}
+
+networks:
+  caddy_proxy:
+    external: true
+    name: ${CADDY_NETWORK}

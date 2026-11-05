@@ -8,6 +8,8 @@ English and Dutch. Works on phones and desktop.
 
 Open `index.html` in a browser, or run `npm start` and open the address it prints.
 
+On the server: `cp .env.example .env && docker compose up -d` serves it at `APP_DOMAIN` (https://huiswerk.paws.home) through Caddy.
+
 ## Develop
 
 ```

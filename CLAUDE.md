@@ -35,6 +35,8 @@ Plain browser scripts sharing globals, no framework, no build step needed to run
 | `src/styles.css` | All styling. Design tokens (light/dark) at the top. |
 | `index.html` | Loads the above for local development. |
 | `scripts/build.mjs` | Inlines everything into `dist/algebra-cleanup.html` (single file, claude.ai Artifact format). |
+| `docker-compose.yml` | One `web` service (nginx) with Caddy labels for `APP_DOMAIN`. |
+| `nginx/default.conf` | Static serving, no-cache, fallback to `index.html`. |
 | `tests/` | `node:test` suite; `tests/load.js` loads core + practice into a VM sandbox. |
 
 ### Data model (`core.js`)
@@ -71,6 +73,18 @@ npm start       # serve the folder locally (or just open index.html)
 ```
 
 Run `npm test` after any change to `core.js` or `practice.js`; the suite checks that every level and generated problem is still solvable and that the no-magic rules hold.
+
+## Running the stack
+
+Hosted at https://huiswerk.paws.home through Caddy Docker Proxy. The `web` service is plain `nginx:1.30-alpine` serving `index.html` and `src/` straight from the repo (read-only mounts, `Cache-Control: no-cache`), so edits are live on reload with no rebuild. `dist/` is not used here; it is only for the claude.ai Artifact build.
+
+```
+docker compose up -d        # start (needs the external `proxy` network)
+docker compose logs -f web
+docker compose down
+```
+
+Config is in `.env` (copy `.env.example`): `APP_DOMAIN`, `CADDY_NETWORK`, `HOST_PORT` (only for the commented-out `ports:` block).
 
 ## Known limitations and ideas
 
