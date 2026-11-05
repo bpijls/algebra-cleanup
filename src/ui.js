@@ -223,7 +223,9 @@ function ghostOf(el, to, br) {
   const g = el.cloneNode(true);
   g.classList.remove('born', 'sel', 'partner', 'hint');
   g.classList.add('ghost');
-  Object.assign(g.style, { left: to.left - br.left + 'px', top: to.top - br.top + 'px', width: to.width + 'px', height: to.height + 'px' });
+  [g, ...g.querySelectorAll('[data-id]')].forEach(e => e.removeAttribute('data-id')); // never mistaken for the real tile
+  // left/top are measured from the board's padding box, inside its border
+  Object.assign(g.style, { left: to.left - br.left - board.clientLeft + 'px', top: to.top - br.top - board.clientTop + 'px', width: to.width + 'px', height: to.height + 'px' });
   board.append(g);
   return g;
 }
