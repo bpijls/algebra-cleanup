@@ -1,0 +1,11 @@
+{
+  "name": "algebra-cleanup",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A tile game for secondary school students: explode and regroup powers, numbers and terms to simplify algebra (English and Dutch).",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "build": "node scripts/build.mjs",
+    "start": "npx --yes serve ."
+  }
+}

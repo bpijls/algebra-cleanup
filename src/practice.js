@@ -1,0 +1,155 @@
+/* ===== PRACTICE: random problem generator ===== */
+const R = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+const VARS = ['a', 'b', 'x', 'y'];
+const otherVar = v => pick(VARS.filter(w => w !== v));
+const coprime = (lo, hi, not) => { let u; do u = R(lo, hi); while (not && gcd(u, not) !== 1); return u; };
+const coin = () => Math.random() < .5;
+
+// a monomial term from {coef, vars:{a:2,...}}; untidy = spread it over several tiles
+function mono(c, vars, neg, untidy) {
+  const fs = [];
+  if (untidy && c > 3 && primeFactors(c).length > 1) {
+    const pf = primeFactors(c); const k = R(1, pf.length - 1);
+    fs.push(N(pf.slice(0, k).reduce((a, b) => a * b, 1)), N(pf.slice(k).reduce((a, b) => a * b, 1)));
+  } else if (c !== 1 || !Object.keys(vars).length) fs.push(N(c));
+  for (const [b, e] of Object.entries(vars)) {
+    if (untidy && e > 1 && coin()) { const k = R(1, e - 1); fs.push(V(b, k), V(b, e - k)); }
+    else fs.push(V(b, e));
+  }
+  if (untidy) fs.sort(() => Math.random() - .5);
+  return T(fs, neg);
+}
+
+const GEN = {
+  powers(d) {
+    const v = pick(VARS);
+    const kinds = d === 1 ? ['prod', 'pp'] : d === 2 ? ['prod', 'pp', 'prodc', 'ppc'] : ['prod', 'prodc', 'ppc', 'mix'];
+    const kind = pick(kinds);
+    if (kind === 'prod') {
+      const fs = Array.from({ length: d === 1 ? 2 : 3 }, () => V(v, R(1, d === 1 ? 4 : 5)));
+      if (d === 3) { const w = otherVar(v); fs.splice(1, 0, V(w, R(1, 3))); fs.push(V(w, R(1, 3))); }
+      return { parts: [F([T(fs)])] };
+    }
+    if (kind === 'pp') return { parts: [F([T([G([V(v, R(2, 4))], R(2, 3))])])] };
+    if (kind === 'prodc') {
+      const fs = [N(R(2, 6)), V(v, R(1, 4)), N(R(2, 5)), V(v, R(1, 3))];
+      if (d === 3) fs.push(G([V(v, 2)], R(2, 3)));
+      return { parts: [F([T(fs, d === 3 && coin())])] };
+    }
+    if (kind === 'ppc') {
+      const inner = [N(R(2, 3)), V(v, R(1, 3))];
+      if (d === 3) inner.push(V(otherVar(v), R(1, 2)));
+      const fs = [G(inner, R(2, 3))];
+      if (coin()) fs.unshift(N(R(2, 4)));
+      return { parts: [F([T(fs)])] };
+    }
+    // mix: −2a · 5(a³)³ style
+    return { parts: [F([T([N(R(2, 5)), V(v, R(1, 2)), N(R(2, 5)), G([V(v, R(2, 3))], R(2, 3))], coin())])] };
+  },
+
+  like(d) {
+    const v = pick(VARS), w = otherVar(v);
+    const sigPool = d === 1 ? [{ [v]: 1 }, { [v]: 2 }] : d === 2 ? [{ [v]: 1 }, { [v]: 2 }, { [w]: 1 }] : [{ [v]: 1, [w]: 1 }, { [v]: 2, [w]: 1 }, { [v]: 2 }];
+    const n = d === 1 ? 3 : 4;
+    const main = pick(sigPool);
+    const sigs = [main, main];
+    while (sigs.length < n) sigs.push(pick(sigPool));
+    sigs.sort(() => Math.random() - .5);
+    const terms = sigs.map((s, i) => mono(R(1, d === 1 ? 6 : 9), s, i > 0 && d > 1 && Math.random() < .35, d === 3 && Math.random() < .5));
+    return { parts: [F(terms)] };
+  },
+
+  frac(d) {
+    const v = pick(VARS), w = otherVar(v);
+    if (d === 3 && coin()) {   // dividing fractions
+      const p = R(2, 9), q = R(2, 5), r = R(2, 5), s = R(1, 3);
+      return { parts: [F([mono(p, { [v]: R(1, 2) })], [mono(q, { [w]: R(1, 2) })]), F([mono(r, { [v]: 1 })], [mono(s, { [w]: 1 })])], op: ':' };
+    }
+    const g = d === 1 ? 1 : R(2, 5), p = R(1, 6), q = coprime(1, 5, p);
+    const m = R(2, 7), k = R(1, 5);
+    const numVars = { [v]: m }, denVars = { [v]: k === m ? k - 1 || 1 : k };
+    if (d >= 2 && coin()) { numVars[w] = R(1, 4); denVars[w] = R(1, 3); }
+    if (d === 3) {
+      const e = R(2, 3), base = R(1, 2);
+      const num = T([G([N(2), V(v, base)], e)]);
+      return { parts: [F([num], [mono(2 * R(1, 3), { [v]: R(1, base * e) })])] };
+    }
+    return { parts: [F([mono(p * g, numVars)], [mono(q * g, denVars)])] };
+  },
+
+  open(d) {
+    const v = pick(VARS), c = R(2, 6), dd = R(1, 7);
+    const inner = () => Pr([T([V(v)]), T([N(R(1, 7))], coin())]);
+    if (d === 1) return { parts: [F([T([N(c), Pr([T([V(v)]), T([N(dd)], coin())])])])] };
+    if (d === 2) return { parts: [F([T([N(c), inner()]), mono(R(1, 6), { [v]: 1 }, coin())])] };
+    return { parts: [F([T([N(c), inner()]), T([N(R(2, 5)), inner()], coin())])] };
+  },
+
+  factor(d) {
+    const v = pick(VARS), w = otherVar(v);
+    let g, cv, inner;
+    if (d === 1) { g = R(2, 7); cv = {}; inner = [mono(R(1, 3) === 1 ? 1 : 1, { [v]: 1 }), mono(1, { [w]: 1 }, coin())]; }
+    else if (d === 2) {
+      if (coin()) { g = R(2, 5); const u = R(1, 4), s = coprime(2, 5, u); cv = {}; inner = [mono(u, { [v]: 1 }), mono(s, { [w]: 1 }, coin())]; }
+      else { g = 1; cv = { [v]: 1 }; const u = R(2, 5); inner = [mono(u, { [v]: 1 }), mono(R(1, 7), {}, coin())]; }
+    } else {
+      g = R(2, 4); cv = { [v]: 1 }; const u = R(1, 4), s = coprime(2, 5, u);
+      inner = [mono(u, { [v]: 1 }), mono(s, { [w]: R(1, 2) }, coin())];
+    }
+    const terms = inner.map(t => {
+      const vars = { ...cv };
+      varPart(t).forEach(f => { vars[f.b] = (vars[f.b] || 0) + f.e; });
+      return mono(g * coefAbs(t), vars, t.neg);
+    });
+    return { parts: [F(terms)], goal: 'factor' };
+  },
+
+  mixed(d) {
+    const v = pick(VARS);
+    const E = pick([6, 8, 12]);
+    const pairs = [[2, E / 2], [E / 2, 2], ...(E % 3 === 0 ? [[3, E / 3]] : []), ...(E % 4 === 0 ? [[4, E / 4]] : [])];
+    const [m, n] = pick(pairs); let [k, l] = pick(pairs);
+    const c1 = R(2, 9), c2 = R(1, 7);
+    const t1 = T([N(c1), G([V(v, m)], n)]);
+    const t2 = d === 1 ? T([N(c2), G([V(v, k)], l)], coin()) : T([G([N(R(2, 3)), V(v, k)], l)]);
+    if (d < 3) return { parts: [F([t1, t2])] };
+    const s = c1 + Math.pow(t2.f[0].f[0].v, l);
+    const divs = [2, 3, 5, 7].filter(p => s % p === 0);
+    return { parts: [F([t1, t2], [mono(divs.length ? pick(divs) : R(2, 5), { [v]: R(1, 4) })])] };
+  },
+};
+
+function autoSolve(S) {
+  let k = 0;
+  while (k++ < 80) {
+    const h = hint(S); let r;
+    if (h.k === 'hDone') break;
+    if (h.k === 'hDiv' || h.k === 'hBar') r = opOp(S);
+    else if (h.k === 'hGroup' || h.k === 'hOpen' || h.k === 'hExplodeVar') r = opExplode(S, h.ids[0]);
+    else if (h.k === 'hExplodeCancel') { for (const id of h.ids) { r = opExplode(S, id); normalize(S); if (r && r.no) break; } }
+    else if (h.k === 'hExplodeNums') { r = opExplode(S, h.ids[0]); normalize(S); if (r && !r.no) r = opExplode(S, h.ids[1]); }
+    else r = opPair(S, h.ids[0], h.ids[1]);
+    if (!r || r.no) return null;
+    normalize(S);
+  }
+  return isClean(S) ? k - 1 : null;
+}
+
+function makeProblem(topics, d) {
+  for (let tries = 0; tries < 60; tries++) {
+    const topic = pick(topics);
+    const S = GEN[topic](d);
+    S.op = S.op || null; S.goal = S.goal || 'simplify';
+    normalize(S);
+    if (isClean(S)) continue;
+    const test = JSON.parse(JSON.stringify(S));
+    const moves = autoSolve(test);
+    if (moves == null || moves > 60) continue;
+    if (/^<span class="mn">0<\/span>$/.test(stateHTML(test))) continue;
+    S.topic = topic;
+    return S;
+  }
+  return null;
+}
+/* ===== END PRACTICE ===== */

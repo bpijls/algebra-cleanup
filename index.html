@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Algebra Cleanup</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=STIX+Two+Text:ital,wght@1,500&display=swap">
+<link rel="stylesheet" href="src/styles.css">
+<style>
+  /* the claude.ai artifact host adds these; keep them for local runs */
+  :root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  body { margin: 0; } [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand" id="brand">Algebra <span>Cleanup</span></div>
+    <button class="chipbtn" id="btnLevels" type="button"></button>
+    <button class="chipbtn" id="btnPractice" type="button"></button>
+    <button class="chipbtn" id="btnLang" type="button" aria-label="Language"></button>
+    <button class="chipbtn" id="btnRestart" type="button"></button>
+  </header>
+  <div class="lvlrow"><h1 id="lvlTitle"></h1><span class="badge" id="lvlBadge" hidden></span><span class="moves" id="moves"></span></div>
+  <div class="written"><span class="label" id="writtenLabel"></span><span class="expr-n" id="written"></span></div>
+  <main class="board" id="board" aria-live="polite"></main>
+  <div class="note" id="note" role="status"></div>
+  <nav class="tools" id="tools">
+    <button class="tool" id="btnUndo" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></svg><span></span></button>
+    <button class="tool" id="btnHint" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg><span></span></button>
+    <button class="tool main" id="btnExplode" type="button" hidden><span></span></button>
+    <button class="tool" id="btnGather" type="button" hidden><span></span></button>
+    <button class="tool main" id="btnSplit" type="button" hidden><span></span></button>
+    <button class="tool" id="btnSkip" type="button" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4l10 8-10 8z"/><path d="M19 5v14"/></svg><span></span></button>
+  </nav>
+</div>
+<div id="sheetHost"></div>
+<script src="src/core.js"></script>
+<script src="src/practice.js"></script>
+<script src="src/i18n.js"></script>
+<script src="src/ui.js"></script>
+</body>
+</html>
