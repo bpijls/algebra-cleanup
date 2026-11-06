@@ -102,3 +102,19 @@ test('splitting a term in two keeps its total: 5x = 2x + 3x, and refuses 0 or th
   assert.equal(strip(G.stateHTML(S)), 'x^2 + 2x + 3x + 6');
   assert.equal(G.hint(S).k, 'hExplodeVar');   // work on x² + 2x first, not on 2x + 3x
 });
+
+test('the hidden 1: −x explodes to −1·x, the 1 taps away again, and a shown 1 is never a finished answer', () => {
+  const S = G.buildLevel(25);   // x² − x − 12
+  const x = S.parts[0].num[1].f[0];
+  assert.equal(G.opExplode(S, x.id).ok, 'explodeOne'); G.normalize(S);
+  assert.equal(strip(G.stateHTML(S)), 'x^2 − 1x − 12');
+  const one = S.parts[0].num[1].f[0];
+  assert.equal(one.v, 1);
+  assert.equal(G.opExplode(S, one.id).ok, 'hideOne'); G.normalize(S);
+  assert.equal(strip(G.stateHTML(S)), 'x^2 − x − 12');
+  const T = G.parseProblem('3x').S;   // a term that already has a number: x stays an atom
+  assert.equal(G.opExplode(T, T.parts[0].num[0].f[1].id).no, 'atom');
+  const U = G.parseProblem('x + y').S;
+  G.opExplode(U, U.parts[0].num[0].f[0].id); G.normalize(U);
+  assert.equal(G.isClean(U), false); assert.equal(G.hint(U).k, 'hHideOne');
+});

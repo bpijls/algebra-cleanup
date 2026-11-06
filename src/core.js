@@ -56,7 +56,8 @@ function sumClean(terms) {
 
 function cleanTerm(t) {
   t.f = t.f.filter(f => !(f.k !== 'n' && f.e === 0));
-  if (t.f.length > 1) t.f = t.f.filter(f => !(f.k === 'n' && f.v === 1));
+  // a 1 the player made visible (x → 1·x) stays until they tap it away; other 1's go
+  if (t.f.length > 1) t.f = t.f.filter(f => !(f.k === 'n' && f.v === 1 && !f.shown));
   if (!t.f.length) t.f = [N(1)];
   return t;
 }
@@ -124,7 +125,14 @@ function isFactored(S) {
 }
 // a side that is one bare bracket reads as the sum inside it
 const unbare = side => side.length === 1 && !side[0].neg && side[0].f.length === 1 && side[0].f[0].k === 'p' && side[0].f[0].e === 1 ? side[0].f[0].terms : side;
+// a visible 1 in front of letters (1·x): fine while working, but not how the answer is written
+function shownOne(S) {
+  let hit = null;
+  eachFactor(S, L => { if (!hit && L.f.k === 'n' && L.f.v === 1 && L.f.shown && L.term.f.length > 1) hit = L.f; });
+  return hit;
+}
 function isClean(S) {
+  if (shownOne(S)) return false;
   if (S.goal === 'factor') return isFactored(S);
   if (S.parts.length > 1) return false;
   const P = S.parts[0];
@@ -196,13 +204,24 @@ const bx = b => mx(`<i class="mv">${b}</i>`);
 function opExplode(S, id) {
   const L = locate(S, id), f = L.f, arr = L.term.f;
   if (f.k === 'v') {
-    if (f.e < 2) return { no: 'atom', p: { x: mx(fx(f)) }, ids: [id] };
+    if (f.e < 2) {
+      // x is 1·x: the 1 was there all along, it just isn't written (only when the term has no number yet)
+      if (arr.some(g => g.k === 'n')) return { no: 'atom', p: { x: mx(fx(f)) }, ids: [id] };
+      const one = Object.assign(N(1), { shown: true });
+      arr.splice(arr.indexOf(f), 0, one);
+      const sign = L.term.neg ? '−' : '';
+      return { ok: 'explodeOne', p: { x: mx(sign + fx(f)), ex: mx(sign + '1 · ' + fx(f)) }, born: [one.id] };
+    }
     if (f.e > MAX_VAR) return { no: 'tooBig', ids: [id] };
     const copies = Array.from({ length: f.e }, () => V(f.b, 1));
     arr.splice(L.i, 1, ...copies);
     return { ok: 'explodeVar', p: { x: mx(fx(f)), n: f.e, b: bx(f.b), ex: mx(copies.map(fx).join(' · ')) }, born: copies.map(c => c.id), origins: Object.fromEntries(copies.map(c => [c.id, [f.id]])) };
   }
   if (f.k === 'n') {
+    if (f.v === 1 && f.shown && arr.length > 1) {   // tap the 1 of 1·x away again
+      f.shown = false;
+      return { ok: 'hideOne', p: { x: mx(factorsHTML(arr.filter(g => g !== f))) } };
+    }
     if (f.v === 1) return { no: 'atom', p: { x: mx('1') }, ids: [id] };
     const pf = primeFactors(f.v);
     if (pf.length < 2) return { no: 'prime', p: { n: f.v }, ids: [id] };
@@ -332,6 +351,7 @@ function opFactor(S, A, B) {
   return { ok: lead ? 'factorNeg' : leftOne ? 'factorOne' : 'factor', p: { c: mx(fx(c)), ex, r: mx(termHTML(nt)) }, born: [c.id], origins: { [c.id]: picked.map(f => f.id) }, arcs: true };
 }
 
+const sgn = n => String(n).replace('-', '−');
 /* Write a·x as p·x + q·x with p + q = a (the step behind the sum-product method). */
 function opSplitTwo(S, tid, p) {
   const L = locate(S, tid);
@@ -342,7 +362,7 @@ function opSplitTwo(S, tid, p) {
   const mk = k => T([...(Math.abs(k) !== 1 ? [N(Math.abs(k))] : []), ...vp.map(cloneF)], k < 0);
   const nts = [mk(p), mk(q)];
   L.terms.splice(L.t, 1, ...nts);
-  return { ok: 'splitTwo', p: { x: mx(sumHTML([t])), ex: mx(sumHTML(nts)), a: p, b: q, c }, born: nts.flatMap(n => n.f.map(f => f.id)) };
+  return { ok: 'splitTwo', p: { x: mx(sumHTML([t])), ex: mx(sumHTML(nts)), a: sgn(p), b: q < 0 ? `(${sgn(q)})` : q, c: sgn(c) }, born: nts.flatMap(n => n.f.map(f => f.id)) };
 }
 
 function opPair(S, aId, bId) {
@@ -677,6 +697,8 @@ function hint(S) {
     eachFactor(S, L => { if (!h && L.f.k === 'p') h = { k: 'hOpen', p: { x: mx(termHTML(L.term)) }, ids: [L.f.id] }; });
     if (h) return h;
   }
+  const one = shownOne(S);
+  if (one) return { k: 'hHideOne', ids: [one.id] };
   return { k: 'hDone', ids: [] };
 }
 

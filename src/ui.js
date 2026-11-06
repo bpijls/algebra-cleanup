@@ -114,6 +114,11 @@ function showOwn() {
 }
 
 /* ---- split a term in two: 5x = 2x + 3x ---- */
+// the term a selected piece belongs to, when that term can be split (a tidy term with letters)
+function splitTermOf(fid) {
+  const L = locate(S, fid);
+  return L && L.kind === 'f' && tidy(L.term) && varPart(L.term).length ? L.term.id : null;
+}
 function showSplit(tid) {
   const L = locate(S, tid);
   const c = L && coef(L.term), vp = L && varPart(L.term);
@@ -267,7 +272,7 @@ function render() {
   let gatherable = false;
   if (fSel) { const L = locate(S, sel.id); gatherable = L.term.f.filter(f => canMerge(L.f, f)).length >= 3; }
   $('btnGather').hidden = !gatherable; $('btnGather').querySelector('span').textContent = t('gatherBtn');
-  $('btnSplit').hidden = !tSel; $('btnSplit').querySelector('span').textContent = t('splitBtn');
+  $('btnSplit').hidden = !(tSel || (fSel && splitTermOf(sel.id))); $('btnSplit').querySelector('span').textContent = t('splitBtn');
   document.documentElement.lang = lang;
 }
 
@@ -469,7 +474,7 @@ board.addEventListener('click', e => {
 
 $('btnExplode').onclick = () => sel && run(s => opExplode(s, sel.id));
 $('btnGather').onclick = () => sel && run(s => opGather(s, sel.id));
-$('btnSplit').onclick = () => sel && !busy && !won && showSplit(sel.id);
+$('btnSplit').onclick = () => sel && !busy && !won && showSplit(sel.t === 't' ? sel.id : splitTermOf(sel.id));
 $('btnUndo').onclick = () => {
   if (!history.length || busy) return;
   const prev = JSON.parse(history.pop()); S = prev.S; moves = prev.moves;
