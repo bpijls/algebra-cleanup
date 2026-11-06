@@ -4,27 +4,31 @@ const nid = () => uid++;
 const N = v => ({ k: 'n', v, id: nid() });
 const V = (b, e = 1) => ({ k: 'v', b, e, id: nid() });
 const G = (f, e) => ({ k: 'g', f, e, id: nid() });          // bracket around a product, with exponent
-const Pr = terms => ({ k: 'p', terms, e: 1, id: nid() });  // bracket around a sum
+const Pr = (terms, e = 1) => ({ k: 'p', terms, e, id: nid() });  // bracket around a sum, with exponent
 const T = (f, neg = false) => ({ k: 't', f, neg, id: nid() });
 const F = (num, den) => ({ num, den: den || [T([N(1)])] });
 const MAX_VAR = 16, MAX_GROUP = 8, MAX_SPLIT = 12;
 
-const cloneF = f => f.k === 'n' ? N(f.v) : f.k === 'v' ? V(f.b, f.e) : f.k === 'g' ? G(f.f.map(cloneF), f.e) : Pr(f.terms.map(cloneT));
+const cloneF = f => f.k === 'n' ? N(f.v) : f.k === 'v' ? V(f.b, f.e) : f.k === 'g' ? G(f.f.map(cloneF), f.e) : Pr(f.terms.map(cloneT), f.e);
 const cloneT = t => T(t.f.map(cloneF), t.neg);
 const gcd = (a, b) => { a = Math.abs(a); b = Math.abs(b); while (b) [a, b] = [b, a % b]; return a; };
 function primeFactors(n) { const r = []; let d = 2; while (n > 1) { while (n % d === 0) { r.push(d); n /= d; } d++; } return r; }
 const fkey = f => f.k === 'n' ? 'n' + f.v : f.k === 'v' ? f.b + '^' + f.e : f.k === 'g' ? '(' + f.f.map(fkey).join('*') + ')^' + f.e
-  : '[' + f.terms.map(t => (t.neg ? '-' : '+') + t.f.map(fkey).sort().join('*')).join('') + ']';
+  : sumKey(f.terms) + '^' + f.e;
+// a sum, independent of the order of its terms and of the factors inside each term
+const sumKey = terms => '[' + terms.map(t => (t.neg ? '-' : '+') + t.f.map(fkey).sort().join('*')).sort().join('') + ']';
 const innerKey = g => g.f.map(fkey).join('*');
 function canMerge(x, y) {
-  if (x.k !== y.k || x.k === 'p') return false;
+  if (x.k !== y.k) return false;
   if (x.k === 'n') return true;
   if (x.k === 'v') return x.b === y.b;
+  if (x.k === 'p') return sumKey(x.terms) === sumKey(y.terms);
   return innerKey(x) === innerKey(y);
 }
 function mergeF(x, y) {
   if (x.k === 'n') return N(x.v * y.v);
   if (x.k === 'v') return V(x.b, x.e + y.e);
+  if (x.k === 'p') return Pr(x.terms.map(cloneT), x.e + y.e);
   return G(x.f.map(cloneF), x.e + y.e);
 }
 const varPart = t => t.f.filter(f => f.k === 'v');
@@ -39,7 +43,7 @@ function tidy(t, allowB) {
   let n = 0, p = 0; const bs = new Set();
   for (const f of t.f) {
     if (f.k === 'g') return false;
-    if (f.k === 'p') { if (!allowB || !sumClean(f.terms)) return false; p++; }
+    if (f.k === 'p') { if (!allowB || f.e !== 1 || !sumClean(f.terms)) return false; p++; }
     else if (f.k === 'n') n++;
     else { if (bs.has(f.b)) return false; bs.add(f.b); }
   }
@@ -51,18 +55,23 @@ function sumClean(terms) {
 }
 
 function cleanTerm(t) {
-  t.f = t.f.filter(f => !((f.k === 'v' || f.k === 'g') && f.e === 0));
+  t.f = t.f.filter(f => !(f.k !== 'n' && f.e === 0));
   if (t.f.length > 1) t.f = t.f.filter(f => !(f.k === 'n' && f.v === 1));
   if (!t.f.length) t.f = [N(1)];
   return t;
 }
-function normTerms(terms) {
+function normTerms(terms, keepBare) {
   for (const t of terms) {
     const nf = [];
     for (const f of t.f) {
       if (f.k === 'p') {
         normTerms(f.terms);
-        if (f.terms.length === 1) { const it = f.terms[0]; if (it.neg) t.neg = !t.neg; nf.push(...it.f); continue; }
+        if (f.terms.length === 1) {
+          const it = f.terms[0];
+          if (it.neg && f.e % 2) t.neg = !t.neg;
+          if (f.e === 1) nf.push(...it.f); else nf.push(G(it.f, f.e));   // (2a)² is a power of a product
+          continue;
+        }
       }
       nf.push(f);
     }
@@ -71,9 +80,9 @@ function normTerms(terms) {
   }
   for (let i = 0; i < terms.length; i++) {
     const t = terms[i];
-    if (t.f.length === 1 && t.f[0].k === 'p') {
+    // a bare bracket with + in front is just its terms; a minus or a power in front must be opened by the player
+    if (t.f.length === 1 && t.f[0].k === 'p' && !t.neg && t.f[0].e === 1 && !(keepBare && terms.length === 1)) {
       const inner = t.f[0].terms;
-      if (t.neg) inner.forEach(it => { it.neg = !it.neg; });
       terms.splice(i, 1, ...inner); i += inner.length - 1;
     }
   }
@@ -85,7 +94,8 @@ function negate(side) {
 }
 function normalize(S) {
   for (const P of S.parts) for (const side of SIDES) {
-    normTerms(P[side]);
+    // (x+2)/(x+2)(x+3): a bracket that is the whole top or bottom stays a bracket, so it can cancel as one piece
+    normTerms(P[side], !isUnit(P[side === 'num' ? 'den' : 'num']) && S.op !== '·');
     if (!P[side].length) P[side] = [T([N(side === 'num' ? 0 : 1)])];
   }
   // a fraction that is used up (1 over 1) stays on the board: the player cancels the 1's (opPair, 'ones')
@@ -101,24 +111,31 @@ function isFactored(S) {
   if (!isOne(P.den) || P.num.length !== 1) return false;
   const t = P.num[0];
   const ps = t.f.filter(f => f.k === 'p');
-  if (ps.length !== 1 || !tidy(t, true)) return false;
-  const inner = ps[0].terms;
-  let g = 0; inner.forEach(it => { g = gcd(g, coefAbs(it)); });
-  if (g > 1) return false;
-  return !varPart(inner[0]).some(v => inner.every(it => varPart(it).some(w => w.b === v.b)));
+  if (!ps.length || !tidy({ f: t.f.filter(f => f.k !== 'p') })) return false;
+  const keys = ps.map(f => sumKey(f.terms));
+  if (new Set(keys).size !== keys.length) return false;   // (x+2)(x+2) is written (x+2)²
+  return ps.every(f => {
+    const inner = f.terms;
+    if (!sumClean(inner) || !inner.every(t => tidy(t))) return false;   // no half-finished brackets inside
+    let g = 0; inner.forEach(it => { g = gcd(g, coefAbs(it)); });
+    if (g > 1 || quadSplit(inner)) return false;   // x² + 5x + 6 still splits into (x + 2)(x + 3)
+    return !varPart(inner[0]).some(v => inner.every(it => varPart(it).some(w => w.b === v.b)));
+  });
 }
+// a side that is one bare bracket reads as the sum inside it
+const unbare = side => side.length === 1 && !side[0].neg && side[0].f.length === 1 && side[0].f[0].k === 'p' && side[0].f[0].e === 1 ? side[0].f[0].terms : side;
 function isClean(S) {
   if (S.goal === 'factor') return isFactored(S);
   if (S.parts.length > 1) return false;
   const P = S.parts[0];
   for (const side of SIDES) {
-    const ts = P[side];
+    const ts = unbare(P[side]);
     if (!ts.every(t => tidy(t, !!S.allowB))) return false;
     const sigs = ts.map(sig);
     if (new Set(sigs).size !== sigs.length) return false;
   }
   if (isOne(P.den)) return true;
-  const all = [...P.num, ...P.den];
+  const all = [...unbare(P.num), ...unbare(P.den)];
   let g = 0; for (const t of all) g = gcd(g, coefAbs(t));
   if (g > 1) return false;
   const shared = varPart(all[0]).map(f => f.b).filter(b => all.every(t => varPart(t).some(f => f.b === b)));
@@ -150,7 +167,7 @@ function containers(S) { const out = []; walk(S, L => { if (L.kind === 't' && !o
 function fx(f) {
   if (f.k === 'n') return `<span class="mn">${f.v}</span>`;
   if (f.k === 'v') return `<i class="mv">${f.b}</i>${f.e > 1 ? `<sup>${f.e}</sup>` : ''}`;
-  if (f.k === 'p') return `(${sumHTML(f.terms)})`;
+  if (f.k === 'p') return `(${sumHTML(f.terms)})${f.e > 1 ? `<sup>${f.e}</sup>` : ''}`;
   return `(${factorsHTML(f.f)})${f.e > 1 ? `<sup>${f.e}</sup>` : ''}`;
 }
 const RANK = { n: 0, v: 1, g: 2, p: 3 };
@@ -193,16 +210,23 @@ function opExplode(S, id) {
     arr.splice(L.i, 1, ...parts);
     return { ok: 'explodeNum', p: { n: f.v, ex: mx(pf.join(' · ')) }, born: parts.map(c => c.id), origins: Object.fromEntries(parts.map(c => [c.id, [f.id]])) };
   }
+  if (f.k === 'p' && f.e >= 2) {   // (a+b)² is (a+b)·(a+b)
+    if (f.e > MAX_GROUP) return { no: 'tooBig', ids: [id] };
+    const copies = Array.from({ length: f.e }, () => Pr(f.terms.map(cloneT)));
+    arr.splice(L.i, 1, ...copies);
+    return { ok: 'explodeGroup', p: { e: f.e, x: mx(fx(f)), ex: mx(copies.map(fx).join(' · ')) }, born: copies.map(c => c.id), origins: Object.fromEntries(copies.map(c => [c.id, [f.id]])) };
+  }
   if (f.k === 'p') {   // open the brackets: multiply everything outside with every term inside
     const before = mx(termHTML(L.term));
     const others = L.term.f.filter(g => g !== f);
     const origins = {};
     const nts = f.terms.map(it => {
       const copies = others.map(o => { const k = cloneF(o); origins[k.id] = [o.id]; return k; });
-      return T([...copies, ...it.f], L.term.neg !== it.neg);   // inner pieces keep their identity and slide
+      // inner pieces keep their identity and slide; another bracket goes behind: a(c + d), not (c + d)a
+      return T([...copies.filter(c => c.k !== 'p'), ...it.f, ...copies.filter(c => c.k === 'p')], L.term.neg !== it.neg);
     });
     L.terms.splice(L.t, 1, ...nts);
-    return { ok: others.length ? 'distribute' : 'unwrapSum', p: { x: before, ex: mx(sumHTML(nts)) }, born: Object.keys(origins).map(Number), origins, arcs: true };
+    return { ok: others.length ? 'distribute' : L.term.neg ? 'unwrapNeg' : 'unwrapSum', p: { x: before, ex: mx(sumHTML(nts)) }, born: Object.keys(origins).map(Number), origins, arcs: true };
   }
   if (f.e >= 2) {
     if (f.e > MAX_GROUP) return { no: 'tooBig', ids: [id] };
@@ -221,6 +245,11 @@ function groupHasBase(g, b) { return g.k === 'g' && g.f.some(f => f.k === 'v' &&
 // only exactly equal pieces cancel: x³ with x³, 2 with 2
 function cancelCheck(x, y) {
   if (x.k === 'v' && y.k === 'v' && x.b === y.b) {
+    if (x.e === y.e) return { type: 'cancel' };
+    const big = x.e > y.e ? x : y, small = big === x ? y : x;
+    return { type: 'fizzle', msg: 'cancelUnequal', p: { x: mx(fx(x)), y: mx(fx(y)), big: mx(fx(big)), small: mx(fx(small)) } };
+  }
+  if (x.k === 'p' && y.k === 'p' && sumKey(x.terms) === sumKey(y.terms)) {
     if (x.e === y.e) return { type: 'cancel' };
     const big = x.e > y.e ? x : y, small = big === x ? y : x;
     return { type: 'fizzle', msg: 'cancelUnequal', p: { x: mx(fx(x)), y: mx(fx(y)), big: mx(fx(big)), small: mx(fx(small)) } };
@@ -245,6 +274,11 @@ function pairCheck(S, A, B) {
   }
   if (A.terms === B.terms) {
     if (A.term === B.term) return canMerge(x, y) ? { type: 'merge' } : { type: 'none' };
+    if (x.k === 'p' && y.k === 'p' && canMerge(x, y)) {   // a(x+2) + 3(x+2): the same bracket in both terms
+      if (x.e === y.e) return { type: 'factor', useless: false };
+      const big = x.e > y.e ? x : y, small = big === x ? y : x;
+      return { type: 'fizzle', msg: 'explodeFirstVar', p: { x: mx(fx(x)), y: mx(fx(y)), big: mx(fx(big)), small: mx(fx(small)) } };
+    }
     if (x.k !== y.k || x.k === 'g' || x.k === 'p' || (x.k === 'v' && x.b !== y.b)) return { type: 'none' };
     const strictA = tidy(A.term), strictB = tidy(B.term);
     if (strictA && strictB && sig(A.term) === sig(B.term)) return { type: 'addTerms' };
@@ -272,39 +306,43 @@ function pairCheck(S, A, B) {
   if (S.op === '·' && usedUp(P)) return { type: 'ones' };
   const sameVar = x.k === 'v' && y.k === 'v' && x.b === y.b;
   const nums = x.k === 'n' && y.k === 'n';
+  const brk = x.k === 'p' && y.k === 'p' && sumKey(x.terms) === sumKey(y.terms);
   const grp = (x.k === 'g' && (y.k === 'g' || (y.k === 'v' && groupHasBase(x, y.b)) || y.k === 'n'))
     || (y.k === 'g' && ((x.k === 'v' && groupHasBase(y, x.b)) || x.k === 'n'));
-  if (!sameVar && !nums && !grp) return { type: 'none' };
+  if (!sameVar && !nums && !grp && !brk) return { type: 'none' };
   if (P.num.length > 1 || P.den.length > 1) return { type: 'fizzle', msg: 'cancelSum' };
   if (grp) return { type: 'fizzle', msg: 'cancelGroup' };
   return cancelCheck(x, y);
 }
 
+/* Putting outside brackets: only from the two terms the player tapped, only the tapped pieces.
+   The sign of the first term goes in front with it, so −3x + 6 becomes −3(x − 2). */
 function opFactor(S, A, B) {
-  const x = A.f, y = B.f, terms = A.terms;
-  let c, has, reduce;
-  const tapped = new Map([[A.term, x], [B.term, y]]);
-  if (x.k === 'n') {
-    const g = x.v;
-    c = N(g);
-    var pickIn = t => tapped.get(t) || t.f.find(f => f.k === 'n' && f.v === g);
-    has = t => !!pickIn(t);
-  } else {
-    const m = x.e, b = x.b;   // exact matches only: x and y have the same exponent
-    c = V(b, m);
-    pickIn = t => tapped.get(t) || t.f.find(f => f.k === 'v' && f.b === b && f.e === m);
-    has = t => !!pickIn(t);
-  }
-  const set = terms.filter(has);
-  const picked = set.map(t => pickIn(t));
-  const inner = set.map((t, i) => { t.f.splice(t.f.indexOf(picked[i]), 1); return cleanTerm(t); });
-  const ex = mx(set.map((t, i) => (i === 0 ? (t.neg ? '−' : '') : (t.neg ? ' − ' : ' + ')) + fx(c) + '·' + termHTML(inner[i])).join(''));
-  const nt = T([c, Pr(inner)]);
+  const terms = A.terms;
+  const [first, second] = [A, B].sort((p, q) => terms.indexOf(p.term) - terms.indexOf(q.term));
+  const set = [first.term, second.term], picked = [first.f, second.f];
+  const c = cloneF(first.f), lead = first.term.neg;
+  const ex = mx(sumHTML(set));
+  const inner = set.map((t, i) => { t.f.splice(t.f.indexOf(picked[i]), 1); t.neg = t.neg !== lead; return cleanTerm(t); });
+  const nt = T([c, Pr(inner)], lead);
   const at = terms.indexOf(set[0]);
   set.forEach(t => terms.splice(terms.indexOf(t), 1));
   terms.splice(at, 0, nt);
   const leftOne = inner.some(t => t.f.length === 1 && t.f[0].k === 'n' && t.f[0].v === 1);
-  return { ok: leftOne ? 'factorOne' : 'factor', p: { c: mx(fx(c)), ex, r: mx(termHTML(nt)) }, born: [c.id], origins: { [c.id]: picked.map(f => f.id) }, arcs: true };
+  return { ok: lead ? 'factorNeg' : leftOne ? 'factorOne' : 'factor', p: { c: mx(fx(c)), ex, r: mx(termHTML(nt)) }, born: [c.id], origins: { [c.id]: picked.map(f => f.id) }, arcs: true };
+}
+
+/* Write a·x as p·x + q·x with p + q = a (the step behind the sum-product method). */
+function opSplitTwo(S, tid, p) {
+  const L = locate(S, tid);
+  if (!L || L.kind !== 't') return null;
+  const t = L.term, c = coef(t), vp = varPart(t);
+  if (!tidy(t) || !vp.length || !Number.isInteger(p) || p === 0 || p === c) return { no: 'splitTwoNo', ids: [tid] };
+  const q = c - p;
+  const mk = k => T([...(Math.abs(k) !== 1 ? [N(Math.abs(k))] : []), ...vp.map(cloneF)], k < 0);
+  const nts = [mk(p), mk(q)];
+  L.terms.splice(L.t, 1, ...nts);
+  return { ok: 'splitTwo', p: { x: mx(sumHTML([t])), ex: mx(sumHTML(nts)), a: p, b: q, c }, born: nts.flatMap(n => n.f.map(f => f.id)) };
 }
 
 function opPair(S, aId, bId) {
@@ -348,7 +386,7 @@ function opPair(S, aId, bId) {
   }
   // cancel
   const shown = mx(fx(x));
-  if (x.k === 'v') { x.e = 0; y.e = 0; } else { x.v = 1; y.v = 1; }
+  if (x.k === 'n') { x.v = 1; y.v = 1; } else { x.e = 0; y.e = 0; }
   return { ok: 'cancelVar', p: { x: shown }, cancel: true };
 }
 
@@ -514,6 +552,75 @@ function partnersOf(S, sel) {
   return out;
 }
 
+/* ---- factor goal hints ---- */
+// which terms to take something out of next: the terms without a bracket when some term already has one
+// (x(x+2) + 3x + 6 → work on 3x + 6), or the first pair of a sum split into four (x² + 2x + 3x + 6)
+function factorFocus(ts) {
+  const withP = ts.filter(t => t.f.some(f => f.k === 'p'));
+  if (withP.length) { const rest = ts.filter(t => !withP.includes(t)); return rest.length >= 2 ? rest : ts; }
+  return ts.length === 4 ? ts.slice(0, 2) : ts;
+}
+const numProd = t => t.f.filter(f => f.k === 'n').reduce((a, f) => a * f.v, 1);
+function factorHint(S) {
+  for (const ts of containers(S)) {
+    if (ts.length < 2) continue;
+    for (let i = 0; i < ts.length; i++) for (let j = i + 1; j < ts.length; j++)
+      for (const a of ts[i].f) for (const b of ts[j].f)
+        if (a.k === 'p' && b.k === 'p' && canMerge(a, b) && a.e === b.e) return { k: 'hFactor', p: { x: mx(fx(a)), y: mx(fx(b)) }, ids: [a.id, b.id] };
+    const focus = factorFocus(ts);
+    // a piece that is exactly in every one of these terms
+    for (const a of focus[0].f) {
+      if (!((a.k === 'n' && a.v > 1) || a.k === 'v')) continue;
+      const match = t => t.f.find(f => f.k === a.k && (a.k === 'n' ? f.v === a.v : f.b === a.b && f.e === a.e));
+      if (focus.every(match)) { const b = match(focus[1]); return { k: 'hFactor', p: { x: mx(fx(a)), y: mx(fx(b)) }, ids: [a.id, b.id] }; }
+    }
+    // a factor they share but that is hidden inside a bigger number or power: explode it
+    const g = focus.reduce((g, t) => gcd(g, numProd(t)), 0);
+    if (g > 1) {
+      const p = primeFactors(g)[0];
+      for (const t of focus) {
+        if (t.f.some(f => f.k === 'n' && f.v === p)) continue;
+        const n = t.f.find(f => f.k === 'n' && f.v % p === 0);
+        if (n) return { k: 'hExplodeFor', p: { x: n.v, p }, ids: [n.id] };
+      }
+    }
+    for (const v of varPart(focus[0])) {
+      if (!focus.every(t => varPart(t).some(w => w.b === v.b))) continue;
+      for (const t of focus) {
+        if (t.f.some(f => f.k === 'v' && f.b === v.b && f.e === 1)) continue;
+        const big = t.f.find(f => f.k === 'v' && f.b === v.b);
+        return { k: 'hExplodeVar', p: { x: mx(fx(big)), y: mx(termHTML(focus.find(u => u !== t))), b: bx(v.b) }, ids: [big.id] };
+      }
+    }
+  }
+  return null;
+}
+// x² + 5x + 6: two numbers with product 6 and sum 5 tell how to split 5x, so the four terms factor in pairs.
+// Returns the split for a sum written as ax² + bx + c, or null when there is none with whole numbers.
+function quadSplit(ts) {
+  if (ts.length !== 3 || !ts.every(t => tidy(t)) || ts.some(t => t.f.some(f => f.k === 'p'))) return null;
+  const vs = ts.map(varPart);
+  if (vs[2].length || vs[0].length !== 1 || vs[1].length !== 1) return null;
+  const [sq, lin] = [vs[0][0], vs[1][0]];
+  if (sq.b !== lin.b || sq.e !== 2 || lin.e !== 1) return null;
+  const a = coef(ts[0]), b = coef(ts[1]), c = coef(ts[2]);
+  if (a < 1 || gcd(gcd(a, b), c) > 1) return null;
+  const inner = (u, v) => { const g = gcd(u, v) * Math.sign(u); return u / g + ',' + v / g; };
+  for (let p = -Math.abs(a * c); p <= Math.abs(a * c); p++) {
+    const q = b - p;
+    if (!p || !q || p * q !== a * c) continue;
+    if (inner(a, p) === inner(q, c)) return { a, b, c, p, q };   // this order leaves the same bracket twice
+  }
+  return null;
+}
+function sumProductHint(S) {
+  for (const ts of containers(S)) {
+    const q = quadSplit(ts);
+    if (q) return { k: 'hSumProduct', p: { x: mx(termHTML(ts[1])), prod: q.a * q.c, sum: q.b, a: q.p, b: q.q }, ids: [ts[1].id], split: q.p };
+  }
+  return null;
+}
+
 function hint(S) {
   if (S.parts.length > 1) {
     if (S.op === '/') return { k: 'hBar', ids: ['op'] };
@@ -538,7 +645,7 @@ function hint(S) {
   let h = null;
   eachFactor(S, L => {
     if (h) return;
-    if (L.f.k === 'g') h = { k: 'hGroup', p: { x: mx(fx(L.f)) }, ids: [L.f.id] };
+    if (L.f.k === 'g' || (L.f.k === 'p' && L.f.e > 1 && S.goal !== 'factor')) h = { k: 'hGroup', p: { x: mx(fx(L.f)) }, ids: [L.f.id] };
   });
   if (h) return h;
   if (P.num.length === 1 && P.den.length === 1 && !isOne(P.den)) {
@@ -552,42 +659,20 @@ function hint(S) {
       return { k: 'hExplodeCancel', p: { x: mx(fx(x)), y: mx(fx(y)) }, ids };
     }
   }
-  if (S.goal === 'factor') {
-    for (const ts of containers(S)) {
-      for (let i = 0; i < ts.length; i++) for (let j = i + 1; j < ts.length; j++) {
-        if (tidy(ts[i]) && tidy(ts[j]) && sig(ts[i]) === sig(ts[j])) continue;
-        for (const a of ts[i].f) for (const b of ts[j].f) {
-          if ((a.k === 'n' && b.k === 'n' && a.v === b.v && a.v > 1) || (a.k === 'v' && b.k === 'v' && a.b === b.b && a.e === b.e))
-            return { k: 'hFactor', p: { x: mx(fx(a)), y: mx(fx(b)) }, ids: [a.id, b.id] };
-        }
-      }
-    }
-  }
+  if (S.goal === 'factor') { h = factorHint(S); if (h) return h; }
   eachTerm(S, L => {
     const t = L.term;
     for (let i = 0; !h && i < t.f.length; i++) for (let j = i + 1; !h && j < t.f.length; j++)
-      if (canMerge(t.f[i], t.f[j])) h = { k: 'hMerge', p: { x: mx(fx(t.f[i])), y: mx(fx(t.f[j])) }, ids: [t.f[i].id, t.f[j].id] };
+      // (a+b)·(a+b) only folds back into (a+b)² when the goal is to factor; to simplify, it gets opened
+      if (canMerge(t.f[i], t.f[j]) && (t.f[i].k !== 'p' || S.goal === 'factor')) h = { k: 'hMerge', p: { x: mx(fx(t.f[i])), y: mx(fx(t.f[j])) }, ids: [t.f[i].id, t.f[j].id] };
   });
   if (h) return h;
   const pick = t => t.f.find(f => f.k === 'v') || t.f[0];
   for (const ts of containers(S))
     for (let i = 0; i < ts.length; i++) for (let j = i + 1; j < ts.length; j++)
       if (tidy(ts[i]) && tidy(ts[j]) && sig(ts[i]) === sig(ts[j]))
-        return { k: 'hLike', p: { x: mx(termHTML(ts[i])), y: mx(termHTML(ts[j])) }, ids: [pick(ts[i]).id, pick(ts[j]).id] };
-  if (S.goal === 'factor') {
-    for (const ts of containers(S)) {
-      for (let i = 0; i < ts.length; i++) for (let j = i + 1; j < ts.length; j++) {
-        const na = ts[i].f.find(f => f.k === 'n'), nb = ts[j].f.find(f => f.k === 'n');
-        if (na && nb && na.v !== nb.v && gcd(na.v, nb.v) > 1) return { k: 'hExplodeNums', p: { x: na.v, y: nb.v }, ids: [na.id, nb.id] };
-        for (const va of varPart(ts[i])) for (const vb of varPart(ts[j])) {
-          if (va.b === vb.b && va.e !== vb.e) {
-            const big = va.e > vb.e ? va : vb, small = big === va ? vb : va;
-            return { k: 'hExplodeVar', p: { x: mx(fx(big)), y: mx(fx(small)), b: bx(big.b) }, ids: [big.id] };
-          }
-        }
-      }
-    }
-  }
+        return { k: 'hLike', p: { x: mx(termHTML(ts[i])), y: mx(termHTML(ts[j])) }, ids: [pick(ts[i]).id, (ts[j].f.find(f => f.k === 'v' && f.b === pick(ts[i]).b) || pick(ts[j])).id] };
+  if (S.goal === 'factor') { h = sumProductHint(S); if (h) return h; }
   if (S.goal !== 'factor' && !S.allowB) {
     eachFactor(S, L => { if (!h && L.f.k === 'p') h = { k: 'hOpen', p: { x: mx(termHTML(L.term)) }, ids: [L.f.id] }; });
     if (h) return h;
@@ -645,6 +730,15 @@ const LEVELS = [
   { s: () => ({ parts: [F([T([N(5), Pr([T([V('a')]), T([N(2)])])]), T([N(3), V('a')])])] }),
     en: 'Brackets with a sum inside. Tap the brackets twice to open them up.',
     nl: 'Haakjes met een som erin. Tik twee keer op de haakjes om ze weg te werken.' },
+  { s: () => ({ parts: [F([T([Pr([T([V('x')]), T([N(3)], true)])], true), T([N(2), V('x')])])] }),
+    en: 'A minus in front of brackets. It means −1 times everything inside. Open the brackets and watch the signs.',
+    nl: 'Een min voor de haakjes. Dat betekent −1 keer alles erin. Werk de haakjes weg en let op de tekens.' },
+  { s: () => ({ parts: [F([T([Pr([T([V('x')]), T([N(3)])]), Pr([T([V('x')]), T([N(2)])])])])] }),
+    en: 'Two brackets next to each other. Tap the first one twice: each term in it multiplies the whole other bracket. Then open those too.',
+    nl: 'Twee haakjes naast elkaar. Tik twee keer op de eerste: elke term erin gaat keer het hele andere haakje. Werk die daarna ook weg.' },
+  { s: () => ({ parts: [F([T([Pr([T([V('a')]), T([V('b')])], 2)])])] }),
+    en: 'Lots of people think (<i>a</i> + <i>b</i>)<sup>2</sup> = <i>a</i><sup>2</sup> + <i>b</i><sup>2</sup>. Explode the square and find out what it really is.',
+    nl: 'Veel mensen denken dat (<i>a</i> + <i>b</i>)<sup>2</sup> = <i>a</i><sup>2</sup> + <i>b</i><sup>2</sup>. Laat het kwadraat ontploffen en ontdek wat het echt is.' },
   { goal: 'factor', s: () => ({ parts: [F([T([N(2), V('x')]), T([N(2), V('y')])])] }),
     en: 'New goal: put what the terms share <b>outside the brackets</b>. Both terms contain a 2. Tap one 2, then the other.',
     nl: 'Nieuw doel: breng wat de termen gemeen hebben <b>buiten haakjes</b>. Beide termen bevatten een 2. Tik op de ene 2 en dan op de andere.' },
@@ -657,6 +751,15 @@ const LEVELS = [
   { goal: 'factor', s: () => ({ parts: [F([T([N(4), V('a', 2), V('b')]), T([N(6), V('a'), V('b', 2)])])] }),
     en: 'These terms share three things. Take them out one at a time. You can keep going inside the brackets.',
     nl: 'Deze termen hebben drie dingen gemeen. Haal ze er één voor één uit. Je kunt binnen de haakjes gewoon verder.' },
+  { goal: 'factor', s: () => ({ parts: [F([T([V('a'), Pr([T([V('x')]), T([N(2)])])]), T([N(3), Pr([T([V('x')]), T([N(2)])])])])] }),
+    en: 'A whole bracket can be a shared factor too. Both terms contain (<i>x</i> + 2): tap one bracket, then the other.',
+    nl: 'Een heel haakje kan ook een gemeenschappelijke factor zijn. Beide termen bevatten (<i>x</i> + 2): tik op het ene haakje en dan op het andere.' },
+  { goal: 'factor', s: () => ({ parts: [F([T([V('x', 2)]), T([N(5), V('x')]), T([N(6)])])] }),
+    en: 'Nothing is in all three terms. Find two numbers that multiply to 6 and add up to 5. Tap the term 5<i>x</i>, press Split, and write it as two terms. Then take things outside brackets two terms at a time.',
+    nl: 'Er zit niets in alle drie de termen. Zoek twee getallen die keer elkaar 6 zijn en opgeteld 5. Tik op de term 5<i>x</i>, druk op Splits en schrijf hem als twee termen. Breng daarna steeds twee termen buiten haakjes.' },
+  { goal: 'factor', book: true, s: () => ({ parts: [F([T([V('x', 2)]), T([V('x')], true), T([N(12)], true)])] }),
+    en: 'Now with minus signs: the product is −12, the sum is −1. One of the two numbers is negative.',
+    nl: 'Nu met mintekens: het product is −12, de som is −1. Een van de twee getallen is negatief.' },
 ];
 function buildLevel(i) { const S = LEVELS[i].s(); S.op = S.op || null; S.goal = LEVELS[i].goal || 'simplify'; return S; }
 /* ===== END CORE ===== */

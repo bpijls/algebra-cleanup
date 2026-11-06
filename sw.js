@@ -1,11 +1,11 @@
 /* Service worker: the game works offline once it has been opened.
    Own files are network-first (edits on the server show up on the next load; the cache is the fallback),
    Google Fonts are cache-first (they never change for a given URL). Bump VERSION when SHELL changes. */
-const VERSION = 'v1';
+const VERSION = 'v2';
 const SHELL_CACHE = 'alg-shell-' + VERSION, FONT_CACHE = 'alg-fonts-' + VERSION;
 const SHELL = [
   './', 'index.html', 'manifest.webmanifest',
-  'src/styles.css', 'src/core.js', 'src/practice.js', 'src/i18n.js', 'src/ui.js', 'src/pwa.js',
+  'src/styles.css', 'src/core.js', 'src/practice.js', 'src/parse.js', 'src/i18n.js', 'src/ui.js', 'src/pwa.js',
   'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png',
 ];
 

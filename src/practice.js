@@ -82,8 +82,55 @@ const GEN = {
     const v = pick(VARS), c = R(2, 6), dd = R(1, 7);
     const inner = () => Pr([T([V(v)]), T([N(R(1, 7))], coin())]);
     if (d === 1) return { parts: [F([T([N(c), Pr([T([V(v)]), T([N(dd)], coin())])])])] };
-    if (d === 2) return { parts: [F([T([N(c), inner()]), mono(R(1, 6), { [v]: 1 }, coin())])] };
-    return { parts: [F([T([N(c), inner()]), T([N(R(2, 5)), inner()], coin())])] };
+    if (d === 2) return coin()
+      ? { parts: [F([T([N(c), inner()]), mono(R(1, 6), { [v]: 1 }, coin())])] }
+      : { parts: [F([T([inner()], true), mono(R(2, 6), { [v]: 1 })])] };        // −(x − 3) + 4x
+    return { parts: [F([T([N(c), inner()]), T([N(R(2, 5)), inner()], true)])] };  // 3(x + 1) − 2(x − 4)
+  },
+
+  // (x + 3)(x − 2), (2a + 1)(a − 4), (a + b)(a + 2b)
+  double(d) {
+    const v = pick(VARS), w = otherVar(v);
+    const lin = (k, n) => Pr([mono(k, { [v]: 1 }), T([N(Math.abs(n))], n < 0)]);
+    const nz = (lo, hi) => { let n; do n = R(lo, hi); while (!n); return n; };
+    if (d === 1) return { parts: [F([T([lin(1, R(1, 6)), lin(1, R(1, 6))])])] };
+    if (d === 2) return { parts: [F([T([lin(1, nz(-7, 7)), lin(1, nz(-7, 7))])])] };
+    if (coin()) return { parts: [F([T([lin(R(1, 3), nz(-5, 5)), lin(R(2, 3), nz(-5, 5))])])] };
+    const two = (k) => Pr([T([V(v)]), mono(k, { [w]: 1 }, coin())]);
+    return { parts: [F([T([two(R(1, 3)), two(R(1, 3))])])] };
+  },
+
+  // merkwaardige producten: (a + b)², (a − b)², (a + b)(a − b), and with a number in front
+  square(d) {
+    const v = pick(VARS), w = otherVar(v), n = R(1, 7);
+    const sum = (neg, k = 1, other) => Pr([mono(k, { [v]: 1 }), other ? mono(1, { [w]: 1 }, neg) : T([N(n)], neg)]);
+    if (d === 1) return { parts: [F([T([Pr(sum(coin()).terms, 2)])])] };
+    if (d === 2) return pick([
+      () => ({ parts: [F([T([Pr(sum(true).terms, 2)])])] }),
+      () => ({ parts: [F([T([sum(false), sum(true)])])] }),
+      () => ({ parts: [F([T([Pr(sum(coin(), 1, true).terms, 2)])])] }),
+    ])();
+    return pick([
+      () => ({ parts: [F([T([Pr(sum(coin(), R(2, 3)).terms, 2)])])] }),                       // (2x + 3)²
+      () => ({ parts: [F([T([N(R(2, 4)), Pr(sum(coin()).terms, 2)])])] }),                    // 3(x − 2)²
+      () => ({ parts: [F([T([Pr(sum(false).terms, 2)]), T([sum(false), sum(true)], true)])] }), // (x + 3)² − (x + 3)(x − 3)
+    ])();
+  },
+
+  // ontbinden: x² + bx + c from (x + p)(x + q); at Hard also a number in front or 2x² + …
+  trinomial(d) {
+    const v = pick(VARS);
+    const nz = (lo, hi) => { let n; do n = R(lo, hi); while (!n); return n; };
+    let a = 1, p, q, k = 1;
+    if (d === 1) { p = R(1, 6); q = R(1, 6); }
+    else { do { p = nz(-8, 8); q = nz(-8, 8); } while (p + q === 0); }
+    if (d === 3) { if (coin()) k = R(2, 3); else { a = 2; if (p % 2 === 0) p++; } }
+    // k(ax + p)(x + q) = k(a x² + (aq + p) x + pq)
+    const b = k * (a * q + p), c = k * p * q, A = k * a;
+    const terms = [mono(A, { [v]: 2 })];
+    if (b) terms.push(mono(Math.abs(b), { [v]: 1 }, b < 0));
+    terms.push(T([N(Math.abs(c))], c < 0));
+    return { parts: [F(terms)], goal: 'factor' };
   },
 
   factor(d) {
@@ -120,20 +167,23 @@ const GEN = {
   },
 };
 
+// follow one hint; returns the move's result, or null when the hint can't be followed
+function autoSolveStep(S) {
+  const h = hint(S); let r = null;
+  if (h.k === 'hDone') return null;
+  if (h.k === 'hDiv' || h.k === 'hBar' || h.k === 'hJoin') r = opOp(S);
+  else if (h.k === 'hGroup' || h.k === 'hOpen' || h.k === 'hExplodeVar') r = opExplode(S, h.ids[0]);
+  else if (h.k === 'hExplodeCancel' || h.k === 'hExplodeNums' || h.k === 'hExplodeFor') { for (const id of h.ids) { r = opExplode(S, id); normalize(S); if (r && r.no) break; } }
+  else if (h.k === 'hSumProduct') r = opSplitTwo(S, h.ids[0], h.split);
+  else r = opPair(S, h.ids[0], h.ids[1]);
+  if (!r || r.no) return null;
+  normalize(S);
+  return r;
+}
 function autoSolve(S) {
   let k = 0;
-  while (k++ < 80) {
-    const h = hint(S); let r;
-    if (h.k === 'hDone') break;
-    if (h.k === 'hDiv' || h.k === 'hBar' || h.k === 'hJoin') r = opOp(S);
-    else if (h.k === 'hGroup' || h.k === 'hOpen' || h.k === 'hExplodeVar') r = opExplode(S, h.ids[0]);
-    else if (h.k === 'hExplodeCancel') { for (const id of h.ids) { r = opExplode(S, id); normalize(S); if (r && r.no) break; } }
-    else if (h.k === 'hExplodeNums') { r = opExplode(S, h.ids[0]); normalize(S); if (r && !r.no) r = opExplode(S, h.ids[1]); }
-    else r = opPair(S, h.ids[0], h.ids[1]);
-    if (!r || r.no) return null;
-    normalize(S);
-  }
-  return isClean(S) ? k - 1 : null;
+  while (k < 80 && !isClean(S) && autoSolveStep(S)) k++;
+  return isClean(S) ? k : null;
 }
 
 function makeProblem(topics, d) {

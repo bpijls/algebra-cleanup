@@ -11,7 +11,10 @@ Nothing may happen that the player can't see the reason for. Every simplificatio
 Concretely:
 
 - **Cancelling needs exactly equal pieces.** `x¹²` over `x³` does not cancel. The player explodes `x¹²`, regroups three x's into `x³`, and cancels `x³` against `x³`. Numbers likewise: `12/4` needs `2·2·3 / 2·2`, then the 2's cancel in pairs.
-- **Factoring (putting outside brackets) needs exactly equal pieces.** `6a + 9b`: 6 and 9 are refused; explode to `2·3·a + 3·3·b`, then tap the two 3's. `a²` with `a` is refused; explode `a²` first.
+- **Factoring (putting outside brackets) needs exactly equal pieces.** `6a + 9b`: 6 and 9 are refused; explode to `2·3·a + 3·3·b`, then tap the two 3's. `a²` with `a` is refused; explode `a²` first. A whole bracket can be the shared piece: `a(x+2) + 3(x+2)` → `(x+2)(a+3)`.
+- **Factoring takes only from the two tapped terms** (`2x + 2y + 2z` → `2(x + y) + 2z`; tap again to take the 2 out of the rest). The first term's sign comes out with it: `−3x + 6` → `−3(x − 2)` (message `factorNeg`).
+- **A minus or a power in front of a bracket stays until the player opens it.** `−(x − 3)` is not unwrapped by `normalize`; tapping it twice gives `unwrapNeg`. `(a+b)²` explodes into `(a+b)·(a+b)` (like `G`), never straight to a sum.
+- **Sum-product (ontbinden):** `x² + 5x + 6` has nothing in all three terms. The player selects the term `5x`, presses Split and chooses `2x + 3x` in a stepper sheet (`opSplitTwo`, any p with p + q = the coefficient, both ≠ 0). Then the pairs are factored (`x(x+2) + 3(x+2)`) and the shared bracket goes outside. Works for `ax² + bx + c` too when the split order leaves the same bracket twice.
 - **Factoring is allowed in every mode**, because it is always valid algebra. In simplify levels, factoring two tidy unlike terms is allowed but flagged (`factorUseless`) and those pairs don't glow as suggestions.
 - **Like terms add when you tap matching pieces across a + sign** (`a` then `a` gives `2a`), and the note contrasts `a + a = 2a` with `a · a = a²`. Unlike terms in simplify levels get the `notLike` explanation.
 - **A swipe is accepted only as ONE valid move**: grouping matching pieces inside one term, or adding like terms by sweeping one matching piece per term. Anything else is refused as a whole with an explanation. (An earlier box-select did many operations at once and felt like magic.)
@@ -29,7 +32,8 @@ Plain browser scripts sharing globals, no framework, no build step needed to run
 | File | What it holds |
 |---|---|
 | `src/core.js` | The algebra model and every move. No DOM. |
-| `src/practice.js` | Random problem generator (`GEN`, `makeProblem`) and `autoSolve`. |
+| `src/practice.js` | Random problem generator (`GEN`, `makeProblem`), `autoSolveStep` and `autoSolve`. |
+| `src/parse.js` | `parseProblem(text, goal)` turns typed textbook notation (`(x+3)(x-2)`, `12a^5/4a^2`, `12a⁵ : 4a²`, `(8x/3y):(3x/y)`, `−2(x+4)`) into a state, or `{ err, at }` with an i18n key (`pEquation`, `pParen`, …). `guessGoal` picks factor for a plain clean sum. |
 | `src/i18n.js` | `I18N.en` / `I18N.nl`: all player-facing text. |
 | `src/ui.js` | Rendering, tap/swipe input, animation, level and practice screens. |
 | `src/styles.css` | All styling. Design tokens (light/dark) at the top. |
@@ -41,16 +45,18 @@ Plain browser scripts sharing globals, no framework, no build step needed to run
 | `scripts/build.mjs` | Inlines everything into `dist/algebra-cleanup.html` (single file, claude.ai Artifact format), stripping the manifest, icon links and `pwa.js`. |
 | `docker-compose.yml` | One `web` service (nginx) with Caddy labels for `APP_DOMAIN`. |
 | `nginx/default.conf` | Static serving, no-cache, fallback to `index.html`. |
-| `tests/` | `node:test` suite; `tests/load.js` loads core + practice into a VM sandbox. |
+| `tests/` | `node:test` suite; `tests/load.js` loads core, practice, parse and i18n into a VM sandbox. |
+| `tests/judge.js` | The outside judge: evaluates a state numerically at random letter values; `fuzz` plays random moves (every explode, pair, split, sign tap) and fails if any move changes the value, a refused move mutates the state, or a message has no text. |
+| `tests/corpus.test.js` | Textbook exercises per chapter (machten … ontbinden), typed as a student would; each must parse, be solved by the hints to the textbook answer, and keep its value. Add new exercise types here first. |
 
 ### Data model (`core.js`)
 
 - State `S = { parts: [Fraction, ...], op: null | ':' | '·' | '/', goal: 'simplify' | 'factor', allowB? }`. Two parts only while dividing/multiplying fractions.
 - `Fraction = { num: Term[], den: Term[] }` (each side is a sum of terms).
 - `Term = { k:'t', f: Factor[], neg }`.
-- Factors: `N(v)` number, `V(b, e)` letter with exponent, `G(f, e)` bracket around a *product* with exponent, `Pr(terms)` bracket around a *sum*. Every node has a unique `id`; tiles in the DOM carry it as `data-id`.
-- `normalize(S)` cleans up after every move (drops `1`s and `x⁰`, unwraps one-term brackets, collapses `(a/1)/(b/1)`).
-- `isClean(S)` decides a win. `goal: 'factor'` levels use `isFactored`.
+- Factors: `N(v)` number, `V(b, e)` letter with exponent, `G(f, e)` bracket around a *product* with exponent, `Pr(terms, e)` bracket around a *sum* with exponent. Every node has a unique `id`; tiles in the DOM carry it as `data-id`. `sumKey(terms)` compares sums regardless of term and factor order.
+- `normalize(S)` cleans up after every move (drops `1`s and `x⁰`/`(…)⁰`, unwraps one-term brackets (a one-term `Pr` with a power becomes a `G`), unwraps a bare `+(…)` term but never `−(…)` or `(…)²`, collapses `(a/1)/(b/1)`). A bracket that is the whole top or bottom of a fraction stays a bracket, so `(x+2)/((x+2)(x+3))` can cancel it as one piece; `isClean` reads such a side as its sum (`unbare`).
+- `isClean(S)` decides a win. `goal: 'factor'` levels use `isFactored`: one term, a tidy rest, any number of *different* brackets (`(x+2)(x+2)` must be merged to `(x+2)²`), each with no common factor and not a trinomial that `quadSplit` can still split.
 
 ### Move contract
 
@@ -61,12 +67,15 @@ Every move function either:
 
 `pairCheck(S, A, B)` decides what tapping A then B means (`merge`, `cancel`, `addTerms`, `factor`, `move`, `fizzle`, `none`). `hint(S)` returns the next suggested move; `autoSolve` follows hints, and the generator only accepts problems it can solve in ≤ 60 moves, that don't start clean and don't end as 0.
 
-Message keys in `ok`/`no` map to `I18N` entries. **Every new key needs both an English and a Dutch string.** Params named `extra` are flattened into the template params.
+Factor-goal hints (`factorHint`, `sumProductHint`) work on a *focus*: the terms without a bracket once some term has one (`x(x+2) + 3x + 6` → work on `3x + 6`), or the first pair of a four-term sum. In order: a bracket shared by two terms; a piece exactly in every focus term; explode a number or power that hides a shared factor (`hExplodeFor`, `hExplodeVar`); merges; like terms; then the sum-product split (`hSumProduct`, carries `split`). In simplify levels the merge hint never folds `(a+b)(a+b)` back into a square.
+
+Message keys in `ok`/`no` map to `I18N` entries. **Every new key needs both an English and a Dutch string**, and a key may appear only once per language (`tests/i18n.test.js`; button labels use `…Btn` keys so they can't collide with move messages). Params named `extra` are flattened into the template params.
 
 ## Content
 
-- 20 levels in `LEVELS` (core.js): powers, like terms, fractions, two-letter terms, four textbook problems (marked `book: true`), opening brackets, and four "outside brackets" levels (`goal: 'factor'`).
-- Practice mode: six topics (powers, like terms, fractions, opening brackets, outside brackets, textbook mix) × three difficulties.
+- 26 levels in `LEVELS` (core.js): powers, like terms, fractions, two-letter terms, four textbook problems (marked `book: true`), opening brackets, a minus before brackets, double brackets, `(a+b)²`, then seven "outside brackets" levels (`goal: 'factor'`) ending with a shared bracket and two sum-product trinomials.
+- Practice mode: nine topics (powers, like terms, fractions, opening brackets, double brackets, special products, outside brackets, sum-product factorising, textbook mix) × three difficulties.
+- Your own problem: Practice → "Type your own problem" (`showOwn` in ui.js, `mode = 'custom'`). Live preview while typing, goal chips (simplify / factorise, guessed until the player picks), example chips. If `autoSolve` finds no route the problem still plays, with `ownUnsure` saying the hint won't help.
 
 ## Commands
 
@@ -76,7 +85,7 @@ npm run build   # write dist/algebra-cleanup.html
 npm start       # serve the folder locally (or just open index.html)
 ```
 
-Run `npm test` after any change to `core.js` or `practice.js`; the suite checks that every level and generated problem is still solvable and that the no-magic rules hold.
+Run `npm test` after any change to `core.js`, `practice.js` or `parse.js`; the suite checks that every level, generated problem and corpus exercise is still solvable, that random play never changes an expression's value, and that the no-magic rules hold. A new move needs nothing extra to be judged: `fuzz` in `tests/judge.js` tries every move on every state it reaches (add new move functions to its `candidates`).
 
 ## Running the stack
 
@@ -104,4 +113,6 @@ Config is in `.env` (copy `.env.example`): `APP_DOMAIN`, `CADDY_NETWORK`, `HOST_
 - You can't combine a tile inside brackets with one outside; the player must open the brackets first (`bracketWall`).
 - Swiping blocks page scrolling on the board (`touch-action: none`), which could matter for very long expressions.
 - The swipe hit-testing and animations were never tested on a real device during the prototype; tune them there.
-- Ideas raised: an exercise editor that turns typed textbook problems into levels; making `autoSolve` prefer the elegant regroup route (explode, regroup to the matching power, cancel) instead of exploding both sides.
+- Not yet possible (the parser or the hints say so): equations (`pEquation`); `x² − 9` as `(x+3)(x−3)` (there is no middle term to split; it would need a "write 0 as 3x − 3x" move); fractions that need factoring before cancelling, like `(x²+5x+6)/(x+2)` (factoring is only hinted in factor goals); `ax² + bx + c` with a common factor *and* a ≠ 1 at once is untested.
+- `(−2a)³` is shown as `−(2a)³` straight away, because a `G` can't hold a sign.
+- Ideas raised: making `autoSolve` prefer the elegant regroup route (explode, regroup to the matching power, cancel) instead of exploding both sides; factoring a number fully in one go (`4x + 12` now goes `2(2(x+3))` → `4(x+3)`).

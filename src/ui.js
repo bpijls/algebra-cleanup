@@ -19,16 +19,21 @@ function say(key, p, type = 'info', raw) {
   note.innerHTML = raw ? raw[lang] : t(key, p);
 }
 function sayIntro() {
+  if (mode === 'custom') return say(S.unsure ? 'ownUnsure' : S.goal === 'factor' ? 'ti_customF' : 'ti_custom', {}, S.unsure ? 'warn' : 'info');
   if (mode === 'practice') return say('ti_' + S.topic, {}, 'info');
   say(null, null, 'info', { en: LEVELS[lvl].en, nl: LEVELS[lvl].nl });
 }
-const TOPICS = ['powers', 'like', 'frac', 'open', 'factor', 'mixed'];
+const TOPICS = ['powers', 'like', 'frac', 'open', 'double', 'square', 'factor', 'trinomial', 'mixed'];
 let mode = 'levels', initial = null, sheetFn = null;
 let prac = store.get('practice', { topics: ['powers', 'like', 'frac'], d: 1 });
 let session = { solved: 0, streak: 0 };
 function nextProblem() {
+  if (mode === 'custom') return showOwn();
   mode = 'practice';
   S = makeProblem(prac.topics, prac.d);
+  startBoard();
+}
+function startBoard() {
   initial = JSON.stringify(S);
   history = []; moves = 0; sel = null; born = new Set(); hintIds = new Set(); won = false;
   board.classList.remove('won');
@@ -42,7 +47,9 @@ function showPractice() {
     <div class="plabel">${t('topics')}</div><div class="pchips">${chips}</div>
     <div class="plabel">${t('difficulty')}</div><div class="pchips">${ds}</div>
     <p class="pwarn" id="pWarn" hidden>${t('pickOne')}</p>
-    <div class="row" style="margin-top:18px"><button class="tool main" type="button" id="pStart">${t('start')} →</button></div>`);
+    <div class="row" style="margin-top:18px"><button class="tool main" type="button" id="pStart">${t('start')} →</button>
+      <button class="tool" type="button" id="pOwn">✎ ${t('ownTitle')}</button></div>`);
+  host.querySelector('#pOwn').addEventListener('click', showOwn);
   host.querySelectorAll('[data-tp]').forEach(b => b.addEventListener('click', () => {
     const tp = b.dataset.tp, on = prac.topics.includes(tp);
     prac.topics = on ? prac.topics.filter(x => x !== tp) : [...prac.topics, tp];
@@ -55,8 +62,83 @@ function showPractice() {
   host.querySelector('#pStart').addEventListener('click', () => {
     if (!prac.topics.length) { host.querySelector('#pWarn').hidden = false; return; }
     store.set('practice', prac); session = { solved: 0, streak: 0 };
-    closeSheet(); nextProblem();
+    closeSheet(); mode = 'practice'; nextProblem();
   });
+}
+
+/* ---- your own problem: typed from the book ---- */
+const OWN_EXAMPLES = ['(x+3)(x-2)', '(a+b)^2', '-2(x+4)-3(x-1)', '12a^5/4a^2', 'x^2+5x+6', '4a^2b+6ab^2'];
+let own = store.get('own', { src: '', goal: null });
+function showOwn() {
+  sheetFn = showOwn;
+  const host = openSheet(`<h2 style="font-size:1.6rem">${t('ownTitle')}</h2><p>${t('ownIntro')}</p>
+    <form id="ownForm" class="ownform" autocomplete="off">
+      <input id="ownIn" class="ownin" type="text" inputmode="text" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="${t('ownTitle')}" value="">
+      <div class="ownprev expr-n" id="ownPrev" aria-live="polite"></div>
+      <p class="pwarn" id="ownErr" hidden></p>
+      <div class="pchips" style="margin-top:10px">
+        <button type="button" class="pchip seg" data-g="simplify">${t('ownSimplify')}</button>
+        <button type="button" class="pchip seg" data-g="factor">${t('ownFactor')}</button>
+      </div>
+      <div class="row" style="margin-top:16px"><button class="tool main" type="submit">${t('ownGo')} →</button></div>
+    </form>
+    <div class="plabel">${t('ownExamples')}</div>
+    <div class="pchips">${OWN_EXAMPLES.map(e => `<button type="button" class="pchip ex" data-ex="${e}">${e}</button>`).join('')}</div>`);
+  const input = host.querySelector('#ownIn'), prev = host.querySelector('#ownPrev'), errEl = host.querySelector('#ownErr');
+  let goal = own.goal, touched = !!own.goal;
+  input.value = own.src;
+  const update = () => {
+    if (!touched) goal = guessGoal(input.value);
+    host.querySelectorAll('[data-g]').forEach(b => { const on = b.dataset.g === goal; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
+    const r = input.value.trim() ? parseProblem(input.value, goal) : null;
+    prev.innerHTML = r && !r.err ? stateHTML(r.S) : '';
+    errEl.hidden = true;
+    return r;
+  };
+  host.querySelectorAll('[data-g]').forEach(b => b.addEventListener('click', () => { goal = b.dataset.g; touched = true; update(); }));
+  host.querySelectorAll('[data-ex]').forEach(b => b.addEventListener('click', () => { input.value = b.dataset.ex; touched = false; update(); input.focus(); }));
+  input.addEventListener('input', update);
+  host.querySelector('#ownForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const r = parseProblem(input.value, goal);
+    const fail = (k, p) => { errEl.innerHTML = t(k, p); errEl.hidden = false; input.focus(); };
+    if (r.err) { fail(r.err, { ch: r.ch }); if (r.at != null) input.setSelectionRange(r.at, r.at + 1); return; }
+    if (isClean(r.S)) return fail('ownClean');
+    own = { src: input.value, goal: touched ? goal : null }; store.set('own', own);
+    S = r.S;
+    S.unsure = autoSolve(JSON.parse(JSON.stringify(S))) == null;
+    closeSheet(); mode = 'custom'; session = { solved: 0, streak: 0 }; startBoard();
+  });
+  update();
+  setTimeout(() => input.focus(), 50);
+}
+
+/* ---- split a term in two: 5x = 2x + 3x ---- */
+function showSplit(tid) {
+  const L = locate(S, tid);
+  const c = L && coef(L.term), vp = L && varPart(L.term);
+  if (!L || !tidy(L.term) || !vp.length) return run(s => opSplit(s, tid));
+  const mono2 = k => T([...(Math.abs(k) !== 1 ? [N(Math.abs(k))] : []), ...vp.map(cloneF)], k < 0);
+  let p = Math.sign(c) * (Math.abs(c) > 1 ? 1 : 2);
+  const ones = coefAbs(L.term) >= 2 && coefAbs(L.term) <= MAX_SPLIT;
+  const draw = () => {
+    const host = openSheet(`<h2 style="font-size:1.6rem">${t('splitTitle', { x: mx(termHTML(L.term)) })}</h2><p>${t('splitHow')}</p>
+      <div class="splitrow">
+        <button type="button" class="tool" id="sMinus" aria-label="−1">−</button>
+        <div class="splitprev expr-n">${sumHTML([L.term])} = ${sumHTML([mono2(p), mono2(c - p)])}</div>
+        <button type="button" class="tool" id="sPlus" aria-label="+1">+</button>
+      </div>
+      <div class="row" style="margin-top:16px">
+        <button class="tool main" type="button" id="sDo">${t('splitDo')}</button>
+        ${ones ? `<button class="tool" type="button" id="sOnes">${t('splitOnes', { ex: mx(sumHTML(Array.from({ length: Math.min(coefAbs(L.term), 4) }, () => mono2(Math.sign(c)))) + (coefAbs(L.term) > 4 ? ' + …' : '')) })}</button>` : ''}
+      </div>`);
+    const step = d => { do p += d; while (p === 0 || p === c); draw(); host.querySelector(d < 0 ? '#sMinus' : '#sPlus').focus(); };
+    host.querySelector('#sMinus').addEventListener('click', () => step(-1));
+    host.querySelector('#sPlus').addEventListener('click', () => step(1));
+    host.querySelector('#sDo').addEventListener('click', () => { closeSheet(); run(s => opSplitTwo(s, tid, p)); });
+    host.querySelector('#sOnes')?.addEventListener('click', () => { closeSheet(); run(s => opSplit(s, tid)); });
+  };
+  draw();
 }
 
 function loadLevel(i) {
@@ -75,6 +157,7 @@ function tileEl(f, partners) {
     const l = document.createElement('span'); l.className = 'paren'; l.textContent = '(';
     const r = document.createElement('span'); r.className = 'paren'; r.textContent = ')';
     b.append(l, sideEl(f.terms, partners), r);
+    if (f.e > 1) { const sp = document.createElement('sup'); sp.textContent = f.e; b.append(sp); b.setAttribute('aria-label', `brackets to the power ${f.e}`); }
     if (sel && sel.t === 'f' && sel.id === f.id) b.classList.add('sel');
     if (partners.has(f.id)) b.classList.add('partner');
     if (hintIds.has(f.id)) b.classList.add('hint');
@@ -160,8 +243,13 @@ function render() {
   $('brand').innerHTML = lang === 'nl' ? 'Algebra <span>Opruimen</span>' : 'Algebra <span>Cleanup</span>';
   $('btnPractice').textContent = t('practice');
   $('btnPractice').classList.toggle('on', mode === 'practice');
-  $('btnSkip').hidden = mode !== 'practice'; $('btnSkip').querySelector('span').textContent = t('newProblem');
-  if (mode === 'practice') {
+  $('btnPractice').classList.toggle('on', mode !== 'levels');
+  $('btnSkip').hidden = mode === 'levels'; $('btnSkip').querySelector('span').textContent = t(mode === 'custom' ? 'ownSkip' : 'newProblem');
+  if (mode === 'custom') {
+    $('lvlTitle').textContent = t('practiceTitle');
+    $('lvlBadge').hidden = false; $('lvlBadge').textContent = t('tp_custom');
+    $('moves').innerHTML = t('moves', { n: moves });
+  } else if (mode === 'practice') {
     $('lvlTitle').textContent = t('practiceTitle');
     $('lvlBadge').hidden = false; $('lvlBadge').textContent = t('tp_' + S.topic) + ' · ' + t('d' + prac.d);
     $('moves').innerHTML = t('solved', { n: session.solved }) + t('streak', { n: session.streak });
@@ -178,8 +266,8 @@ function render() {
   $('btnExplode').hidden = !fSel; $('btnExplode').querySelector('span').textContent = t('explode');
   let gatherable = false;
   if (fSel) { const L = locate(S, sel.id); gatherable = L.term.f.filter(f => canMerge(L.f, f)).length >= 3; }
-  $('btnGather').hidden = !gatherable; $('btnGather').querySelector('span').textContent = t('gather');
-  $('btnSplit').hidden = !tSel; $('btnSplit').querySelector('span').textContent = t('split');
+  $('btnGather').hidden = !gatherable; $('btnGather').querySelector('span').textContent = t('gatherBtn');
+  $('btnSplit').hidden = !tSel; $('btnSplit').querySelector('span').textContent = t('splitBtn');
   document.documentElement.lang = lang;
 }
 
@@ -376,7 +464,7 @@ board.addEventListener('click', e => {
 
 $('btnExplode').onclick = () => sel && run(s => opExplode(s, sel.id));
 $('btnGather').onclick = () => sel && run(s => opGather(s, sel.id));
-$('btnSplit').onclick = () => sel && run(s => opSplit(s, sel.id));
+$('btnSplit').onclick = () => sel && !busy && !won && showSplit(sel.id);
 $('btnUndo').onclick = () => {
   if (!history.length || busy) return;
   const prev = JSON.parse(history.pop()); S = prev.S; moves = prev.moves;
@@ -388,12 +476,12 @@ $('btnHint').onclick = () => {
   const h = hint(S); sel = null; born = new Set(); hintIds = new Set(h.ids); render(); say(h.k, h.p, 'info');
 };
 $('btnRestart').onclick = () => {
-  if (mode !== 'practice') return loadLevel(lvl);
+  if (mode === 'levels') return loadLevel(lvl);
   closeSheet(); S = JSON.parse(initial); history = []; moves = 0; sel = null; born = new Set(); hintIds = new Set(); won = false;
   board.classList.remove('won'); render(); sayIntro();
 };
 $('btnPractice').onclick = showPractice;
-$('btnSkip').onclick = () => { if (busy) return; session.streak = 0; nextProblem(); say('skipped', {}, 'info'); };
+$('btnSkip').onclick = () => { if (busy) return; if (mode === 'custom') return showOwn(); session.streak = 0; nextProblem(); say('skipped', {}, 'info'); };
 $('btnLang').onclick = () => {
   lang = lang === 'nl' ? 'en' : 'nl'; store.set('lang', lang); render();
   if (lastNote) say(lastNote.key, lastNote.p, lastNote.type, lastNote.raw);
@@ -420,7 +508,8 @@ function openSheet(html) {
 
 function win(refresh) {
   won = true;
-  if (mode === 'practice') {
+  if (mode !== 'levels') {
+    const custom = mode === 'custom';
     if (!refresh) { session.solved++; session.streak++; store.set('solvedTotal', store.get('solvedTotal', 0) + 1); board.classList.add('won'); render(); }
     const show = () => {
       const host = openSheet(`
@@ -429,10 +518,10 @@ function win(refresh) {
         <div class="result expr-n">${stateHTML(S)}</div>
         <p>${t('winMoves', { n: moves })} ${t('winPractice', { n: session.solved })}</p>
         <div class="row">
-          <button class="tool main" type="button" id="wNext">${t('nextProblem')} →</button>
+          <button class="tool main" type="button" id="wNext">${t(custom ? 'ownAnother' : 'nextProblem')} →</button>
           <button class="tool" type="button" id="wTopics">${t('changeTopics')}</button>
         </div>`);
-      host.querySelector('#wNext').addEventListener('click', () => { closeSheet(); nextProblem(); });
+      host.querySelector('#wNext').addEventListener('click', () => { if (custom) { won = false; return showOwn(); } closeSheet(); nextProblem(); });
       host.querySelector('#wTopics').addEventListener('click', () => { closeSheet(); won = false; showPractice(); });
       host.querySelector('#wNext').focus();
     };

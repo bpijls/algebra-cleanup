@@ -120,6 +120,7 @@ button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 .tile.p .term { padding: 6px; }
 .tile.p .sign { font-size: 1.6rem; }
 .tile.p.sel { transform: translateY(-3px); }
+.tile.p > sup { font-size: 20px; margin: 4px 0 0 0; }
 .mini { display: inline-flex; align-items: center; justify-content: center; border-radius: 7px; min-width: 28px; height: 32px; padding: 0 5px; font-size: 19px; }
 .mini.v { background: var(--c); color: var(--on-var); font-family: var(--f-math); font-style: italic; }
 .mini.n { border: 1.5px solid var(--num-edge); font-weight: 700; }
@@ -184,6 +185,14 @@ button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 .pchip { min-height: 44px; padding: 0 14px; border-radius: 999px; border: 2px solid var(--line); background: var(--paper); cursor: pointer; font-weight: 700; }
 .pchip.on { background: var(--accent); border-color: var(--accent); color: var(--paper); }
 .pwarn { color: var(--warn) !important; margin: 10px 0 0 !important; }
+.ownform { margin: 0; }
+.ownin { width: 100%; box-sizing: border-box; min-height: 52px; padding: 8px 14px; border-radius: 14px; border: 2px solid var(--line); background: var(--paper); color: var(--ink); font: 1.35rem var(--f-body); }
+.ownin:focus { outline: none; border-color: var(--accent); }
+.ownprev { min-height: 2.2rem; margin-top: 10px; font-size: 1.5rem; color: var(--ink); overflow-x: auto; }
+.pchip.ex { font-weight: 400; font-family: var(--f-body); }
+.splitrow { display: flex; align-items: center; gap: 12px; justify-content: space-between; }
+.splitrow .tool { min-width: 52px; font-size: 1.5rem; justify-content: center; }
+.splitprev { font-size: 1.5rem; color: var(--ink); text-align: center; flex: 1; min-width: 0; }
 .lvlbtn {
   min-height: 60px; border-radius: 14px; border: 2px solid var(--line); background: var(--paper); cursor: pointer;
   font-weight: 700; font-size: 1.1rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;

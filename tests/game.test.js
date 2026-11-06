@@ -39,9 +39,9 @@ test('no magic: numbers cancel only when equal (12 over 4)', () => {
 });
 
 test('no magic: factoring needs exact matches (6a + 9b, a² with a)', () => {
-  let S = G.buildLevel(17);
+  let S = G.buildLevel(20);
   assert.equal(G.opPair(S, num(S)[0].f[0].id, num(S)[1].f[0].id).no, 'explodeFirst');
-  S = G.buildLevel(19);
+  S = G.buildLevel(22);
   assert.equal(G.opPair(S, num(S)[0].f[1].id, num(S)[1].f[1].id).no, 'explodeFirstVar');
 });
 
