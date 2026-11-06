@@ -114,10 +114,25 @@ function showOwn() {
 }
 
 /* ---- split a term in two: 5x = 2x + 3x ---- */
-// the term a selected piece belongs to, when that term can be split (a tidy term with letters)
-function splitTermOf(fid) {
-  const L = locate(S, fid);
-  return L && L.kind === 'f' && tidy(L.term) && varPart(L.term).length ? L.term.id : null;
+// the term (selected, or holding the selected piece) when it can be written as a sum of two terms
+function splitTermOf(id) {
+  const L = locate(S, id);
+  return L && tidy(L.term) && varPart(L.term).length ? L.term.id : null;
+}
+// "before = after" for a move, from a dry run on a copy; null when the move would be refused
+function previewOf(fn) {
+  const copy = JSON.parse(JSON.stringify(S));
+  const r = fn(copy);
+  if (!r || r.no) return null;
+  const p = r.p || {};
+  const inner = h => String(h).replace(/^<span class="mx">([\s\S]*)<\/span>$/, '$1');
+  const short = h => {   // x · x · x · x · x · x · x → x · x · … · x
+    const sep = h.includes(' + ') ? ' + ' : ' · ', bits = h.split(sep);
+    return bits.length > 6 ? [bits[0], bits[1], '…', bits[bits.length - 1]].join(sep) : h;
+  };
+  const left = r.ok === 'explodeNum' ? p.n : r.ok === 'hideOne' ? '1 · ' + inner(p.x) : inner(p.x || p.ex);
+  const right = r.ok === 'hideOne' ? inner(p.x) : r.ok === 'gather' ? inner(p.r) : short(inner(p.ex));
+  return mx(r.ok === 'gather' ? short(inner(p.ex)) + ' = ' + right : left + ' = ' + right);
 }
 function showSplit(tid) {
   const L = locate(S, tid);
@@ -125,7 +140,6 @@ function showSplit(tid) {
   if (!L || !tidy(L.term) || !vp.length) return run(s => opSplit(s, tid));
   const mono2 = k => T([...(Math.abs(k) !== 1 ? [N(Math.abs(k))] : []), ...vp.map(cloneF)], k < 0);
   let p = Math.sign(c) * (Math.abs(c) > 1 ? 1 : 2);
-  const ones = coefAbs(L.term) >= 2 && coefAbs(L.term) <= MAX_SPLIT;
   const draw = () => {
     const host = openSheet(`<h2 style="font-size:1.6rem">${t('splitTitle', { x: mx(termHTML(L.term)) })}</h2><p>${t('splitHow')}</p>
       <div class="splitrow">
@@ -135,13 +149,11 @@ function showSplit(tid) {
       </div>
       <div class="row" style="margin-top:16px">
         <button class="tool main" type="button" id="sDo">${t('splitDo')}</button>
-        ${ones ? `<button class="tool" type="button" id="sOnes">${t('splitOnes', { ex: mx(sumHTML(Array.from({ length: Math.min(coefAbs(L.term), 4) }, () => mono2(Math.sign(c)))) + (coefAbs(L.term) > 4 ? ' + …' : '')) })}</button>` : ''}
       </div>`);
     const step = d => { do p += d; while (p === 0 || p === c); draw(); host.querySelector(d < 0 ? '#sMinus' : '#sPlus').focus(); };
     host.querySelector('#sMinus').addEventListener('click', () => step(-1));
     host.querySelector('#sPlus').addEventListener('click', () => step(1));
     host.querySelector('#sDo').addEventListener('click', () => { closeSheet(); run(s => opSplitTwo(s, tid, p)); });
-    host.querySelector('#sOnes')?.addEventListener('click', () => { closeSheet(); run(s => opSplit(s, tid)); });
   };
   draw();
 }
@@ -268,11 +280,19 @@ function render() {
   $('btnUndo').disabled = !history.length;
   $('btnHint').querySelector('span').textContent = t('hint');
   const fSel = sel && sel.t === 'f', tSel = sel && sel.t === 't';
-  $('btnExplode').hidden = !fSel; $('btnExplode').querySelector('span').textContent = t('explode');
+  // the move buttons show what they will do, worked out on a copy of the board
+  const exLabel = fSel && previewOf(s => opExplode(s, sel.id));
+  $('btnExplode').hidden = !exLabel; if (exLabel) $('btnExplode').querySelector('span').innerHTML = exLabel;
   let gatherable = false;
   if (fSel) { const L = locate(S, sel.id); gatherable = L.term.f.filter(f => canMerge(L.f, f)).length >= 3; }
-  $('btnGather').hidden = !gatherable; $('btnGather').querySelector('span').textContent = t('gatherBtn');
-  $('btnSplit').hidden = !(tSel || (fSel && splitTermOf(sel.id))); $('btnSplit').querySelector('span').textContent = t('splitBtn');
+  $('btnGather').hidden = !gatherable;
+  if (gatherable) $('btnGather').querySelector('span').innerHTML = previewOf(s => opGather(s, sel.id));
+  const onesLabel = tSel && previewOf(s => opSplit(s, sel.id));
+  $('btnSplit').hidden = !onesLabel; if (onesLabel) $('btnSplit').querySelector('span').innerHTML = onesLabel;
+  // from a piece only when factoring (a lone −x is hard to hit as a term); elsewhere it would just be noise
+  const twoId = tSel || (fSel && S.goal === 'factor') ? splitTermOf(sel.id) : null;
+  $('btnSplitTwo').hidden = !twoId;
+  if (twoId) $('btnSplitTwo').querySelector('span').innerHTML = mx(sumHTML([locate(S, twoId).term]) + ' = … + …');
   document.documentElement.lang = lang;
 }
 
@@ -408,7 +428,8 @@ function select(s) {
   sel = s; hintIds = new Set(); born = new Set();
   render();
   const has = partnersOf(S, sel).size > 0;
-  say(s.t === 'f' ? (has ? 'pickedP' : 'picked') : (has ? 'pickedTermP' : 'pickedTerm'), {}, 'info');
+  const canExplode = s.t === 'f' && !$('btnExplode').hidden;
+  say(s.t === 'f' ? (has ? 'pickedP' : canExplode ? 'picked' : 'pickedAtom') : (has ? 'pickedTermP' : 'pickedTerm'), {}, 'info');
 }
 
 let drag = null, suppressClick = false;
@@ -474,7 +495,8 @@ board.addEventListener('click', e => {
 
 $('btnExplode').onclick = () => sel && run(s => opExplode(s, sel.id));
 $('btnGather').onclick = () => sel && run(s => opGather(s, sel.id));
-$('btnSplit').onclick = () => sel && !busy && !won && showSplit(sel.t === 't' ? sel.id : splitTermOf(sel.id));
+$('btnSplit').onclick = () => sel && run(s => opSplit(s, sel.id));
+$('btnSplitTwo').onclick = () => sel && !busy && !won && showSplit(splitTermOf(sel.id));
 $('btnUndo').onclick = () => {
   if (!history.length || busy) return;
   const prev = JSON.parse(history.pop()); S = prev.S; moves = prev.moves;
