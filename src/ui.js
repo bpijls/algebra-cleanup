@@ -390,7 +390,12 @@ function onFactor(id) {
   select({ t: 'f', id });
 }
 function onTerm(tid) {
-  if (sel && sel.t === 't' && sel.id === tid) { sel = null; render(); return; }
+  if (sel && sel.t === 't' && sel.id === tid) {
+    // tapping a term twice writes it as a sum, like exploding a tile: 4x → x + x + x + x
+    const L = locate(S, tid);
+    if (L && coefAbs(L.term) >= 2 && varPart(L.term).length) { run(s => opSplit(s, tid)); return; }
+    sel = null; render(); return;
+  }
   if (sel && sel.t === 't') { const a = sel.id; run(s => termPair(s, a, tid)); return; }
   select({ t: 't', id: tid });
 }
