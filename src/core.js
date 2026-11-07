@@ -7,7 +7,7 @@ const G = (f, e) => ({ k: 'g', f, e, id: nid() });          // bracket around a 
 const Pr = (terms, e = 1) => ({ k: 'p', terms, e, id: nid() });  // bracket around a sum, with exponent
 const T = (f, neg = false) => ({ k: 't', f, neg, id: nid() });
 const F = (num, den) => ({ num, den: den || [T([N(1)])] });
-const MAX_VAR = 16, MAX_GROUP = 8, MAX_SPLIT = 12;
+const MAX_VAR = 16, MAX_GROUP = 8;
 
 const cloneF = f => f.k === 'n' ? N(f.v) : f.k === 'v' ? V(f.b, f.e) : f.k === 'g' ? G(f.f.map(cloneF), f.e) : Pr(f.terms.map(cloneT), f.e);
 const cloneT = t => T(t.f.map(cloneF), t.neg);
@@ -56,8 +56,7 @@ function sumClean(terms) {
 
 function cleanTerm(t) {
   t.f = t.f.filter(f => !(f.k !== 'n' && f.e === 0));
-  // a 1 the player made visible (x → 1·x) stays until they tap it away; other 1's go
-  if (t.f.length > 1) t.f = t.f.filter(f => !(f.k === 'n' && f.v === 1 && !f.shown));
+  if (t.f.length > 1) t.f = t.f.filter(f => !(f.k === 'n' && f.v === 1));
   if (!t.f.length) t.f = [N(1)];
   return t;
 }
@@ -130,14 +129,7 @@ function isFactored(S) {
 }
 // a side that is one bare bracket reads as the sum inside it
 const unbare = side => side.length === 1 && !side[0].neg && side[0].f.length === 1 && side[0].f[0].k === 'p' && side[0].f[0].e === 1 ? side[0].f[0].terms : side;
-// a visible 1 in front of letters (1·x): fine while working, but not how the answer is written
-function shownOne(S) {
-  let hit = null;
-  eachFactor(S, L => { if (!hit && L.f.k === 'n' && L.f.v === 1 && L.f.shown && L.term.f.length > 1) hit = L.f; });
-  return hit;
-}
 function isClean(S) {
-  if (shownOne(S)) return false;
   if (S.goal === 'solve') return isSolved(S);
   if (S.goal === 'factor') return isFactored(S);
   if (S.parts.length > 1) return false;
@@ -210,24 +202,13 @@ const bx = b => mx(`<i class="mv">${b}</i>`);
 function opExplode(S, id) {
   const L = locate(S, id), f = L.f, arr = L.term.f;
   if (f.k === 'v') {
-    if (f.e < 2) {
-      // x is 1·x: the 1 was there all along, it just isn't written (only when the term has no number yet)
-      if (arr.some(g => g.k === 'n')) return { no: 'atom', p: { x: mx(fx(f)) }, ids: [id] };
-      const one = Object.assign(N(1), { shown: true });
-      arr.splice(arr.indexOf(f), 0, one);
-      const sign = L.term.neg ? '−' : '';
-      return { ok: 'explodeOne', p: { x: mx(sign + fx(f)), ex: mx(sign + '1 · ' + fx(f)) }, born: [one.id] };
-    }
+    if (f.e < 2) return { no: 'atom', p: { x: mx(fx(f)) }, ids: [id] };
     if (f.e > MAX_VAR) return { no: 'tooBig', ids: [id] };
     const copies = Array.from({ length: f.e }, () => V(f.b, 1));
     arr.splice(L.i, 1, ...copies);
     return { ok: 'explodeVar', p: { x: mx(fx(f)), n: f.e, b: bx(f.b), ex: mx(copies.map(fx).join(' · ')) }, born: copies.map(c => c.id), origins: Object.fromEntries(copies.map(c => [c.id, [f.id]])) };
   }
   if (f.k === 'n') {
-    if (f.v === 1 && f.shown && arr.length > 1) {   // tap the 1 of 1·x away again
-      f.shown = false;
-      return { ok: 'hideOne', p: { x: mx(factorsHTML(arr.filter(g => g !== f))) } };
-    }
     if (f.v === 1) return { no: 'atom', p: { x: mx('1') }, ids: [id] };
     const pf = primeFactors(f.v);
     if (pf.length < 2) return { no: 'prime', p: { n: f.v }, ids: [id] };
@@ -492,16 +473,6 @@ function termPair(S, aId, bId) {
   return { ok: 'likeAdd', p: { v: vp.length ? mx(factorsHTML(vp)) : '1', ex: r.ex, r: r.r }, born: r.born, origins: r.origins };
 }
 
-function opSplit(S, tid) {
-  const L = locate(S, tid), t = L.term;
-  const c = coefAbs(t), vp = varPart(t);
-  if (!tidy(t) || !vp.length || c < 2 || c > MAX_SPLIT) return { no: 'splitNo', ids: [tid] };
-  const origins = {};
-  const nts = Array.from({ length: c }, () => T(vp.map(v => { const k = cloneF(v); origins[k.id] = [v.id]; return k; }), t.neg));
-  L.terms.splice(L.t, 1, ...nts);
-  return { ok: 'split', p: { x: mx(termHTML(t)), n: c, v: mx(factorsHTML(vp)), ex: mx(sumHTML(nts)) }, born: Object.keys(origins).map(Number), origins };
-}
-
 function flipPart(P) { [P.num, P.den] = [P.den, P.num]; return [...P.num, ...P.den].flatMap(t => t.f.map(f => f.id)); }
 // (A/1)·(1/B) or (1/B)·(A/1): every top piece sits in one fraction and every bottom piece in the other
 function joinable(S) {
@@ -705,8 +676,6 @@ function hint(S) {
     eachFactor(S, L => { if (!h && L.f.k === 'p') h = { k: 'hOpen', p: { x: mx(termHTML(L.term)) }, ids: [L.f.id] }; });
     if (h) return h;
   }
-  const one = shownOne(S);
-  if (one) return { k: 'hHideOne', ids: [one.id] };
   return { k: 'hDone', ids: [] };
 }
 
@@ -752,6 +721,35 @@ function opSwap(S) {
   S.parts.reverse();
   return { ok: 'swapSides', p: { ex: mx(S.parts.map(P => fracHTML(P)).join(' = ')) } };
 }
+// dragging a piece across the = undoes what it does on its side, on both sides:
+//   a term in a sum → take it away (3x + 5: drag 5 → − 5), the number in 3x → divide by 3,
+//   what is below the bar → multiply by it, a lone −x → divide by −1
+function dragBalance(S, id) {
+  if (S.op !== '=') return null;
+  for (const P of S.parts) for (const side of SIDES) for (const top of P[side]) {
+    let L = null;
+    walkTerms([top], { depth: 0 }, M => { if (!L && (M.kind === 't' ? M.term.id : M.f.id) === id) L = M; });
+    if (!L) continue;
+    const ts = P[side];
+    if (side === 'den') return ts.length === 1 ? { op: '·', value: T(top.f.map(cloneF), top.neg) } : { no: 'dragDenSum' };
+    const whole = { op: top.neg ? '+' : '-', value: T(top.f.map(cloneF)) };
+    if (ts.length > 1 || L.kind === 't') return whole;
+    // the only term on its side: a number in front divides, a lone minus divides by −1, anything else takes the term away
+    if (L.depth === 0 && L.f.k === 'n' && top.f.length > 1) return { op: ':', value: T([N(L.f.v)], top.neg) };
+    if (top.neg && !top.f.some(f => f.k === 'n')) return { op: ':', value: T([N(1)], true) };
+    return whole;
+  }
+  return null;
+}
+function opDrag(S, id) {
+  const d = dragBalance(S, id);
+  if (!d) return null;
+  if (d.no) return { no: d.no, ids: [id] };
+  if ((d.op === '+' || d.op === '-') && d.value.f.some(f => f.k === 'p' || f.k === 'g')) return { no: 'dragBracket', ids: [id] };
+  const r = opBalance(S, d.op, d.value);
+  if (r && r.no) r.ids = [id, ...(r.ids || [])];
+  return r;
+}
 // solved: one side is the letter on its own, the other side a clean value without it
 function isSolved(S) {
   if (S.op !== '=' || S.parts.length !== 2) return false;
@@ -773,26 +771,30 @@ function eqHint(S) {
   const b = bs[0];
   const hasX = t => { let h = false; walkTerms([t], { depth: 0 }, M => { if (M.kind === 'f' && M.f.k === 'v' && M.f.b === b) h = true; }); return h; };
   const monoOf = t => T(t.f.map(cloneF));
-  const take = (t, side) => ({ k: 'hBalanceTerm', p: { x: mx(sumHTML([t])), op: t.neg ? '+' : '−', v: mx(termHTML(t)), side }, ids: [t.id, 'op'], balance: { op: t.neg ? '+' : '-', value: monoOf(t) } });
+  // the piece to drag: the term, or on a side of its own a non-number tile (dragging the 3 of 3x would divide)
+  const take = (t, side, terms) => {
+    const id = terms.length > 1 ? t.id : (t.f.find(f => f.k !== 'n') || t.f[0]).id;
+    return { k: 'hBalanceTerm', p: { x: mx(sumHTML([t])), op: t.neg ? '+' : '−', v: mx(termHTML(t)), side }, ids: [id, 'op'], drag: id, balance: { op: t.neg ? '+' : '-', value: monoOf(t) } };
+  };
   // a fraction: multiply both sides by what is below the bar
   for (const P of S.parts) if (!isOne(P.den)) {
     if (P.den.length !== 1 || P.den[0].f.some(f => f.k !== 'n')) return { k: 'hDone', ids: [] };
     const d = P.den[0];
-    return { k: 'hBalanceMul', p: { v: mx(termHTML(d)) }, ids: [d.f[0].id, 'op'], balance: { op: '·', value: T(d.f.map(cloneF), d.neg) } };
+    return { k: 'hBalanceMul', p: { v: mx(termHTML(d)) }, ids: [d.f[0].id, 'op'], drag: d.f[0].id, balance: { op: '·', value: T(d.f.map(cloneF), d.neg) } };
   }
   // letters to the left, numbers to the right
   if (!L.num.some(hasX) && R.num.some(hasX)) return { k: 'hSwap', p: { b: bx(b) }, ids: ['op'] };
   const xR = R.num.find(hasX);
-  if (xR) return take(xR, 'right');
+  if (xR) return take(xR, 'right', R.num);
   const cL = L.num.find(t => !hasX(t));
-  if (cL && !isZeroSide([cL])) return take(cL, 'left');
+  if (cL && !isZeroSide([cL])) return take(cL, 'left', L.num);
   // a·x = c: divide both sides by a
   if (L.num.length === 1) {
     const t = L.num[0], n = t.f.filter(f => f.k === 'n');
     const rest = t.f.filter(f => f.k !== 'n');
     if (rest.length === 1 && rest[0].k === 'v' && rest[0].e === 1 && (n.length || t.neg)) {
       const a = n.reduce((p, f) => p * f.v, 1);
-      return { k: 'hBalanceDiv', p: { x: mx(sumHTML([t])), v: mx((t.neg ? '−' : '') + a) }, ids: [(n[0] || rest[0]).id, 'op'], balance: { op: ':', value: T([N(a)], t.neg) } };
+      return { k: 'hBalanceDiv', p: { x: mx(sumHTML([t])), v: mx((t.neg ? '−' : '') + a) }, ids: [(n[0] || rest[0]).id, 'op'], drag: (n[0] || rest[0]).id, balance: { op: ':', value: T([N(a)], t.neg) } };
     }
   }
   return { k: 'hDone', ids: [] };

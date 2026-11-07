@@ -197,10 +197,10 @@ function autoSolveStep(S) {
   const h = hint(S); let r = null;
   if (h.k === 'hDone') return null;
   if (h.k === 'hDiv' || h.k === 'hBar' || h.k === 'hJoin') r = opOp(S);
-  else if (h.k === 'hGroup' || h.k === 'hOpen' || h.k === 'hExplodeVar' || h.k === 'hHideOne') r = opExplode(S, h.ids[0]);
+  else if (h.k === 'hGroup' || h.k === 'hOpen' || h.k === 'hExplodeVar') r = opExplode(S, h.ids[0]);
   else if (h.k === 'hExplodeCancel' || h.k === 'hExplodeNums' || h.k === 'hExplodeFor') { for (const id of h.ids) { r = opExplode(S, id); normalize(S); if (r && r.no) break; } }
   else if (h.k === 'hSumProduct') r = opSplitTwo(S, h.ids[0], h.split);
-  else if (h.balance) r = opBalance(S, h.balance.op, h.balance.value);
+  else if (h.drag != null) r = opDrag(S, h.drag);   // the hinted piece, dragged across the =
   else if (h.k === 'hSwap') r = opSwap(S);
   else r = opPair(S, h.ids[0], h.ids[1]);
   if (!r || r.no) return null;

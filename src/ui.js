@@ -6,7 +6,7 @@ const store = { get(k, d) { try { const v = localStorage.getItem('alg-cleanup:' 
 let lang = store.get('lang', (navigator.language || '').toLowerCase().startsWith('nl') ? 'nl' : 'en');
 let lvl = Math.min(store.get('level', 0), LEVELS.length - 1);
 let best = store.get('best', {});
-let S, history, moves, sel, born, hintIds, lastNote, busy = false, won = false;
+let S, history, moves, sel, born, hintIds, lastNote, busy = false, won = false, balancing = false;
 
 const $ = id => document.getElementById(id);
 const board = $('board'), note = $('note');
@@ -35,7 +35,7 @@ function nextProblem() {
 }
 function startBoard() {
   initial = JSON.stringify(S);
-  history = []; moves = 0; sel = null; born = new Set(); hintIds = new Set(); won = false;
+  history = []; moves = 0; sel = null; born = new Set(); hintIds = new Set(); won = false; balancing = false;
   board.classList.remove('won');
   render(); sayIntro();
 }
@@ -179,9 +179,9 @@ function showBalance() {
     e.preventDefault();
     const v = balanceValue(input.value);
     if (!v) { errEl.innerHTML = t(input.value.trim() ? 'balBad' : 'balEmpty'); errEl.hidden = false; input.focus(); return; }
-    closeSheet(); run(s => opBalance(s, op, v));
+    closeSheet(); balancing = false; run(s => opBalance(s, op, v));
   });
-  host.querySelector('#balSwap').addEventListener('click', () => { closeSheet(); run(s => opSwap(s)); });
+  host.querySelector('#balSwap').addEventListener('click', () => { closeSheet(); balancing = false; run(s => opSwap(s)); });
   update();
   setTimeout(() => { input.focus(); input.select(); }, 50);
 }
@@ -203,38 +203,46 @@ function previewOf(fn) {
     const sep = h.includes(' + ') ? ' + ' : ' · ', bits = h.split(sep);
     return bits.length > 6 ? [bits[0], bits[1], '…', bits[bits.length - 1]].join(sep) : h;
   };
-  const left = r.ok === 'explodeNum' ? p.n : r.ok === 'hideOne' ? '1 · ' + inner(p.x) : inner(p.x || p.ex);
-  const right = r.ok === 'hideOne' ? inner(p.x) : r.ok === 'gather' ? inner(p.r) : short(inner(p.ex));
+  const left = r.ok === 'explodeNum' ? p.n : inner(p.x || p.ex);
+  const right = r.ok === 'gather' ? inner(p.r) : short(inner(p.ex));
   return mx(r.ok === 'gather' ? short(inner(p.ex)) + ' = ' + right : left + ' = ' + right);
 }
+// 5x = 2x + 3x: a slider picks the first term, the second is what is left
 function showSplit(tid) {
   const L = locate(S, tid);
   const c = L && coef(L.term), vp = L && varPart(L.term);
-  if (!L || !tidy(L.term) || !vp.length) return run(s => opSplit(s, tid));
+  if (!L || !tidy(L.term) || !vp.length) return;
   const mono2 = k => T([...(Math.abs(k) !== 1 ? [N(Math.abs(k))] : []), ...vp.map(cloneF)], k < 0);
+  const R = Math.max(12, Math.abs(c) + 12);
   let p = Math.sign(c) * (Math.abs(c) > 1 ? 1 : 2);
-  const draw = () => {
-    const host = openSheet(`<h2 style="font-size:1.6rem">${t('splitTitle', { x: mx(termHTML(L.term)) })}</h2><p>${t('splitHow')}</p>
-      <div class="splitrow">
-        <button type="button" class="tool" id="sMinus" aria-label="−1">−</button>
-        <div class="splitprev expr-n">${sumHTML([L.term])} = ${sumHTML([mono2(p), mono2(c - p)])}</div>
-        <button type="button" class="tool" id="sPlus" aria-label="+1">+</button>
-      </div>
-      <div class="row" style="margin-top:16px">
-        <button class="tool main" type="button" id="sDo">${t('splitDo')}</button>
-      </div>`);
-    const step = d => { do p += d; while (p === 0 || p === c); draw(); host.querySelector(d < 0 ? '#sMinus' : '#sPlus').focus(); };
-    host.querySelector('#sMinus').addEventListener('click', () => step(-1));
-    host.querySelector('#sPlus').addEventListener('click', () => step(1));
-    host.querySelector('#sDo').addEventListener('click', () => { closeSheet(); run(s => opSplitTwo(s, tid, p)); });
+  sheetFn = null;
+  const host = openSheet(`<h2 style="font-size:1.6rem">${t('splitTitle', { x: mx(sumHTML([L.term])) })}</h2><p>${t('splitHow')}</p>
+    <div class="splitprev expr-n" id="sPrev" aria-live="polite"></div>
+    <input type="range" class="slider" id="sRange" min="${-R}" max="${R}" step="1" value="${p}" aria-label="${t('splitTitle', { x: termText(L.term) })}">
+    <div class="sliderends"><span>${-R}</span><span>0</span><span>${R}</span></div>
+    <div class="row" style="margin-top:16px">
+      <button class="tool main" type="button" id="sDo">${t('splitDo')}</button>
+    </div>`);
+  const range = host.querySelector('#sRange'), prev = host.querySelector('#sPrev'), go = host.querySelector('#sDo');
+  // 0 or the whole term would leave nothing to split: skip over them in the direction the slider moves
+  const update = () => {
+    let v = +range.value;
+    if (v === 0 || v === c) { v += v >= p ? 1 : -1; if (v === 0 || v === c) v += v >= p ? 1 : -1; if (Math.abs(v) > R) v = p; range.value = v; }
+    p = v;
+    prev.innerHTML = `${sumHTML([L.term])} = ${sumHTML([mono2(p), mono2(c - p)])}`;
+    const said = k => (k < 0 ? '−' : '') + termText(mono2(k));
+    range.setAttribute('aria-valuetext', `${said(p)} + ${said(c - p)}`);
   };
-  draw();
+  range.addEventListener('input', update);
+  go.addEventListener('click', () => { closeSheet(); run(s => opSplitTwo(s, tid, p)); });
+  update();
+  setTimeout(() => range.focus(), 50);
 }
 
 function loadLevel(i) {
   mode = 'levels';
   lvl = i; store.set('level', i);
-  S = buildLevel(i); history = []; moves = 0; sel = null; born = new Set(); hintIds = new Set(); won = false;
+  S = buildLevel(i); history = []; moves = 0; sel = null; born = new Set(); hintIds = new Set(); won = false; balancing = false;
   board.classList.remove('won');
   render(); sayIntro();
 }
@@ -309,7 +317,7 @@ function render() {
       op.className = stacked ? 'opchip bigbar' : 'opchip';
       op.textContent = stacked ? '' : S.op;
       op.setAttribute('aria-label', stacked ? 'fraction bar' : S.op === '=' ? 'equals: do the same to both sides' : S.op === ':' ? 'divide' : 'times');
-      if (S.op === '=') op.classList.add('eq');
+      if (S.op === '=') { op.classList.add('eq'); op.classList.toggle('on', balancing); op.setAttribute('aria-pressed', String(balancing)); }
       if (hintIds.has('op')) op.classList.add('hint');
       host.append(op);
     }
@@ -327,12 +335,13 @@ function render() {
     host.append(fr);
   });
   board.replaceChildren(wrap);
+  board.classList.toggle('balancing', balancing);
   fitBoard(wrap);
   $('written').innerHTML = stateHTML(S);
 
   // chrome
   $('btnLevels').textContent = t('levels');
-  $('btnLang').textContent = lang === 'nl' ? 'EN' : 'NL';
+  $('btnLang').textContent = lang === 'nl' ? 'English' : 'Nederlands';
   $('btnRestart').textContent = t('restart');
   $('brand').innerHTML = lang === 'nl' ? 'Algebra <span>Opruimen</span>' : 'Algebra <span>Cleanup</span>';
   $('btnPractice').textContent = t('practice');
@@ -356,7 +365,10 @@ function render() {
   $('btnUndo').querySelector('span').textContent = t('undo');
   $('btnUndo').disabled = !history.length;
   $('btnHint').querySelector('span').textContent = t('hint');
-  const fSel = sel && sel.t === 'f', tSel = sel && sel.t === 't';
+  $('btnSwap').hidden = $('btnBalType').hidden = !balancing;
+  $('btnSwap').querySelector('span').textContent = t('balSwapBtn'); $('btnSwap').setAttribute('aria-label', t('balSwap'));
+  $('btnBalType').querySelector('span').textContent = t('balOtherBtn');
+  const fSel = !balancing && sel && sel.t === 'f', tSel = !balancing && sel && sel.t === 't';
   // the move buttons show what they will do, worked out on a copy of the board
   const exLabel = fSel && previewOf(s => opExplode(s, sel.id));
   $('btnExplode').hidden = !exLabel; if (exLabel) $('btnExplode').querySelector('span').innerHTML = exLabel;
@@ -364,8 +376,6 @@ function render() {
   if (fSel) { const L = locate(S, sel.id); gatherable = L.term.f.filter(f => canMerge(L.f, f)).length >= 3; }
   $('btnGather').hidden = !gatherable;
   if (gatherable) $('btnGather').querySelector('span').innerHTML = previewOf(s => opGather(s, sel.id));
-  const onesLabel = tSel && previewOf(s => opSplit(s, sel.id));
-  $('btnSplit').hidden = !onesLabel; if (onesLabel) $('btnSplit').querySelector('span').innerHTML = onesLabel;
   // from a piece only when factoring (a lone −x is hard to hit as a term); elsewhere it would just be noise
   const twoId = tSel || (fSel && S.goal === 'factor') ? splitTermOf(sel.id) : null;
   $('btnSplitTwo').hidden = !twoId;
@@ -386,6 +396,13 @@ function fitBoard(wrap) {
   }
   const avail = wrap.clientWidth, need = Math.max(0, ...[...wrap.children].map(c => c.scrollWidth));
   if (avail && need > avail) wrap.style.zoom = String(Math.max(0.55, avail / need));
+  fitHeight(wrap);
+}
+// a phone on its side has little height: shrink the tiles until they fit between the bars instead of scrolling
+function fitHeight(wrap) {
+  const cs = getComputedStyle(board), room = board.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+  const h = wrap.getBoundingClientRect().height, z = parseFloat(wrap.style.zoom) || 1;
+  if (room > 0 && h > room) wrap.style.zoom = String(Math.max(0.55, z * room / h));
 }
 window.addEventListener('resize', () => { const w = board.querySelector('.expr'); if (w) fitBoard(w); });
 
@@ -509,9 +526,6 @@ function onFactor(id) {
 }
 function onTerm(tid) {
   if (sel && sel.t === 't' && sel.id === tid) {
-    // tapping a term twice writes it as a sum, like exploding a tile: 4x → x + x + x + x
-    const L = locate(S, tid);
-    if (L && coefAbs(L.term) >= 2 && varPart(L.term).length) { run(s => opSplit(s, tid)); return; }
     sel = null; render(); return;
   }
   if (sel && sel.t === 't') { const a = sel.id; run(s => termPair(s, a, tid)); return; }
@@ -524,6 +538,88 @@ function select(s) {
   const canExplode = s.t === 'f' && !$('btnExplode').hidden;
   if (S.op === '=' && !has) return say('pickedEq', {}, 'info');
   say(s.t === 'f' ? (has ? 'pickedP' : canExplode ? 'picked' : 'pickedAtom') : (has ? 'pickedTermP' : 'pickedTerm'), {}, 'info');
+}
+
+/* ---- balance mode: tap =, then drag a piece across it; it is undone on both sides ---- */
+function setBalancing(on) {
+  balancing = on && S.op === '=';
+  sel = null; hintIds = new Set(); born = new Set();
+  render(); say(balancing ? 'balanceMode' : 'balanceOff', {}, 'info');
+}
+function dropAcross(id) {
+  run(s => { const r = opDrag(s, id); if (r && !r.no) balancing = false; return r; });
+}
+let bdrag = null;
+// the other side's fraction: where the piece has to land
+function otherSide(fromRight) {
+  return fromRight ? board.querySelector('.expr > .frac') : board.querySelector('.eqright > .frac');
+}
+function overOtherSide(x, y) {
+  const wrap = board.querySelector('.expr'), eq = board.querySelector('.opchip.eq'), other = otherSide(bdrag.right);
+  if (!eq || !other) return false;
+  const e = eq.getBoundingClientRect(), b = board.getBoundingClientRect();
+  if (wrap.classList.contains('oneline'))   // on one line: anywhere past the = counts
+    return y >= b.top - 40 && y <= b.bottom + 40 && (bdrag.right ? x < e.left + e.width / 2 : x > e.left + e.width / 2);
+  const r = other.getBoundingClientRect(), m = 32;
+  return x >= r.left - m && x <= r.right + m && y >= r.top - m && y <= r.bottom + m;
+}
+// a finger is wide and the tiles wobble: a press just next to a piece still picks it up
+function pieceNear(x, y) {
+  let best = null, bd = 22;
+  board.querySelectorAll('.frac > .side > .term > .tile').forEach(el => {
+    const r = el.getBoundingClientRect();
+    const d = Math.hypot(Math.max(r.left - x, 0, x - r.right), Math.max(r.top - y, 0, y - r.bottom));
+    if (d < bd) { bd = d; best = el; }
+  });
+  return best;
+}
+function balanceDown(e) {
+  if (e.target.closest('.opchip')) return;
+  const el = e.target.closest('#board .tile, #board .term') || pieceNear(e.clientX, e.clientY);
+  // a press on nothing still becomes a drag record, so letting go somewhere else isn't read as a tap on the board
+  bdrag = { el, id: el && (el.classList.contains('tile') ? +el.dataset.id : +el.dataset.tid), x: e.clientX, y: e.clientY, pid: e.pointerId, active: false, right: !!(el && el.closest('.eqright')) };
+}
+function balanceMove(e) {
+  const d = bdrag;
+  if (e.pointerId !== d.pid) return;
+  if (!d.active) {
+    if (Math.hypot(e.clientX - d.x, e.clientY - d.y) < 8) return;
+    d.active = true;
+    if (!d.el) return;
+    try { board.setPointerCapture(e.pointerId); } catch {}
+    const r = d.el.getBoundingClientRect();
+    d.k = r.width / (d.el.offsetWidth || r.width);           // the board's zoom
+    d.ox = d.x - r.left; d.oy = d.y - r.top;
+    d.ghost = d.el.cloneNode(true);
+    d.ghost.classList.add('dragghost'); d.ghost.classList.remove('sel', 'hint', 'born', 'partner');
+    d.ghost.style.width = d.el.offsetWidth + 'px';
+    document.body.append(d.ghost);
+    d.el.classList.add('lifted');
+  }
+  if (!d.el) return;
+  d.ghost.style.transform = `translate(${e.clientX - d.ox}px, ${e.clientY - d.oy}px) scale(${d.k * 1.08})`;
+  const over = overOtherSide(e.clientX, e.clientY);
+  otherSide(d.right)?.classList.toggle('droptarget', over);
+}
+function balanceDrop() {
+  if (!bdrag) return;
+  bdrag.ghost?.remove(); bdrag.el?.classList.remove('lifted');
+  board.querySelectorAll('.droptarget').forEach(el => el.classList.remove('droptarget'));
+  bdrag = null;
+}
+function balanceUp(e) {
+  const d = bdrag;
+  if (e.pointerId !== d.pid) return;
+  const over = d.active && d.el && overOtherSide(e.clientX, e.clientY);
+  balanceDrop();
+  if (!d.active) {                                // a tap: the click handler explains, also for a near miss
+    if (d.el && !e.target.closest('.tile, .term')) { shake([d.id]); say('balanceTap', {}, 'info'); suppressClick = true; setTimeout(() => { suppressClick = false; }, 0); }
+    return;
+  }
+  suppressClick = true; setTimeout(() => { suppressClick = false; }, 0);
+  if (!d.el) return;
+  if (over) dropAcross(d.id);
+  else say('balanceMiss', {}, 'info');
 }
 
 let drag = null, suppressClick = false;
@@ -539,9 +635,11 @@ function clearSweep() {
 }
 board.addEventListener('pointerdown', e => {
   if (busy || won || e.button > 0) return;
+  if (balancing) { balanceDown(e); return; }
   drag = { x: e.clientX, y: e.clientY, lx: e.clientX, ly: e.clientY, id: e.pointerId, active: false, ids: [], pts: [] };
 });
 board.addEventListener('pointermove', e => {
+  if (bdrag) { balanceMove(e); return; }
   if (!drag || e.pointerId !== drag.id) return;
   if (!drag.active) {
     if (Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 10) return;
@@ -565,6 +663,7 @@ function sample(x, y) {
   if (t && !drag.ids.includes(+t.dataset.id)) { drag.ids.push(+t.dataset.id); t.classList.add('swept'); }
 }
 const endDrag = e => {
+  if (bdrag) { balanceUp(e); return; }
   if (!drag || e.pointerId !== drag.id) return;
   const d = drag;
   if (!d.active) { drag = null; return; }
@@ -574,14 +673,19 @@ const endDrag = e => {
   else if (d.ids.length === 1) select({ t: 'f', id: d.ids[0] });
 };
 board.addEventListener('pointerup', endDrag);
-board.addEventListener('pointercancel', () => { clearSweep(); drag = null; });
+board.addEventListener('pointercancel', () => { clearSweep(); drag = null; balanceDrop(); });
 
 board.addEventListener('click', e => {
   if (suppressClick) { suppressClick = false; return; }
   if (busy || won) return;
-  if (e.target.closest('.opchip')) return S.op === '=' ? (!busy && showBalance()) : run(s => opOp(s));
+  if (e.target.closest('.opchip')) return S.op === '=' ? setBalancing(!balancing) : run(s => opOp(s));
   if (e.target.closest('.fbar')) return run(s => opBar(s));
   const hit = e.target.closest('.tile, .term');
+  if (balancing) {
+    if (!hit) return setBalancing(false);
+    if (e.detail === 0) return dropAcross(hit.classList.contains('tile') ? +hit.dataset.id : +hit.dataset.tid);   // keyboard: Enter moves it across
+    shake([+(hit.dataset.id || hit.dataset.tid)]); return say('balanceTap', {}, 'info');
+  }
   if (hit && hit.classList.contains('tile')) return onFactor(+hit.dataset.id);
   if (hit) return onTerm(+hit.dataset.tid);
   if (sel) { sel = null; render(); }
@@ -589,12 +693,13 @@ board.addEventListener('click', e => {
 
 $('btnExplode').onclick = () => sel && run(s => opExplode(s, sel.id));
 $('btnGather').onclick = () => sel && run(s => opGather(s, sel.id));
-$('btnSplit').onclick = () => sel && run(s => opSplit(s, sel.id));
+$('btnSwap').onclick = () => { if (busy || won) return; balancing = false; run(s => opSwap(s)); };
+$('btnBalType').onclick = () => !busy && !won && showBalance();
 $('btnSplitTwo').onclick = () => sel && !busy && !won && showSplit(splitTermOf(sel.id));
 $('btnUndo').onclick = () => {
   if (!history.length || busy) return;
   const prev = JSON.parse(history.pop()); S = prev.S; moves = prev.moves;
-  sel = null; born = new Set(); hintIds = new Set(); won = false; board.classList.remove('won');
+  sel = null; born = new Set(); hintIds = new Set(); won = false; balancing = false; board.classList.remove('won');
   render(); say(null, null, 'info', { en: 'One step back.', nl: 'Eén stap terug.' });
 };
 $('btnHint').onclick = () => {
@@ -603,7 +708,7 @@ $('btnHint').onclick = () => {
 };
 $('btnRestart').onclick = () => {
   if (mode === 'levels') return loadLevel(lvl);
-  closeSheet(); S = JSON.parse(initial); history = []; moves = 0; sel = null; born = new Set(); hintIds = new Set(); won = false;
+  closeSheet(); S = JSON.parse(initial); history = []; moves = 0; sel = null; born = new Set(); hintIds = new Set(); won = false; balancing = false;
   board.classList.remove('won'); render(); sayIntro();
 };
 $('btnPractice').onclick = showPractice;
@@ -615,12 +720,33 @@ $('btnLang').onclick = () => {
   else if (sheetFn && $('sheetHost').children.length) sheetFn();
 };
 $('btnLevels').onclick = () => showLevels();
+
+/* ---- the menu (levels, practice, restart, language) and the floating bars ---- */
+function setMenu(open) {
+  $('menu').hidden = !open; $('btnMenu').setAttribute('aria-expanded', String(open));
+  if (open) $('menu').querySelector('.menuitem').focus();
+}
+$('btnMenu').onclick = e => { e.stopPropagation(); setMenu($('menu').hidden); };
+$('menu').addEventListener('click', e => { if (e.target.closest('.menuitem')) setMenu(false); });
+document.addEventListener('pointerdown', e => { if (!$('menu').hidden && !e.target.closest('#menu, #btnMenu')) setMenu(false); });
+// the board keeps its tiles in the open space between the bars, whatever their height
+// only room for a two-line note is kept free: a longer note floats over the board instead of shifting every tile
+// (tiles that jump when the message changes are hard to grab)
+const hudFit = () => {
+  const note = $('note'), keep = parseFloat(getComputedStyle(note).minHeight) || 0;
+  const top = $('hudTop').offsetHeight + 'px', bottom = ($('hudBottom').offsetHeight - note.offsetHeight + keep) + 'px';
+  if (board.style.getPropertyValue('--hud-top') === top && board.style.getPropertyValue('--hud-bottom') === bottom) return;
+  board.style.setProperty('--hud-top', top); board.style.setProperty('--hud-bottom', bottom);
+  const w = board.querySelector('.expr'); if (w) fitBoard(w);
+};
+if (window.ResizeObserver) { const ro = new ResizeObserver(hudFit); ro.observe($('hudTop')); ro.observe($('hudBottom')); }
+hudFit();
 board.addEventListener('keydown', e => {
   const p = e.target.closest && e.target.closest('.tile.p');
   if (p && e.target === p && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onFactor(+p.dataset.id); }
 });
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') closeSheet();
+  if (e.key === 'Escape') { closeSheet(); if (!$('menu').hidden) { setMenu(false); $('btnMenu').focus(); } }
   if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); $('btnUndo').click(); }
 });
 

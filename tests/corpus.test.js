@@ -109,20 +109,11 @@ test('splitting a term in two keeps its total: 5x = 2x + 3x, and refuses 0 or th
   assert.equal(G.hint(S).k, 'hExplodeVar');   // work on x² + 2x first, not on 2x + 3x
 });
 
-test('the hidden 1: −x explodes to −1·x, the 1 taps away again, and a shown 1 is never a finished answer', () => {
+test('a lone letter is an atom: x does not explode into 1·x', () => {
   const S = G.buildLevel(25);   // x² − x − 12
-  const x = S.parts[0].num[1].f[0];
-  assert.equal(G.opExplode(S, x.id).ok, 'explodeOne'); G.normalize(S);
-  assert.equal(strip(G.stateHTML(S)), 'x^2 − 1x − 12');
-  const one = S.parts[0].num[1].f[0];
-  assert.equal(one.v, 1);
-  assert.equal(G.opExplode(S, one.id).ok, 'hideOne'); G.normalize(S);
-  assert.equal(strip(G.stateHTML(S)), 'x^2 − x − 12');
-  const T = G.parseProblem('3x').S;   // a term that already has a number: x stays an atom
+  assert.equal(G.opExplode(S, S.parts[0].num[1].f[0].id).no, 'atom');
+  const T = G.parseProblem('3x').S;
   assert.equal(G.opExplode(T, T.parts[0].num[0].f[1].id).no, 'atom');
-  const U = G.parseProblem('x + y').S;
-  G.opExplode(U, U.parts[0].num[0].f[0].id); G.normalize(U);
-  assert.equal(G.isClean(U), false); assert.equal(G.hint(U).k, 'hHideOne');
 });
 
 test('equations: a term only crosses the = by doing the same to both sides', () => {
@@ -137,4 +128,30 @@ test('equations: a term only crosses the = by doing the same to both sides', () 
   const F = G.parseProblem('x/3+2=5'); assert.equal(F.err, 'pFracSum');
   const H = G.parseProblem('x/3=4').S;
   assert.equal(G.opBalance(H, '+', G.T([G.N(1)])).no, 'balanceFrac');             // fractions first
+});
+
+test('equations: dragging a piece across the = undoes it on both sides', () => {
+  const drag = (src, pick) => { const S = G.parseProblem(src).S; const r = G.opDrag(S, pick(S)); if (r && r.ok) G.normalize(S); return r && r.no ? r.no : strip(G.stateHTML(S)); };
+  assert.equal(drag('3x+5=20', S => S.parts[0].num[1].f[0].id), '3x + 5 − 5 = 20 − 5');     // a term in a sum: take it away
+  assert.equal(drag('3x+5=20', S => S.parts[0].num[0].f[0].id), '3x + 5 − 3x = 20 − 3x');   // the 3 of 3x in a sum is still the term
+  assert.equal(drag('3x=15', S => S.parts[0].num[0].f[0].id), '[3x/3 = [15/3');                // on its own: divide by the number
+  assert.equal(drag('-3x=15', S => S.parts[0].num[0].f[0].id), '[3x/3 = [−15/3');            // by −3, so x keeps no minus
+  assert.equal(drag('x/3=4', S => S.parts[0].den[0].f[0].id), '[3x/3 = 3·4');                   // below the bar: multiply
+  assert.equal(drag('-x=4', S => S.parts[0].num[0].f[0].id), 'x = −4');                      // a lone −x: divide by −1
+  assert.equal(drag('x/3=4', S => S.parts[0].num[0].f[0].id), 'balanceFrac');                // fractions first
+  assert.equal(drag('2(x+3)=4x-2', S => S.parts[0].num[0].f[1].terms[0].f[0].id), 'dragBracket');
+  // the hint's piece, dragged, does exactly the hinted move
+  for (const src of ['x+3=7', '3x=12', '5x+3=2x+12', 'x/3=4', '-x=4', '7=2x+1', '5x+3=2x', '4x-3=2x+6']) {
+    let S = G.parseProblem(src).S;
+    for (let k = 0; k < 40 && !G.isSolved(S); k++) {
+      const h = G.hint(S);
+      if (h.drag != null) {
+        const a = JSON.parse(JSON.stringify(S)), b = JSON.parse(JSON.stringify(S));
+        G.opDrag(a, h.drag); G.opBalance(b, h.balance.op, h.balance.value); G.normalize(a); G.normalize(b);
+        assert.equal(strip(G.stateHTML(a)), strip(G.stateHTML(b)), `${src}: dragging the hinted piece differs from the hint`);
+      }
+      assert.ok(G.autoSolveStep(S), `${src}: stuck`);
+    }
+    assert.ok(G.isSolved(S), `${src} not solved`);
+  }
 });

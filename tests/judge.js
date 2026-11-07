@@ -36,7 +36,6 @@ function candidates(S) {
   const out = [];
   fs.forEach(id => out.push(s => G.opExplode(s, id)));
   fs.forEach(a => fs.forEach(b => { if (a !== b) out.push(s => G.opPair(s, a, b)); }));
-  ts.forEach(id => out.push(s => G.opSplit(s, id)));
   ts.forEach(id => [-3, 1, 2].forEach(k => out.push(s => G.opSplitTwo(s, id, k))));
   ts.forEach(a => ts.forEach(b => { if (a !== b) out.push(s => G.termPair(s, a, b)); }));
   out.push(s => G.opOp(s), s => G.opBar(s));
@@ -46,6 +45,7 @@ function candidates(S) {
       out.push(s => G.opBalance(s, '-', mono(t)), s => G.opBalance(s, '+', mono(t)));
       t.f.filter(f => f.k === 'n').forEach(f => out.push(s => G.opBalance(s, ':', G.T([G.N(f.v)])), s => G.opBalance(s, '·', G.T([G.N(f.v)], true))));
     }));
+    fs.concat(ts).forEach(id => out.push(s => G.opDrag(s, id)));   // drag any piece across the =
     out.push(s => G.opSwap(s), s => G.opBalance(s, '·', G.T([G.V('x')])), s => G.opBalance(s, ':', G.T([G.N(0)])), s => G.opBalance(s, '·', G.T([G.N(1)])));
   }
   return out;
