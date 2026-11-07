@@ -87,6 +87,9 @@ function normTerms(terms, keepBare) {
       terms.splice(i, 1, ...inner); i += inner.length - 1;
     }
   }
+  // + 0 adds nothing: x + 0 is x
+  for (let i = terms.length - 1; i >= 0 && terms.length > 1; i--)
+    if (terms[i].f.length === 1 && terms[i].f[0].k === 'n' && terms[i].f[0].v === 0) terms.splice(i, 1);
 }
 const isUnit = side => side.length === 1 && side[0].f.length === 1 && side[0].f[0].k === 'n' && side[0].f[0].v === 1;
 function negate(side) {
@@ -99,6 +102,8 @@ function normalize(S) {
     normTerms(P[side], !isUnit(P[side === 'num' ? 'den' : 'num']) && S.op !== '·');
     if (!P[side].length) P[side] = [T([N(side === 'num' ? 0 : 1)])];
   }
+  // a minus below the bar goes on top: 6/−2 is −6/2 (dividing both sides of an equation by −2 makes these)
+  for (const P of S.parts) if (P.den.length === 1 && P.den[0].neg) { P.den[0].neg = false; negate(P.num); }
   // a fraction that is used up (1 over 1) stays on the board: the player cancels the 1's (opPair, 'ones')
   // (a/1) / (b/1) is just a/b
   if (S.parts.length === 2 && S.op === '/' && isOne(S.parts[0].den) && isOne(S.parts[1].den))
@@ -133,6 +138,7 @@ function shownOne(S) {
 }
 function isClean(S) {
   if (shownOne(S)) return false;
+  if (S.goal === 'solve') return isSolved(S);
   if (S.goal === 'factor') return isFactored(S);
   if (S.parts.length > 1) return false;
   const P = S.parts[0];
@@ -284,6 +290,7 @@ const usedUp = P => isUnit(P.num) && isUnit(P.den);
 function pairCheck(S, A, B) {
   const x = A.f, y = B.f;
   if (A.p !== B.p) {
+    if (S.op === '=') return { type: 'fizzle', msg: 'diffSides' };   // no "move it across and flip the sign"
     if (S.op !== '·') return { type: 'fizzle', msg: 'diffFrac' };
     if (A.side === B.side) return { type: 'move' };
     const PA = S.parts[A.p], PB = S.parts[B.p];
@@ -475,7 +482,7 @@ function opSweep(S, ids) {
 
 function termPair(S, aId, bId) {
   const A = locate(S, aId), B = locate(S, bId);
-  if (A.p !== B.p) return { no: 'diffFrac', ids: [aId, bId] };
+  if (A.p !== B.p) return { no: S.op === '=' ? 'diffSides' : 'diffFrac', ids: [aId, bId] };
   if (A.terms !== B.terms) return { no: A.side !== B.side ? 'termSide' : 'bracketWall', ids: [aId, bId] };
   if (!tidy(A.term) || !tidy(B.term)) return { no: 'untidy', ids: [aId, bId] };
   if (sig(A.term) !== sig(B.term)) return { no: 'notLike', p: { v1: mx(termHTML(A.term)), v2: mx(termHTML(B.term)) }, ids: [aId, bId] };
@@ -505,7 +512,7 @@ function joinable(S) {
   return null;
 }
 function opOp(S) {
-  if (S.parts.length < 2) return null;
+  if (S.parts.length < 2 || S.op === '=') return null;
   if (S.op === '/') { S.op = ':'; return { ok: 'toDiv' }; }
   if (S.op === ':') { const born = flipPart(S.parts[1]); S.op = '·'; return { ok: 'flip', born }; }
   // tops times tops, bottoms times bottoms: with only 1's left to multiply by, the two fractions become one
@@ -642,6 +649,7 @@ function sumProductHint(S) {
 }
 
 function hint(S) {
+  if (S.op === '=') return eqHint(S);
   if (S.parts.length > 1) {
     if (S.op === '/') return { k: 'hBar', ids: ['op'] };
     if (S.op === ':') return { k: 'hDiv', ids: ['op'] };
@@ -699,6 +707,94 @@ function hint(S) {
   }
   const one = shownOne(S);
   if (one) return { k: 'hHideOne', ids: [one.id] };
+  return { k: 'hDone', ids: [] };
+}
+
+/* ---- equations: the balance method ----
+   S = { parts: [left, right], op: '=', goal: 'solve' }. Each side keeps every simplifying move.
+   A term only crosses the = by doing the same thing to both sides (opBalance); tapping a piece on
+   one side and then one on the other is refused (diffSides). */
+const BOPS = { '+': '+', '-': '−', '·': '·', ':': ':' };
+const letters = S => { const bs = new Set(); eachFactor(S, L => { if (L.f.k === 'v') bs.add(L.f.b); }); return [...bs]; };
+const isZeroSide = side => side.length === 1 && side[0].f.length === 1 && side[0].f[0].k === 'n' && side[0].f[0].v === 0;
+// v: a monomial Term (its sign counts). op: '+', '-', '·', ':'
+function opBalance(S, op, v) {
+  if (S.op !== '=' || !v || !v.f || !v.f.length) return null;
+  const vNum = v.f.filter(f => f.k === 'n').reduce((a, f) => a * f.v, 1);
+  const shown = mx((v.neg ? '−' : '') + factorsHTML(v.f, true));
+  if (v.f.some(f => f.k === 'p' || f.k === 'g')) return { no: 'balanceShape', ids: ['op'] };
+  if (vNum === 0) return { no: op === ':' ? 'balanceDivZero' : op === '·' ? 'balanceMulZero' : 'balanceNothing', ids: ['op'] };
+  const born = [];
+  if (op === '+' || op === '-') {
+    if (S.parts.some(P => !isOne(P.den))) return { no: 'balanceFrac', ids: ['op'] };
+    for (const P of S.parts) {
+      const t = cloneT(v); if (op === '-') t.neg = !t.neg;
+      born.push(...t.f.map(f => f.id));
+      if (isZeroSide(P.num)) P.num = [t]; else P.num.push(t);
+    }
+  } else {
+    if (v.f.some(f => f.k === 'v')) return { no: 'balanceLetter', p: { v: shown }, ids: ['op'] };
+    if (vNum === 1 && !v.neg) return { no: 'balanceOne', ids: ['op'] };
+    for (const P of S.parts) {
+      const side = op === '·' ? 'num' : 'den';
+      const c = N(vNum); born.push(c.id);
+      const ts = P[side];
+      if (op === ':' && isOne(ts)) P[side] = [T([c], v.neg)];
+      else if (ts.length === 1) { ts[0].f.unshift(c); if (v.neg) ts[0].neg = !ts[0].neg; }
+      else P[side] = [T([c, Pr(ts)], v.neg)];   // a sum gets multiplied as a whole: 2(x + 1)
+    }
+  }
+  const sides = S.parts.map(P => fracHTML(P));
+  return { ok: 'balance', p: { op: BOPS[op], v: shown, ex: mx(sides.join(' = ')) }, born };
+}
+function opSwap(S) {
+  if (S.op !== '=') return null;
+  S.parts.reverse();
+  return { ok: 'swapSides', p: { ex: mx(S.parts.map(P => fracHTML(P)).join(' = ')) } };
+}
+// solved: one side is the letter on its own, the other side a clean value without it
+function isSolved(S) {
+  if (S.op !== '=' || S.parts.length !== 2) return false;
+  return S.parts.some((P, i) => {
+    const t = P.num[0];
+    if (P.num.length !== 1 || !isOne(P.den) || t.neg || t.f.length !== 1 || t.f[0].k !== 'v' || t.f[0].e !== 1) return false;
+    const other = S.parts[1 - i], b = t.f[0].b;
+    let has = false; walkTerms([...other.num, ...other.den], { depth: 0 }, L => { if (L.kind === 'f' && L.f.k === 'v' && L.f.b === b) has = true; });
+    return !has && isClean({ parts: [other], op: null, goal: 'simplify' });
+  });
+}
+const sideView = P => ({ parts: [P], op: null, goal: 'simplify' });
+function eqHint(S) {
+  if (isSolved(S)) return { k: 'hDone', ids: [] };
+  // first tidy each side with the usual moves
+  for (const P of S.parts) { const h = hint(sideView(P)); if (h.k !== 'hDone') return h; }
+  const [L, R] = S.parts, bs = letters(S);
+  if (bs.length !== 1) return { k: 'hDone', ids: [] };
+  const b = bs[0];
+  const hasX = t => { let h = false; walkTerms([t], { depth: 0 }, M => { if (M.kind === 'f' && M.f.k === 'v' && M.f.b === b) h = true; }); return h; };
+  const monoOf = t => T(t.f.map(cloneF));
+  const take = (t, side) => ({ k: 'hBalanceTerm', p: { x: mx(sumHTML([t])), op: t.neg ? '+' : '−', v: mx(termHTML(t)), side }, ids: [t.id, 'op'], balance: { op: t.neg ? '+' : '-', value: monoOf(t) } });
+  // a fraction: multiply both sides by what is below the bar
+  for (const P of S.parts) if (!isOne(P.den)) {
+    if (P.den.length !== 1 || P.den[0].f.some(f => f.k !== 'n')) return { k: 'hDone', ids: [] };
+    const d = P.den[0];
+    return { k: 'hBalanceMul', p: { v: mx(termHTML(d)) }, ids: [d.f[0].id, 'op'], balance: { op: '·', value: T(d.f.map(cloneF), d.neg) } };
+  }
+  // letters to the left, numbers to the right
+  if (!L.num.some(hasX) && R.num.some(hasX)) return { k: 'hSwap', p: { b: bx(b) }, ids: ['op'] };
+  const xR = R.num.find(hasX);
+  if (xR) return take(xR, 'right');
+  const cL = L.num.find(t => !hasX(t));
+  if (cL && !isZeroSide([cL])) return take(cL, 'left');
+  // a·x = c: divide both sides by a
+  if (L.num.length === 1) {
+    const t = L.num[0], n = t.f.filter(f => f.k === 'n');
+    const rest = t.f.filter(f => f.k !== 'n');
+    if (rest.length === 1 && rest[0].k === 'v' && rest[0].e === 1 && (n.length || t.neg)) {
+      const a = n.reduce((p, f) => p * f.v, 1);
+      return { k: 'hBalanceDiv', p: { x: mx(sumHTML([t])), v: mx((t.neg ? '−' : '') + a) }, ids: [(n[0] || rest[0]).id, 'op'], balance: { op: ':', value: T([N(a)], t.neg) } };
+    }
+  }
   return { k: 'hDone', ids: [] };
 }
 
@@ -782,6 +878,27 @@ const LEVELS = [
   { goal: 'factor', book: true, s: () => ({ parts: [F([T([V('x', 2)]), T([V('x')], true), T([N(12)], true)])] }),
     en: 'Now with minus signs: the product is −12, the sum is −1. One of the two numbers is negative.',
     nl: 'Nu met mintekens: het product is −12, de som is −1. Een van de twee getallen is negatief.' },
+  { goal: 'solve', s: () => parseProblem('x+3=7').S,
+    en: 'An equation is a balance: both sides weigh the same. Get <i>x</i> on its own. Tap the 3, then tap the = sign, and take 3 away from <b>both</b> sides.',
+    nl: 'Een vergelijking is een weegschaal: beide kanten wegen even zwaar. Zorg dat <i>x</i> alleen staat. Tik op de 3, dan op het =-teken, en haal aan <b>beide</b> kanten 3 weg.' },
+  { goal: 'solve', s: () => parseProblem('3x=12').S,
+    en: '3<i>x</i> is three <i>x</i>’s. To get one <i>x</i>, divide both sides by 3: tap the 3, then the = sign.',
+    nl: '3<i>x</i> is drie keer <i>x</i>. Om één <i>x</i> over te houden deel je beide kanten door 3: tik op de 3 en dan op het =-teken.' },
+  { goal: 'solve', s: () => parseProblem('3x+5=20').S,
+    en: 'Two steps. First take away what is added, then divide.',
+    nl: 'Twee stappen. Haal eerst weg wat erbij staat, en deel daarna.' },
+  { goal: 'solve', s: () => parseProblem('5x+3=2x+12').S,
+    en: 'Letters on both sides. Take 2<i>x</i> away from both sides, so all the <i>x</i>’s end up on the left.',
+    nl: 'Letters aan beide kanten. Haal aan beide kanten 2<i>x</i> weg, dan staan alle <i>x</i>’en links.' },
+  { goal: 'solve', s: () => parseProblem('x/3=4').S,
+    en: 'A fraction. <i>x</i> divided by 3 is 4, so multiply both sides by 3: tap the 3 below the bar, then the = sign.',
+    nl: 'Een breuk. <i>x</i> gedeeld door 3 is 4, dus vermenigvuldig beide kanten met 3: tik op de 3 onder de streep en dan op het =-teken.' },
+  { goal: 'solve', book: true, s: () => parseProblem('2(x+3)=4x-2').S,
+    en: 'Brackets first, then balance. You know all the moves.',
+    nl: 'Eerst de haakjes, dan de weegschaal. Je kent alle zetten.' },
+  { goal: 'solve', book: true, s: () => parseProblem('4x-3=2x+6').S,
+    en: 'Not every answer is a whole number.',
+    nl: 'Niet elk antwoord is een heel getal.' },
 ];
 function buildLevel(i) { const S = LEVELS[i].s(); S.op = S.op || null; S.goal = LEVELS[i].goal || 'simplify'; return S; }
 /* ===== END CORE ===== */

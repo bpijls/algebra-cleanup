@@ -152,6 +152,31 @@ const GEN = {
     return { parts: [F(terms)], goal: 'factor' };
   },
 
+  // the balance method, built from the answer k: x + 3 = 7, 3x + 5 = 20, 5x + 3 = 2x + 12, 2(x + 3) = 4x − 2, (x + 3)/2 = 4
+  equations(d) {
+    const v = pick(['x', 'x', 'a', 'y']);
+    const nz = (lo, hi) => { let n; do n = R(lo, hi); while (!n); return n; };
+    const sg = n => (n < 0 ? '-' : '+') + Math.abs(n);   // as a following term: +3, -3
+    const k = nz(-9, 9);
+    const other = a => { let c; do c = nz(-6, 6); while (c === a); return c; };
+    let src;
+    if (d === 1) {
+      const a = R(2, 9), b = nz(-9, 9);
+      src = coin() ? `${v}${sg(b)}=${k + b}` : `${a}${v}=${a * k}`;
+    } else if (d === 2) {
+      const a = nz(-6, 6), b = nz(-9, 9), c = other(a), e = a * k + b - c * k;
+      src = coin() ? `${a}${v}${sg(b)}=${a * k + b}` : `${a}${v}${sg(b)}=${c}${v}${e ? sg(e) : ''}`;
+    } else {
+      const a = R(2, 5), b = nz(-6, 6), c = other(a), e = a * (k + b) - c * k;
+      src = pick([
+        `${a}(${v}${sg(b)})=${c}${v}${e ? sg(e) : ''}`,       // 2(x + 3) = 4x − 2
+        `${v}/${a}=${k}`,                                   // x/3 = 4
+        `(${v}${sg(b)})/${a}=${(k + b) % a ? k : (k + b) / a}`,   // (x + 3)/2 = 4
+      ]);
+    }
+    return parseProblem(src).S;
+  },
+
   mixed(d) {
     const v = pick(VARS);
     const E = pick([6, 8, 12]);
@@ -175,6 +200,8 @@ function autoSolveStep(S) {
   else if (h.k === 'hGroup' || h.k === 'hOpen' || h.k === 'hExplodeVar' || h.k === 'hHideOne') r = opExplode(S, h.ids[0]);
   else if (h.k === 'hExplodeCancel' || h.k === 'hExplodeNums' || h.k === 'hExplodeFor') { for (const id of h.ids) { r = opExplode(S, id); normalize(S); if (r && r.no) break; } }
   else if (h.k === 'hSumProduct') r = opSplitTwo(S, h.ids[0], h.split);
+  else if (h.balance) r = opBalance(S, h.balance.op, h.balance.value);
+  else if (h.k === 'hSwap') r = opSwap(S);
   else r = opPair(S, h.ids[0], h.ids[1]);
   if (!r || r.no) return null;
   normalize(S);

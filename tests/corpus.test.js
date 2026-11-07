@@ -3,7 +3,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { strip } = require('./load');
-const { G, values, same, fuzz, hasText } = require('./judge');
+const { G, values, same, equivalent, fuzz, hasText } = require('./judge');
 
 const CHAPTERS = {
   'machten (powers)': [
@@ -37,6 +37,11 @@ const CHAPTERS = {
     ['x^2+4x+4', '(x + 2)^2', 'factor'], ['x^2+2x-15', '(x − 3)(x + 5)', 'factor'], ['2x^2+10x+12', '2(x + 2)(x + 3)', 'factor'],
     ['2x^2+7x+3', '(2x + 1)(x + 3)', 'factor'],
   ],
+  'vergelijkingen: balansmethode (equations)': [
+    ['x+3=7', 'x = 4'], ['3x=12', 'x = 4'], ['3x+5=20', 'x = 5'], ['5x+3=2x+12', 'x = 3'], ['-2x+7=1', 'x = 3'],
+    ['2(x+3)=4x-2', 'x = 4'], ['x/3=4', 'x = 12'], ['(x+1)/2=3', 'x = 5'], ['4x-3=2x+6', 'x = [9/2'], ['7=2x+1', 'x = 3'],
+    ['3(x-1)-2(x+4)=0', 'x = 11'], ['2a-5=3a+1', 'a = −6'], ['6=-3x', 'x = −2'],
+  ],
 };
 
 for (const [chapter, list] of Object.entries(CHAPTERS)) {
@@ -52,7 +57,7 @@ for (const [chapter, list] of Object.entries(CHAPTERS)) {
         if (h.k === 'hDone' || G.autoSolveStep(T) == null) break;
       }
       assert.notEqual(G.autoSolve(S), null, `${src}: the hints do not solve it`);
-      assert.ok(same(v0, values(S)), `${src}: solving changed the value`);
+      assert.ok(S.op === '=' ? equivalent(v0, values(S)) : same(v0, values(S)), `${src}: solving changed the ${S.op === '=' ? 'solutions' : 'value'}`);
       assert.equal(strip(G.stateHTML(S)), want, `${src}`);
       for (let k = 0; k < 4; k++) fuzz(r.S, 30, src);   // random play keeps the value too
     }
@@ -60,9 +65,10 @@ for (const [chapter, list] of Object.entries(CHAPTERS)) {
 }
 
 test('typing: the parser refuses what the game cannot do, with a reason', () => {
-  for (const [src, err] of [['2x+3=7', 'pEquation'], ['3a + ', 'pMissing'], ['(x+2', 'pParen'], ['x^', 'pPower'], ['', 'pEmpty'], ['2x ? 3', 'pChar']])
+  for (const [src, err] of [['x=4=5', 'pTwoEq'], ['2x+y=5', 'pEqLetters'], ['x/3+2=5', 'pFracSum'], ['3=4', 'pEqNoLetter'], ['3a + ', 'pMissing'], ['(x+2', 'pParen'], ['x^', 'pPower'], ['', 'pEmpty'], ['2x ? 3', 'pChar']])
     { assert.equal(G.parseProblem(src).err, err, src); assert.ok(hasText(err), err); }
   assert.equal(G.guessGoal('x^2+5x+6'), 'factor');
+  assert.equal(G.guessGoal('3x+5=20'), 'solve');
   assert.equal(G.guessGoal('(x+3)(x-2)'), 'simplify');
 });
 
@@ -117,4 +123,18 @@ test('the hidden 1: −x explodes to −1·x, the 1 taps away again, and a shown
   const U = G.parseProblem('x + y').S;
   G.opExplode(U, U.parts[0].num[0].f[0].id); G.normalize(U);
   assert.equal(G.isClean(U), false); assert.equal(G.hint(U).k, 'hHideOne');
+});
+
+test('equations: a term only crosses the = by doing the same to both sides', () => {
+  const S = G.parseProblem('3x+5=20').S;
+  const five = S.parts[0].num[1].f[0], twenty = S.parts[1].num[0].f[0];
+  assert.equal(G.opPair(S, five.id, twenty.id).no, 'diffSides');                  // no "move it across"
+  assert.equal(G.termPair(S, S.parts[0].num[1].id, S.parts[1].num[0].id).no, 'diffSides');
+  assert.equal(G.opBalance(S, '-', G.T([G.N(5)])).ok, 'balance'); G.normalize(S);
+  assert.equal(strip(G.stateHTML(S)), '3x + 5 − 5 = 20 − 5');                      // written out, then combined by the player
+  assert.equal(G.opBalance(S, '·', G.T([G.V('x')])).no, 'balanceLetter');          // could be multiplying by 0
+  assert.equal(G.opBalance(S, ':', G.T([G.N(0)])).no, 'balanceDivZero');
+  const F = G.parseProblem('x/3+2=5'); assert.equal(F.err, 'pFracSum');
+  const H = G.parseProblem('x/3=4').S;
+  assert.equal(G.opBalance(H, '+', G.T([G.N(1)])).no, 'balanceFrac');             // fractions first
 });

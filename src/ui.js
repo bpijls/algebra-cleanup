@@ -19,11 +19,11 @@ function say(key, p, type = 'info', raw) {
   note.innerHTML = raw ? raw[lang] : t(key, p);
 }
 function sayIntro() {
-  if (mode === 'custom') return say(S.unsure ? 'ownUnsure' : S.goal === 'factor' ? 'ti_customF' : 'ti_custom', {}, S.unsure ? 'warn' : 'info');
+  if (mode === 'custom') return say(S.unsure ? 'ownUnsure' : S.goal === 'factor' ? 'ti_customF' : S.goal === 'solve' ? 'ti_customS' : 'ti_custom', {}, S.unsure ? 'warn' : 'info');
   if (mode === 'practice') return say('ti_' + S.topic, {}, 'info');
   say(null, null, 'info', { en: LEVELS[lvl].en, nl: LEVELS[lvl].nl });
 }
-const TOPICS = ['powers', 'like', 'frac', 'open', 'double', 'square', 'factor', 'trinomial', 'mixed'];
+const TOPICS = ['powers', 'like', 'frac', 'open', 'double', 'square', 'factor', 'trinomial', 'equations', 'mixed'];
 let mode = 'levels', initial = null, sheetFn = null;
 let prac = store.get('practice', { topics: ['powers', 'like', 'frac'], d: 1 });
 let session = { solved: 0, streak: 0 };
@@ -67,7 +67,7 @@ function showPractice() {
 }
 
 /* ---- your own problem: typed from the book ---- */
-const OWN_EXAMPLES = ['(x+3)(x-2)', '(a+b)^2', '-2(x+4)-3(x-1)', '12a^5/4a^2', 'x^2+5x+6', '4a^2b+6ab^2'];
+const OWN_EXAMPLES = ['(x+3)(x-2)', '(a+b)^2', '-2(x+4)-3(x-1)', '12a^5/4a^2', 'x^2+5x+6', '4a^2b+6ab^2', '5x+3=2x+12', '2(x+3)=4x-2'];
 let own = store.get('own', { src: '', goal: null });
 function showOwn() {
   sheetFn = showOwn;
@@ -79,6 +79,7 @@ function showOwn() {
       <div class="pchips" style="margin-top:10px">
         <button type="button" class="pchip seg" data-g="simplify">${t('ownSimplify')}</button>
         <button type="button" class="pchip seg" data-g="factor">${t('ownFactor')}</button>
+        <button type="button" class="pchip seg" data-g="solve" hidden>${t('ownSolve')}</button>
       </div>
       <div class="row" style="margin-top:16px"><button class="tool main" type="submit">${t('ownGo')} →</button></div>
     </form>
@@ -88,8 +89,12 @@ function showOwn() {
   let goal = own.goal, touched = !!own.goal;
   input.value = own.src;
   const update = () => {
-    if (!touched) goal = guessGoal(input.value);
-    host.querySelectorAll('[data-g]').forEach(b => { const on = b.dataset.g === goal; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
+    const eq = input.value.includes('=');   // an equation is always solved; the other two goals don't apply
+    if (eq) goal = 'solve'; else if (!touched || goal === 'solve') goal = guessGoal(input.value);
+    host.querySelectorAll('[data-g]').forEach(b => {
+      const on = b.dataset.g === goal; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on));
+      b.hidden = eq ? b.dataset.g !== 'solve' : b.dataset.g === 'solve';
+    });
     const r = input.value.trim() ? parseProblem(input.value, goal) : null;
     prev.innerHTML = r && !r.err ? stateHTML(r.S) : '';
     errEl.hidden = true;
@@ -111,6 +116,74 @@ function showOwn() {
   });
   update();
   setTimeout(() => input.focus(), 50);
+}
+
+/* ---- equations: do the same to both sides ---- */
+// a term as typed text without its sign: 2x, 3a^2, 5
+function termText(t) {
+  const n = t.f.filter(f => f.k === 'n').reduce((a, f) => a * f.v, 1), vs = t.f.filter(f => f.k === 'v');
+  return (n !== 1 || !vs.length ? String(n) : '') + vs.map(f => f.b + (f.e > 1 ? '^' + f.e : '')).join('');
+}
+// what tapping = with something selected suggests: take a term away, divide by its number, or multiply by what is below the bar
+function balancePrefill() {
+  const L = sel && locate(S, sel.id);
+  if (!L || L.depth) return { op: '-', text: '' };
+  const side = S.parts[L.p][L.side];
+  if (L.side === 'den' && side.length === 1 && side[0].f.every(f => f.k === 'n')) return { op: '·', text: (side[0].neg ? '-' : '') + termText(side[0]) };
+  if (L.kind === 'f' && L.f.k === 'n' && side.length === 1 && varPart(L.term).length) return { op: ':', text: (L.term.neg ? '-' : '') + L.f.v };
+  if (L.kind === 'f' && side.length === 1 && L.term.neg && L.term.f.length === 1) return { op: ':', text: '-1' };   // −x: divide by −1
+  if (L.side === 'num') return { op: L.term.neg ? '+' : '-', text: termText(L.term) };
+  return { op: '-', text: '' };
+}
+// the typed value as one monomial term, or null
+function balanceValue(text) {
+  const r = parseProblem(text, 'simplify');
+  if (r.err || r.S.parts.length !== 1 || !isOne(r.S.parts[0].den) || r.S.parts[0].num.length !== 1) return null;
+  const v = r.S.parts[0].num[0];
+  return v.f.some(f => f.k === 'p' || f.k === 'g') ? null : v;
+}
+function showBalance() {
+  sheetFn = null;
+  let { op, text } = balancePrefill();
+  const host = openSheet(`<h2 style="font-size:1.6rem">${t('balTitle')}</h2><p>${t('balIntro')}</p>
+    <div class="pchips balops">${['+', '-', '·', ':'].map(o => `<button type="button" class="pchip seg" data-bop="${o}" aria-label="${o}">${BOPS[o]}</button>`).join('')}</div>
+    <form id="balForm" autocomplete="off" style="margin-top:12px">
+      <label class="plabel" for="balIn">${t('balValue')}</label>
+      <input id="balIn" class="ownin" type="text" inputmode="text" autocapitalize="off" spellcheck="false" value="${text}">
+      <div class="ownprev expr-n" id="balPrev" aria-live="polite"></div>
+      <p class="pwarn" id="balErr" hidden></p>
+      <div class="row" style="margin-top:14px">
+        <button class="tool main" type="submit">${t('balDo')}</button>
+        <button class="tool" type="button" id="balSwap">⇄ ${t('balSwap')}</button>
+      </div>
+    </form>`);
+  const input = host.querySelector('#balIn'), prev = host.querySelector('#balPrev'), errEl = host.querySelector('#balErr');
+  const tryIt = () => {   // dry run on a copy: the preview is exactly what will happen
+    const v = balanceValue(input.value);
+    if (!input.value.trim()) return { no: 'balEmpty' };
+    if (!v) return { no: 'balBad' };
+    const copy = JSON.parse(JSON.stringify(S));
+    const r = opBalance(copy, op, v);
+    if (r && !r.no) normalize(copy);
+    return r && !r.no ? { ok: true, html: stateHTML(copy) } : r || { no: 'balBad' };
+  };
+  const update = () => {
+    host.querySelectorAll('[data-bop]').forEach(b => { const on = b.dataset.bop === op; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
+    const r = tryIt();
+    prev.innerHTML = r.ok ? r.html : '';
+    errEl.hidden = !!r.ok || !input.value.trim(); if (!r.ok) errEl.innerHTML = t(r.no, r.p || {});
+  };
+  host.querySelectorAll('[data-bop]').forEach(b => b.addEventListener('click', () => { op = b.dataset.bop; update(); }));
+  input.addEventListener('input', update);
+  host.querySelector('#balForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const v = balanceValue(input.value);
+    if (!v) { errEl.innerHTML = t(input.value.trim() ? 'balBad' : 'balEmpty'); errEl.hidden = false; input.focus(); return; }
+    closeSheet(); run(s => opBalance(s, op, v));
+  });
+  host.querySelector('#balSwap').addEventListener('click', () => { closeSheet(); run(s => opSwap(s)); });
+  update();
+  setTimeout(() => { input.focus(); input.select(); }, 50);
 }
 
 /* ---- split a term in two: 5x = 2x + 3x ---- */
@@ -229,13 +302,16 @@ function render() {
   const stacked = S.parts.length > 1 && S.op === '/';
   if (stacked) wrap.classList.add('stack');
   S.parts.forEach((P, pi) => {
+    // an equation's = stays with the right-hand side, so a line break can only come before the =
+    const host = S.op === '=' && pi > 0 ? wrap.appendChild(Object.assign(document.createElement('div'), { className: 'eqright' })) : wrap;
     if (pi > 0) {
       const op = document.createElement('button'); op.type = 'button'; op.dataset.op = '1';
       op.className = stacked ? 'opchip bigbar' : 'opchip';
       op.textContent = stacked ? '' : S.op;
-      op.setAttribute('aria-label', stacked ? 'fraction bar' : S.op === ':' ? 'divide' : 'times');
+      op.setAttribute('aria-label', stacked ? 'fraction bar' : S.op === '=' ? 'equals: do the same to both sides' : S.op === ':' ? 'divide' : 'times');
+      if (S.op === '=') op.classList.add('eq');
       if (hintIds.has('op')) op.classList.add('hint');
-      wrap.append(op);
+      host.append(op);
     }
     const fr = document.createElement('div'); fr.className = 'frac';
     fr.append(sideEl(P.num, partners));
@@ -248,9 +324,10 @@ function render() {
       fr.append(bar);
       fr.append(sideEl(P.den, partners));
     }
-    wrap.append(fr);
+    host.append(fr);
   });
   board.replaceChildren(wrap);
+  fitBoard(wrap);
   $('written').innerHTML = stateHTML(S);
 
   // chrome
@@ -272,7 +349,7 @@ function render() {
     $('moves').innerHTML = t('solved', { n: session.solved }) + t('streak', { n: session.streak });
   } else {
     $('lvlTitle').textContent = t('level', { n: lvl + 1 });
-    $('lvlBadge').hidden = !LEVELS[lvl].book && LEVELS[lvl].goal !== 'factor'; $('lvlBadge').textContent = LEVELS[lvl].book ? t('book') : t('factorBadge');
+    $('lvlBadge').hidden = !LEVELS[lvl].book && !LEVELS[lvl].goal; $('lvlBadge').textContent = LEVELS[lvl].book ? t('book') : t(LEVELS[lvl].goal === 'solve' ? 'solveBadge' : 'factorBadge');
     $('moves').innerHTML = t('moves', { n: moves }) + (best[lvl] != null ? t('best', { n: best[lvl] }) : '');
   }
   $('writtenLabel').textContent = t('written');
@@ -295,6 +372,22 @@ function render() {
   if (twoId) $('btnSplitTwo').querySelector('span').innerHTML = mx(sumHTML([locate(S, twoId).term]) + ' = … + …');
   document.documentElement.lang = lang;
 }
+
+// a line that is wider than the board (a long equation side) is shrunk to fit instead of overflowing
+function fitBoard(wrap) {
+  wrap.style.zoom = ''; wrap.classList.remove('oneline');
+  // an equation reads best on one line, like a balance: shrink it a little rather than break it
+  if (S.op === '=') {
+    wrap.classList.add('oneline');                    // nothing wraps, so this is its natural width
+    const k = wrap.parentElement.clientWidth * 0.94 / wrap.scrollWidth;
+    if (k >= 1) return;
+    if (k >= 0.72) { wrap.style.zoom = String(k); return; }
+    wrap.classList.remove('oneline');                 // too long: break before the =, then fit each line
+  }
+  const avail = wrap.clientWidth, need = Math.max(0, ...[...wrap.children].map(c => c.scrollWidth));
+  if (avail && need > avail) wrap.style.zoom = String(Math.max(0.55, avail / need));
+}
+window.addEventListener('resize', () => { const w = board.querySelector('.expr'); if (w) fitBoard(w); });
 
 /* ---- motion: every tile travels from where it was; new pieces fly in from their sources along arcs ---- */
 const reduceMotion = () => window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -429,6 +522,7 @@ function select(s) {
   render();
   const has = partnersOf(S, sel).size > 0;
   const canExplode = s.t === 'f' && !$('btnExplode').hidden;
+  if (S.op === '=' && !has) return say('pickedEq', {}, 'info');
   say(s.t === 'f' ? (has ? 'pickedP' : canExplode ? 'picked' : 'pickedAtom') : (has ? 'pickedTermP' : 'pickedTerm'), {}, 'info');
 }
 
@@ -485,7 +579,7 @@ board.addEventListener('pointercancel', () => { clearSweep(); drag = null; });
 board.addEventListener('click', e => {
   if (suppressClick) { suppressClick = false; return; }
   if (busy || won) return;
-  if (e.target.closest('.opchip')) return run(s => opOp(s));
+  if (e.target.closest('.opchip')) return S.op === '=' ? (!busy && showBalance()) : run(s => opOp(s));
   if (e.target.closest('.fbar')) return run(s => opBar(s));
   const hit = e.target.closest('.tile, .term');
   if (hit && hit.classList.contains('tile')) return onFactor(+hit.dataset.id);
@@ -546,7 +640,7 @@ function win(refresh) {
     const show = () => {
       const host = openSheet(`
         <h2>${t('win')}</h2>
-        <p style="margin-bottom:0">${t(S.goal === 'factor' ? 'winSubF' : 'winSub')}</p>
+        <p style="margin-bottom:0">${t(S.goal === 'factor' ? 'winSubF' : S.goal === 'solve' ? 'winSubS' : 'winSub')}</p>
         <div class="result expr-n">${stateHTML(S)}</div>
         <p>${t('winMoves', { n: moves })} ${t('winPractice', { n: session.solved })}</p>
         <div class="row">
@@ -568,7 +662,7 @@ function win(refresh) {
   const show = () => {
     const host = openSheet(`
       <h2>${t('win')}</h2>
-      <p style="margin-bottom:0">${t(S.goal === 'factor' ? 'winSubF' : 'winSub')}</p>
+      <p style="margin-bottom:0">${t(S.goal === 'factor' ? 'winSubF' : S.goal === 'solve' ? 'winSubS' : 'winSub')}</p>
       <div class="result expr-n">${stateHTML(S)}</div>
       <p>${t('winMoves', { n: moves })}${t('winBest', { n: best[lvl] })}${last ? ' ' + t('allDone') : ''}</p>
       <div class="row">
@@ -587,7 +681,7 @@ function win(refresh) {
 function showLevels() {
   sheetFn = showLevels;
   const btns = LEVELS.map((L, i) => `<button type="button" class="lvlbtn${best[i] != null ? ' done' : ''}${i === lvl ? ' cur' : ''}${L.book ? ' book' : ''}" data-l="${i}">
-      ${best[i] != null ? '✓ ' : ''}${i + 1}<small>${L.book ? t('book') : L.goal === 'factor' ? t('factorBadge') : best[i] != null ? t('best', { n: best[i] }).replace(' · ', '') : '&nbsp;'}</small></button>`).join('');
+      ${best[i] != null ? '✓ ' : ''}${i + 1}<small>${L.book ? t('book') : L.goal === 'factor' ? t('factorBadge') : L.goal === 'solve' ? t('solveBadge') : best[i] != null ? t('best', { n: best[i] }).replace(' · ', '') : '&nbsp;'}</small></button>`).join('');
   const host = openSheet(`<h2 style="font-size:1.6rem">${t('chooseLevel')}</h2><div class="lvlgrid">${btns}</div>`);
   host.querySelectorAll('.lvlbtn').forEach(b => b.addEventListener('click', () => { closeSheet(); loadLevel(+b.dataset.l); }));
 }

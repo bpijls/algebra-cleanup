@@ -194,6 +194,11 @@ button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 .ownin:focus { outline: none; border-color: var(--accent); }
 .ownprev { min-height: 2.2rem; margin-top: 10px; font-size: 1.5rem; color: var(--ink); overflow-x: auto; }
 .pchip.ex { font-weight: 400; font-family: var(--f-body); }
+.opchip.eq { font-size: 1.6rem; min-width: 52px; }
+.eqright { display: flex; align-items: center; gap: 12px; flex-wrap: nowrap; }
+.expr.oneline { flex-wrap: nowrap; width: max-content; max-width: none; margin-inline: auto; }
+.expr.oneline .side, .expr.oneline .term, .expr.oneline .eqright { flex-wrap: nowrap; }
+.balops .pchip { min-width: 56px; font-size: 1.4rem; font-family: var(--f-math); }
 .splitrow { display: flex; align-items: center; gap: 12px; justify-content: space-between; }
 .splitrow .tool { min-width: 52px; font-size: 1.5rem; justify-content: center; }
 .splitprev { font-size: 1.5rem; color: var(--ink); text-align: center; flex: 1; min-width: 0; }

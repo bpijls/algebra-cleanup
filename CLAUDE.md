@@ -22,6 +22,7 @@ Concretely:
 - **A swipe is accepted only as ONE valid move**: grouping matching pieces inside one term, or adding like terms by sweeping one matching piece per term. Anything else is refused as a whole with an explanation. (An earlier box-select did many operations at once and felt like magic.)
 - **Dividing fractions**: the sign cycles fraction bar → `:` → `·` → fraction bar (each tap). `:`→`·` flips the second fraction. With `·`, the player multiplies **by hand**: tap a piece in one fraction, then a piece in the same row (top/bottom) of the other, and it moves across. Cross-cancelling between the fractions follows the equal-pieces rule. A fraction that becomes 1/1 stays on the board; the player taps its top 1 and bottom 1 to cancel it, and only then does it disappear (`pairCheck` type `ones`, message `cancelOnes`, hint `hCancelOnes`; only while the sign is `·`; a −1 passes its minus to the other fraction). There is no automatic join: the only join is the player tapping `·` once one fraction holds only a top and the other only a bottom, `(A/1)·(1/B)` or `(1/B)·(A/1)`, which becomes `A/B` (`joinable`, message `joined`, hint `hJoin`). Without that, the tap would flip `(1/B)·(A/1)` into the dead end `(1/B)/(1/A)`.
 - **Move buttons show their result, not a verb.** "Explode" (into a product, `·`) and "split" (into a sum, `+`) both mean "break apart" in everyday language, so players couldn't tell them apart. The tool bar now labels each move with what it will do, computed by a dry run on a copy of the board (`previewOf` in ui.js): `12 = 2 · 2 · 3`, `x¹² = x · x · … · x`, `5(a + 2) = 5a + 5·2`, `a · a · a = a³`, `5x = x + x + x + x + x`, and `5x = … + …` for the two-term sheet. A move that would be refused gets no button (the double tap still gives the explanation). Player-facing text uses "explode" for the product move and "write as a sum" for the plus move; never "split".
+- **Equations are solved with the balance method (weegschaalmethode).** A term never crosses the `=` by itself: tapping pieces or terms on opposite sides is refused (`diffSides`), so "move it across and flip the sign" is impossible. Tapping `=` opens "do the same to both sides" (`showBalance`): `+ − · :` with a typed number or term, prefilled from the selection (a term → take it away, the number in `3x` → divide by 3, the number below a bar → multiply by it, `−x` → divide by −1), with a live preview from a dry run, plus "swap left and right" (`opSwap`). `opBalance` only *writes* the operation on both sides (`3x + 5 − 5 = 20 − 5`, `3x/3 = 15/3`); the player then tidies each side with the usual moves. Refused: `·`/`:` by a letter (`balanceLetter`, it could be 0), by 0, by 1, and `+`/`−` while a side is a fraction (`balanceFrac`: multiply first).
 - **Refusals are teaching moments.** An illegal move never silently fails: the tiles shake and the note explains why (e.g. cancelling inside a sum → `cancelSum`).
 
 ## Animation
@@ -36,7 +37,7 @@ Plain browser scripts sharing globals, no framework, no build step needed to run
 |---|---|
 | `src/core.js` | The algebra model and every move. No DOM. |
 | `src/practice.js` | Random problem generator (`GEN`, `makeProblem`), `autoSolveStep` and `autoSolve`. |
-| `src/parse.js` | `parseProblem(text, goal)` turns typed textbook notation (`(x+3)(x-2)`, `12a^5/4a^2`, `12a⁵ : 4a²`, `(8x/3y):(3x/y)`, `−2(x+4)`) into a state, or `{ err, at }` with an i18n key (`pEquation`, `pParen`, …). `guessGoal` picks factor for a plain clean sum. |
+| `src/parse.js` | `parseProblem(text, goal)` turns typed textbook notation (`(x+3)(x-2)`, `12a^5/4a^2`, `12a⁵ : 4a²`, `(8x/3y):(3x/y)`, `−2(x+4)`, equations like `5x+3=2x+12`) into a state, or `{ err, at }` with an i18n key (`pParen`, `pFracSum`, …). `guessGoal` picks factor for a plain clean sum and solve for an equation. A sum next to `/` must be bracketed (`x/3 + 2` would read as `x/(3+2)`: `pFracSum`). An equation needs exactly one letter (`pEqLetters`, `pEqNoLetter`). |
 | `src/i18n.js` | `I18N.en` / `I18N.nl`: all player-facing text. |
 | `src/ui.js` | Rendering, tap/swipe input, animation, level and practice screens. |
 | `src/styles.css` | All styling. Design tokens (light/dark) at the top. |
@@ -49,12 +50,12 @@ Plain browser scripts sharing globals, no framework, no build step needed to run
 | `docker-compose.yml` | One `web` service (nginx) with Caddy labels for `APP_DOMAIN`. |
 | `nginx/default.conf` | Static serving, no-cache, fallback to `index.html`. |
 | `tests/` | `node:test` suite; `tests/load.js` loads core, practice, parse and i18n into a VM sandbox. |
-| `tests/judge.js` | The outside judge: evaluates a state numerically at random letter values; `fuzz` plays random moves (every explode, pair, split, sign tap) and fails if any move changes the value, a refused move mutates the state, or a message has no text. |
-| `tests/corpus.test.js` | Textbook exercises per chapter (machten … ontbinden), typed as a student would; each must parse, be solved by the hints to the textbook answer, and keep its value. Add new exercise types here first. |
+| `tests/judge.js` | The outside judge: evaluates a state numerically at random letter values; `fuzz` plays random moves (every explode, pair, split, sign tap, and for equations every balance move and swap, plus ones that must be refused) and fails if any move changes the value (for an equation `L = R`: if `L − R` changes by anything but one nonzero constant, so the solutions change; `equivalent`), a refused move mutates the state, or a message has no text. |
+| `tests/corpus.test.js` | Textbook exercises per chapter (machten … ontbinden, vergelijkingen), typed as a student would; each must parse, be solved by the hints to the textbook answer, and keep its value. Add new exercise types here first. |
 
 ### Data model (`core.js`)
 
-- State `S = { parts: [Fraction, ...], op: null | ':' | '·' | '/', goal: 'simplify' | 'factor', allowB? }`. Two parts only while dividing/multiplying fractions.
+- State `S = { parts: [Fraction, ...], op: null | ':' | '·' | '/' | '=', goal: 'simplify' | 'factor' | 'solve', allowB? }`. Two parts only while dividing/multiplying fractions, or for an equation (`op: '='`, left and right). `isClean` for `goal: 'solve'` is `isSolved`: one side is the letter alone, the other a clean value without it (`x = 9/2` counts). `normalize` moves a minus from below a bar to the top (`6/−2` → `−6/2`) and drops `+ 0` terms.
 - `Fraction = { num: Term[], den: Term[] }` (each side is a sum of terms).
 - `Term = { k:'t', f: Factor[], neg }`.
 - Factors: `N(v)` number, `V(b, e)` letter with exponent, `G(f, e)` bracket around a *product* with exponent, `Pr(terms, e)` bracket around a *sum* with exponent. Every node has a unique `id`; tiles in the DOM carry it as `data-id`. `sumKey(terms)` compares sums regardless of term and factor order.
@@ -72,12 +73,14 @@ Every move function either:
 
 Factor-goal hints (`factorHint`, `sumProductHint`) work on a *focus*: the terms without a bracket once some term has one (`x(x+2) + 3x + 6` → work on `3x + 6`), or the first pair of a four-term sum. In order: a bracket shared by two terms; a piece exactly in every focus term; explode a number or power that hides a shared factor (`hExplodeFor`, `hExplodeVar`); merges; like terms; then the sum-product split (`hSumProduct`, carries `split`). In simplify levels the merge hint never folds `(a+b)(a+b)` back into a square.
 
+Equation hints (`eqHint`): first tidy each side with the ordinary hints (`hint(sideView(P))`), then: a fraction → multiply both sides by its bottom (`hBalanceMul`); letters only on the right → swap (`hSwap`); a letter term on the right or a number on the left → take it away from both sides (`hBalanceTerm`); `a·x = c` → divide by `a` (`hBalanceDiv`). Balance hints carry `balance: { op, value }`, which `autoSolveStep` passes to `opBalance`.
+
 Message keys in `ok`/`no` map to `I18N` entries. **Every new key needs both an English and a Dutch string**, and a key may appear only once per language (`tests/i18n.test.js`; button labels use `…Btn` keys so they can't collide with move messages). Params named `extra` are flattened into the template params.
 
 ## Content
 
-- 26 levels in `LEVELS` (core.js): powers, like terms, fractions, two-letter terms, four textbook problems (marked `book: true`), opening brackets, a minus before brackets, double brackets, `(a+b)²`, then seven "outside brackets" levels (`goal: 'factor'`) ending with a shared bracket and two sum-product trinomials.
-- Practice mode: nine topics (powers, like terms, fractions, opening brackets, double brackets, special products, outside brackets, sum-product factorising, textbook mix) × three difficulties.
+- 33 levels in `LEVELS` (core.js): powers, like terms, fractions, two-letter terms, four textbook problems (marked `book: true`), opening brackets, a minus before brackets, double brackets, `(a+b)²`, then seven "outside brackets" levels (`goal: 'factor'`) ending with a shared bracket and two sum-product trinomials. Then seven equation levels (`goal: 'solve'`): `x + 3 = 7`, `3x = 12`, `3x + 5 = 20`, `5x + 3 = 2x + 12`, `x/3 = 4`, `2(x + 3) = 4x − 2`, `4x − 3 = 2x + 6`.
+- Practice mode: ten topics (powers, like terms, fractions, opening brackets, double brackets, special products, outside brackets, sum-product factorising, equations, textbook mix) × three difficulties.
 - Your own problem: Practice → "Type your own problem" (`showOwn` in ui.js, `mode = 'custom'`). Live preview while typing, goal chips (simplify / factorise, guessed until the player picks), example chips. If `autoSolve` finds no route the problem still plays, with `ownUnsure` saying the hint won't help.
 
 ## Commands
@@ -100,6 +103,8 @@ docker compose logs -f web
 docker compose down
 ```
 
+**Board width.** `fitBoard` (ui.js) runs after every render. An equation is measured with nothing wrapping (`.expr.oneline`); if it fits at 72% zoom or more it stays on one line, like a balance, otherwise the `=` stays with the right-hand side (`.eqright`) so a line break only ever comes before the `=`. Any line still wider than the board is zoomed down (not below 55%).
+
 **Gotcha: single-file mounts.** `index.html`, `sw.js`, `manifest.webmanifest` and `nginx/default.conf` are bind-mounted as single files, which pin the file's inode. Anything that replaces the file instead of rewriting it (`sed -i`, many editors' atomic save, `git checkout`) leaves the container serving the old copy. After changing one of them, run `docker compose up -d --force-recreate` and check with `docker compose exec web grep … /usr/share/nginx/html/index.html`. `src/` and `icons/` are directory mounts and don't have this problem.
 
 ### Progressive web app
@@ -118,6 +123,6 @@ Config is in `.env` (copy `.env.example`): `APP_DOMAIN`, `CADDY_NETWORK`, `HOST_
 - You can't combine a tile inside brackets with one outside; the player must open the brackets first (`bracketWall`).
 - Swiping blocks page scrolling on the board (`touch-action: none`), which could matter for very long expressions.
 - The swipe hit-testing and animations were never tested on a real device during the prototype; tune them there.
-- Not yet possible (the parser or the hints say so): equations (`pEquation`); `x² − 9` as `(x+3)(x−3)` (there is no middle term to split; it would need a "write 0 as 3x − 3x" move); fractions that need factoring before cancelling, like `(x²+5x+6)/(x+2)` (factoring is only hinted in factor goals); `ax² + bx + c` with a common factor *and* a ≠ 1 at once is untested.
+- Not yet possible (the parser or the hints say so): equations with a fraction added to other terms (`x/3 + 2 = 5`), or with two letters or a square (`x² = 9` parses but the hint can't help); `x² − 9` as `(x+3)(x−3)` (there is no middle term to split; it would need a "write 0 as 3x − 3x" move); fractions that need factoring before cancelling, like `(x²+5x+6)/(x+2)` (factoring is only hinted in factor goals); `ax² + bx + c` with a common factor *and* a ≠ 1 at once is untested.
 - `(−2a)³` is shown as `−(2a)³` straight away, because a `G` can't hold a sign.
 - Ideas raised: making `autoSolve` prefer the elegant regroup route (explode, regroup to the matching power, cancel) instead of exploding both sides; factoring a number fully in one go (`4x + 12` now goes `2(2(x+3))` → `4(x+3)`).

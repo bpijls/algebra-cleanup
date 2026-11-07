@@ -52,6 +52,7 @@ function parseProblem(src, goal) {
       break;
     }
     if (!fs.length) fail('pMissing');
+    if (fs.length > 1 && fs.some(f => f.k === 'n' && f.v === 0)) { i--; fail('pZeroNum'); }   // a lone 0 is fine: … = 0
     const t = T([], neg);
     for (const f of fs) { if (f.flip) t.neg = !t.neg; else t.f.push(f); }
     return t;
@@ -59,7 +60,7 @@ function parseProblem(src, goal) {
   const power = () => { if (peek() && peek().t === 'pow') { const v = toks[i++].v; if (v < 1) fail('pZero'); if (v > 20) fail('pBig'); return v; } return 1; };
   function factor() {
     const p = toks[i++];
-    if (p.t === 'num') { const e = power(); if (p.v === 0) fail('pZeroNum'); return [e > 1 ? G([N(p.v)], e) : N(p.v)]; }
+    if (p.t === 'num') { const e = power(); return [e > 1 && p.v ? G([N(p.v)], e) : N(p.v)]; }
     if (p.t === 'var') return [V(p.v, power())];
     if (p.t !== '(') { i--; fail('pMissing'); }
     const open = i - 1;
@@ -76,9 +77,15 @@ function parseProblem(src, goal) {
     return [Pr(inner, e)];                                            // (−2a)³: normalize turns it into a sign and a power
   }
   // fraction := sum [/ sum]; a whole parenthesised side may hold a sum: (x+2)/(x+3)
+  // x/3 + 2 would read as x/(3 + 2): a sum on either side of / must be in brackets
   function fraction() {
     const num = sum();
-    if (peek() && peek().t === '/') { i++; const den = sum(); return F(num, den); }
+    if (peek() && peek().t === '/') {
+      if (num.length > 1) fail('pFracSum');
+      i++; const den = sum();
+      if (den.length > 1) { i--; fail('pFracSum'); }
+      return F(num, den);
+    }
     return F(num);
   }
   // a fraction in brackets, for (8x/3y) : (3x/y)
@@ -101,13 +108,24 @@ function parseProblem(src, goal) {
   try {
     let S;
     const A = bracketFraction() || fraction();
+    if (peek() && peek().t === '=') {   // an equation: solve it with the balance method
+      i++;
+      if (!peek()) fail('pMissing');
+      const B = bracketFraction() || fraction();
+      if (peek()) fail(peek().t === '=' ? 'pTwoEq' : peek().t === ')' ? 'pParen' : 'pMissing');
+      S = { parts: [A, B], op: '=', goal: 'solve' };
+      normalize(S);
+      const bs = letters(S);
+      if (bs.length !== 1) return { err: bs.length ? 'pEqLetters' : 'pEqNoLetter', at: 0 };
+      return { S };
+    }
     if (peek() && (peek().t === ':' || peek().t === '·')) {
       const op = toks[i++].t;
       const B = bracketFraction() || fraction();
       if (op === '·' && (isOne(A.den) || isOne(B.den))) fail('pTimes');
       S = { parts: [A, B], op };
     } else S = { parts: [A], op: null };
-    if (peek()) fail(peek().t === ')' ? 'pParen' : peek().t === '=' ? 'pEquation' : 'pMissing');
+    if (peek()) fail(peek().t === ')' ? 'pParen' : 'pMissing');
     S.goal = goal || 'simplify';
     normalize(S);
     return { S };
@@ -122,6 +140,7 @@ function guessGoal(src) {
   const r = parseProblem(src, 'simplify');
   if (r.err) return 'simplify';
   const S = r.S;
+  if (S.op === '=') return 'solve';
   if (S.parts.length === 1 && isOne(S.parts[0].den) && S.parts[0].num.length >= 2 && isClean(S)) return 'factor';
   return 'simplify';
 }
