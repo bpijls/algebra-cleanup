@@ -31,9 +31,10 @@
   <header class="hud hudtop" id="hudTop">
     <div class="hudinfo">
       <div class="lvlrow"><h1 id="lvlTitle"></h1><span class="badge" id="lvlBadge" hidden></span><span class="moves" id="moves"></span></div>
-      <div class="written"><span class="label" id="writtenLabel"></span><span class="expr-n" id="written"></span></div>
     </div>
+    <button class="donebtn" id="btnDone" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5 10 17 19 7"/></svg><span></span></button>
     <button class="menubtn" id="btnMenu" type="button" aria-label="Menu" aria-expanded="false" aria-controls="menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    <div class="written"><span class="label" id="writtenLabel"></span><span class="expr-n" id="written"></span></div>
   </header>
   <div class="hud hudbottom" id="hudBottom">
     <div class="note" id="note" role="status"></div>
@@ -43,6 +44,8 @@
       <button class="tool main preview" id="btnExplode" type="button" hidden><span></span></button>
       <button class="tool preview" id="btnGather" type="button" hidden><span></span></button>
       <button class="tool preview" id="btnSplitTwo" type="button" hidden><span></span></button>
+      <button class="tool main preview" id="btnZero" type="button" hidden><span></span></button>
+      <button class="tool main preview" id="btnRoot" type="button" hidden><span></span></button>
       <button class="tool" id="btnSwap" type="button" hidden>⇄ <span></span></button>
       <button class="tool" id="btnBalType" type="button" hidden><span></span></button>
       <button class="tool" id="btnSkip" type="button" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4l10 8-10 8z"/><path d="M19 5v14"/></svg><span></span></button>

@@ -1,8 +1,8 @@
 # Algebra Cleanup
 
-A playful way for secondary school students to learn simplifying algebra. Every expression is made of tiles. Tap a tile twice to explode it into its parts (a⁵ becomes a · a · a · a · a, 12 becomes 2 · 2 · 3), then regroup, cancel and put things outside brackets until the expression is clean. The rules for powers aren't told, they're discovered.
+A playful way for secondary school students to learn simplifying algebra. Every expression is made of tiles. Tap a tile twice to explode it into its parts (a⁵ becomes a · a · a · a · a, 12 becomes 2 · 2 · 3), then regroup, cancel and put things outside brackets until the expression is clean, then press Done? to check. The game tells you what is left if it isn’t. The rules for powers aren't told, they're discovered.
 
-It covers the klas 2–3 algebra chapters: powers, like terms, fractions, opening brackets (also with a minus in front), double brackets, special products like (a + b)², putting outside brackets, factorising x² + 5x + 6 with the sum-product method, and solving equations with the balance method: tap =, then drag a piece across it, and it is undone on both sides. Students can also type a problem from their own book or homework (Practice → Type your own problem) and play it.
+It covers the klas 2–3 algebra chapters: powers, like terms, fractions, opening brackets (also with a minus in front), double brackets, special products like (a + b)², putting outside brackets, factorising x² + 5x + 6 with the sum-product method, and solving equations with the balance method: tap =, then drag a piece across it, and it is undone on both sides. Quadratic equations come last: take the root of both sides, split a product that is 0, complete the square, and (with ×4a) arrive at the abc-formula without ever being given it. Students can also type a problem from their own book or homework (Practice → Type your own problem) and play it.
 
 English and Dutch. Works on phones and desktop.
 

@@ -177,6 +177,34 @@ const GEN = {
     return parseProblem(src).S;
   },
 
+  // kwadratische vergelijkingen. Easy: x² = c, (x + p)² = c, a product = 0. Medium: sum-product, or
+  // completing the square with an even b. Hard: odd b or a ≠ 1, through multiplying by 4a. Real solutions only.
+  quadratic(d) {
+    const v = pick(['x', 'x', 'a']);
+    const nz = (lo, hi) => { let n; do n = R(lo, hi); while (!n); return n; };
+    const sg = n => (n < 0 ? '-' : '+') + Math.abs(n);
+    const poly = (a, b, c) => `${a === 1 ? '' : a}${v}^2${b ? sg(b) + (Math.abs(b) === 1 ? '' : '').replace(/^([+-])1$/, '$1') + v : ''}${c ? sg(c) : ''}=0`.replace(/([+-])1([a-z])/, '$1$2');
+    let src;
+    if (d === 1) src = pick([
+      () => `${v}^2=${pick([4, 9, 16, 25, 36, 49, 64, 81, 100, 8, 12, 18, 20, 27, 7])}`,
+      () => `(${v}${sg(nz(-6, 6))})^2=${pick([4, 9, 16, 25, 2, 3, 5, 7, 8, 12])}`,
+      () => `(${v}${sg(nz(-7, 7))})(${v}${sg(nz(-7, 7))})=0`,
+      () => { const k = R(2, 5); return `${k}${v}^2=${k * pick([4, 9, 16, 25])}`; },
+    ])();
+    else if (d === 2) {
+      if (coin()) { const p = nz(-8, 8), q = nz(-8, 8); src = poly(1, p + q, p * q); }   // (x + p)(x + q) written out
+      else { let p, c; do { p = nz(-5, 5); c = nz(-15, 15); } while (p * p - c <= 0 || Number.isInteger(Math.sqrt(p * p - c))); src = poly(1, 2 * p, c); }
+    } else {
+      let a, b, c;
+      do { a = pick([1, 1, 2, 2, 3]); b = nz(-7, 7); c = nz(-9, 9); }
+      // b odd and sharing nothing with a: then 4a·(ax² + bx) + b² is a square with nothing to take out
+      while (b % 2 === 0 || gcd(a, b) > 1 || b * b - 4 * a * c <= 0 || Number.isInteger(Math.sqrt(b * b - 4 * a * c)) || gcd(gcd(a, b), c) > 1);
+      src = poly(a, b, c);
+    }
+    const r = parseProblem(src, 'solve');
+    return r.err ? GEN.quadratic(d) : r.S;
+  },
+
   mixed(d) {
     const v = pick(VARS);
     const E = pick([6, 8, 12]);
@@ -198,10 +226,14 @@ function autoSolveStep(S) {
   if (h.k === 'hDone') return null;
   if (h.k === 'hDiv' || h.k === 'hBar' || h.k === 'hJoin') r = opOp(S);
   else if (h.k === 'hGroup' || h.k === 'hOpen' || h.k === 'hExplodeVar') r = opExplode(S, h.ids[0]);
-  else if (h.k === 'hExplodeCancel' || h.k === 'hExplodeNums' || h.k === 'hExplodeFor') { for (const id of h.ids) { r = opExplode(S, id); normalize(S); if (r && r.no) break; } }
+  else if (h.k === 'hExplodeCancel' || h.k === 'hExplodeNums' || h.k === 'hExplodeFor' || h.k === 'hExplodeRoot') { for (const id of h.ids) { r = opExplode(S, id); normalize(S); if (r && r.no) break; } }
   else if (h.k === 'hSumProduct') r = opSplitTwo(S, h.ids[0], h.split);
   else if (h.drag != null) r = opDrag(S, h.drag);   // the hinted piece, dragged across the =
-  else if (h.k === 'hSwap') r = opSwap(S);
+  else if (h.k === 'hSwap') r = opSwap(S, h.bi || 0);
+  else if (h.zero) r = opZero(S, h.bi || 0);
+  else if (h.root) r = opRoot(S, h.bi || 0);
+  else if (h.balance) r = opBalance(S, h.balance.op, h.balance.value, h.bi || 0);   // typed: + 9, · 8
+  else if (h.k === 'hNoReal' || h.k === 'hNoRealD') return null;
   else r = opPair(S, h.ids[0], h.ids[1]);
   if (!r || r.no) return null;
   normalize(S);

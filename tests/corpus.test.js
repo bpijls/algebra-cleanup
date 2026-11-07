@@ -3,7 +3,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { strip } = require('./load');
-const { G, values, same, equivalent, fuzz, hasText } = require('./judge');
+const { G, values, same, fuzz, hasText, solutions, sameSolutions } = require('./judge');
 
 const CHAPTERS = {
   'machten (powers)': [
@@ -42,6 +42,15 @@ const CHAPTERS = {
     ['2(x+3)=4x-2', 'x = 4'], ['x/3=4', 'x = 12'], ['(x+1)/2=3', 'x = 5'], ['4x-3=2x+6', 'x = [9/2'], ['7=2x+1', 'x = 3'],
     ['3(x-1)-2(x+4)=0', 'x = 11'], ['2a-5=3a+1', 'a = −6'], ['6=-3x', 'x = −2'],
   ],
+  // the answers as the hints leave them: x = −2 ∨ x = −3 reads "x = −2 of x = −3"
+  'kwadratische vergelijkingen (quadratic equations)': [
+    ['x^2=49', 'x = 7 ∨ x = −7'], ['x^2=12', 'x = 2√3 ∨ x = −2√3'], ['3x^2=75', 'x = 5 ∨ x = −5'], ['x^2-9=0', 'x = 3 ∨ x = −3'],
+    ['(x-2)^2=16', 'x = 6 ∨ x = −2'], ['(x+1)^2=3', 'x = √3 − 1 ∨ x = −√3 − 1'], ['(x-3)(x+4)=0', 'x = 3 ∨ x = −4'],
+    ['x(x-5)=0', 'x = 0 ∨ x = 5'], ['x^2+3x=0', 'x = 0 ∨ x = −3'], ['x^2+7x+12=0', 'x = −3 ∨ x = −4'],
+    ['x^2-2x-15=0', 'x = 5 ∨ x = −3'], ['x^2+x=6', 'x = 2 ∨ x = −3'], ['x^2+4x-1=0', 'x = √5 − 2 ∨ x = −√5 − 2'],
+    ['x^2-6x+2=0', 'x = √7 + 3 ∨ x = −√7 + 3'], ['x^2+3x+1=0', 'x = [√5 − 3/2 ∨ x = [−√5 − 3/2'],
+    ['2x^2+3x-1=0', 'x = [√17 − 3/4 ∨ x = [−√17 − 3/4'], ['x^2+6x+9=0', 'x = −3'],
+  ],
 };
 
 for (const [chapter, list] of Object.entries(CHAPTERS)) {
@@ -57,7 +66,7 @@ for (const [chapter, list] of Object.entries(CHAPTERS)) {
         if (h.k === 'hDone' || G.autoSolveStep(T) == null) break;
       }
       assert.notEqual(G.autoSolve(S), null, `${src}: the hints do not solve it`);
-      assert.ok(S.op === '=' ? equivalent(v0, values(S)) : same(v0, values(S)), `${src}: solving changed the ${S.op === '=' ? 'solutions' : 'value'}`);
+      assert.ok(S.op === '=' ? sameSolutions(solutions(r.S), solutions(S)) : same(v0, values(S)), `${src}: solving changed the ${S.op === '=' ? 'solutions' : 'value'}`);
       assert.equal(strip(G.stateHTML(S)), want, `${src}`);
       for (let k = 0; k < 4; k++) fuzz(r.S, 30, src);   // random play keeps the value too
     }

@@ -6,7 +6,7 @@ const store = { get(k, d) { try { const v = localStorage.getItem('alg-cleanup:' 
 let lang = store.get('lang', (navigator.language || '').toLowerCase().startsWith('nl') ? 'nl' : 'en');
 let lvl = Math.min(store.get('level', 0), LEVELS.length - 1);
 let best = store.get('best', {});
-let S, history, moves, sel, born, hintIds, lastNote, busy = false, won = false, balancing = false;
+let S, history, moves, sel, born, hintIds, lastNote, busy = false, won = false, balancing = false, balBranch = 0;
 
 const $ = id => document.getElementById(id);
 const board = $('board'), note = $('note');
@@ -23,7 +23,7 @@ function sayIntro() {
   if (mode === 'practice') return say('ti_' + S.topic, {}, 'info');
   say(null, null, 'info', { en: LEVELS[lvl].en, nl: LEVELS[lvl].nl });
 }
-const TOPICS = ['powers', 'like', 'frac', 'open', 'double', 'square', 'factor', 'trinomial', 'equations', 'mixed'];
+const TOPICS = ['powers', 'like', 'frac', 'open', 'double', 'square', 'factor', 'trinomial', 'equations', 'quadratic', 'mixed'];
 let mode = 'levels', initial = null, sheetFn = null;
 let prac = store.get('practice', { topics: ['powers', 'like', 'frac'], d: 1 });
 let session = { solved: 0, streak: 0 };
@@ -163,7 +163,7 @@ function showBalance() {
     if (!input.value.trim()) return { no: 'balEmpty' };
     if (!v) return { no: 'balBad' };
     const copy = JSON.parse(JSON.stringify(S));
-    const r = opBalance(copy, op, v);
+    const r = opBalance(copy, op, v, balBranch);
     if (r && !r.no) normalize(copy);
     return r && !r.no ? { ok: true, html: stateHTML(copy) } : r || { no: 'balBad' };
   };
@@ -179,9 +179,9 @@ function showBalance() {
     e.preventDefault();
     const v = balanceValue(input.value);
     if (!v) { errEl.innerHTML = t(input.value.trim() ? 'balBad' : 'balEmpty'); errEl.hidden = false; input.focus(); return; }
-    closeSheet(); balancing = false; run(s => opBalance(s, op, v));
+    closeSheet(); balancing = false; run(s => opBalance(s, op, v, balBranch));
   });
-  host.querySelector('#balSwap').addEventListener('click', () => { closeSheet(); balancing = false; run(s => opSwap(s)); });
+  host.querySelector('#balSwap').addEventListener('click', () => { closeSheet(); balancing = false; run(s => opSwap(s, balBranch)); });
   update();
   setTimeout(() => { input.focus(); input.select(); }, 50);
 }
@@ -247,7 +247,36 @@ function loadLevel(i) {
   render(); sayIntro();
 }
 
+/* the picked bracket and its twins in other terms, when they can go outside brackets together */
+function blockOf(S, sel) {
+  if (!sel || sel.t !== 'f' || balancing) return null;
+  const L = locate(S, sel.id);
+  if (!L || L.f.k !== 'p' || L.depth) return null;
+  const key = sumKey(L.f.terms), partners = partnersOf(S, sel), ids = new Set([L.f.id]);
+  L.terms.forEach(t => t.f.forEach(f => { if (f.k === 'p' && f.e === L.f.e && partners.has(f.id) && sumKey(f.terms) === key) ids.add(f.id); }));
+  return ids.size > 1 ? { key, ids, L } : null;
+}
+let block = null;
 function tileEl(f, partners) {
+  if (f.k === 'r') {   // √ with a bar over what is inside; the pieces inside are tiles of their own
+    const b = document.createElement('div');
+    b.className = 'tile r'; b.dataset.id = f.id; b.tabIndex = 0; b.setAttribute('role', 'button'); b.setAttribute('aria-label', 'root');
+    const body = document.createElement('div'); body.className = 'rbody'; body.append(sideEl(f.terms, partners));
+    b.append(Object.assign(document.createElement('span'), { className: 'rsign', textContent: '√' }), body);
+    if (sel && sel.t === 'f' && sel.id === f.id) b.classList.add('sel');
+    if (hintIds.has(f.id)) b.classList.add('hint');
+    if (born.has(f.id)) b.classList.add('born');
+    return b;
+  }
+  if (f.k === 'p' && block && block.ids.has(f.id)) {
+    const b = document.createElement('div');
+    b.className = 'tile p block'; b.dataset.id = f.id; b.tabIndex = 0; b.setAttribute('role', 'button');
+    b.innerHTML = fx({ k: 'bk', terms: f.terms, e: f.e });
+    b.setAttribute('aria-label', 'block');
+    if (sel && sel.t === 'f' && sel.id === f.id) b.classList.add('sel');
+    if (partners.has(f.id)) b.classList.add('partner');
+    return b;
+  }
   if (f.k === 'p') {
     const b = document.createElement('div');
     b.className = 'tile p'; b.dataset.id = f.id; b.tabIndex = 0; b.setAttribute('role', 'button');
@@ -305,20 +334,29 @@ function sideEl(terms, partners) {
 
 function render() {
   const partners = partnersOf(S, sel);
+  block = blockOf(S, sel);
   born.idx = 0;
   const wrap = document.createElement('div'); wrap.className = 'expr';
   const stacked = S.parts.length > 1 && S.op === '/';
   if (stacked) wrap.classList.add('stack');
+  if (S.op === '=') wrap.classList.add('eqs');
+  let row = wrap;
   S.parts.forEach((P, pi) => {
-    // an equation's = stays with the right-hand side, so a line break can only come before the =
-    const host = S.op === '=' && pi > 0 ? wrap.appendChild(Object.assign(document.createElement('div'), { className: 'eqright' })) : wrap;
-    if (pi > 0) {
+    // an equation: one row per branch (x = 3 ∨ x = −3); the = stays with the right-hand side,
+    // so a line break can only come before the =
+    if (S.op === '=' && pi % 2 === 0) {
+      if (pi) wrap.append(Object.assign(document.createElement('span'), { className: 'ortag', textContent: t('orWord') }));
+      row = wrap.appendChild(Object.assign(document.createElement('div'), { className: 'eqrow' }));
+      row.dataset.b = pi >> 1;
+    }
+    const host = S.op === '=' ? (pi % 2 ? row.appendChild(Object.assign(document.createElement('div'), { className: 'eqright' })) : row) : wrap;
+    if (pi > 0 && (S.op !== '=' || pi % 2)) {
       const op = document.createElement('button'); op.type = 'button'; op.dataset.op = '1';
       op.className = stacked ? 'opchip bigbar' : 'opchip';
       op.textContent = stacked ? '' : S.op;
       op.setAttribute('aria-label', stacked ? 'fraction bar' : S.op === '=' ? 'equals: do the same to both sides' : S.op === ':' ? 'divide' : 'times');
-      if (S.op === '=') { op.classList.add('eq'); op.classList.toggle('on', balancing); op.setAttribute('aria-pressed', String(balancing)); }
-      if (hintIds.has('op')) op.classList.add('hint');
+      if (S.op === '=') { op.classList.add('eq'); op.dataset.b = pi >> 1; op.classList.toggle('on', balancing); op.setAttribute('aria-pressed', String(balancing)); }
+      if (hintIds.has('op') && (hintIds.bi == null || hintIds.bi === pi >> 1)) op.classList.add('hint');
       host.append(op);
     }
     const fr = document.createElement('div'); fr.className = 'frac';
@@ -365,6 +403,9 @@ function render() {
   $('btnUndo').querySelector('span').textContent = t('undo');
   $('btnUndo').disabled = !history.length;
   $('btnHint').querySelector('span').textContent = t('hint');
+  $('btnDone').querySelector('span').textContent = t('doneBtn'); $('btnDone').setAttribute('aria-label', t('doneLabel'));
+  $('btnDone').classList.toggle('hint', hintIds.has('done'));
+  $('btnZero').classList.toggle('hint', hintIds.has('zero')); $('btnRoot').classList.toggle('hint', hintIds.has('root'));
   $('btnSwap').hidden = $('btnBalType').hidden = !balancing;
   $('btnSwap').querySelector('span').textContent = t('balSwapBtn'); $('btnSwap').setAttribute('aria-label', t('balSwap'));
   $('btnBalType').querySelector('span').textContent = t('balOtherBtn');
@@ -377,6 +418,20 @@ function render() {
   $('btnGather').hidden = !gatherable;
   if (gatherable) $('btnGather').querySelector('span').innerHTML = previewOf(s => opGather(s, sel.id));
   // from a piece only when factoring (a lone −x is hard to hit as a term); elsewhere it would just be noise
+  // an equation that splits into branches: the button shows the branches it makes
+  for (const [btn, fn, aria] of [['btnZero', opZero, 'zeroAria'], ['btnRoot', opRoot, 'rootAria']]) {
+    let label = null, bi = null;
+    if (S.op === '=' && !balancing) {
+      const want = sel ? locate(S, sel.id)?.p >> 1 : null;
+      for (let b = 0; b < branchCount(S) && label == null; b++) {
+        if (want != null && b !== want) continue;
+        const c = JSON.parse(JSON.stringify(S)), r = fn(c, b);
+        if (r && r.ok) { label = r.p.btn || r.p.ex; bi = b; }
+      }
+    }
+    $(btn).hidden = label == null; $(btn).dataset.b = bi ?? '';
+    if (label != null) { $(btn).querySelector('span').innerHTML = label; $(btn).setAttribute('aria-label', t(aria)); }
+  }
   const twoId = tSel || (fSel && S.goal === 'factor') ? splitTermOf(sel.id) : null;
   $('btnSplitTwo').hidden = !twoId;
   if (twoId) $('btnSplitTwo').querySelector('span').innerHTML = mx(sumHTML([locate(S, twoId).term]) + ' = … + …');
@@ -385,7 +440,22 @@ function render() {
 
 // a line that is wider than the board (a long equation side) is shrunk to fit instead of overflowing
 function fitBoard(wrap) {
-  wrap.style.zoom = ''; wrap.classList.remove('oneline');
+  wrap.style.zoom = ''; wrap.classList.remove('oneline', 'across');
+  // several branches (x = 3 ∨ x = −3): below each other, or next to each other when that needs less shrinking
+  // (a phone on its side has width to spare and little height)
+  if (S.op === '=' && branchCount(S) > 1) {
+    const cs = getComputedStyle(board), room = board.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+    const W = wrap.parentElement.clientWidth * 0.94;
+    wrap.classList.add('oneline');
+    const k = () => Math.min(1, W / wrap.scrollWidth, room > 0 ? room / wrap.scrollHeight : 1);
+    const down = k();
+    wrap.classList.add('across');
+    const side = k();
+    if (side <= down) wrap.classList.remove('across');
+    const best = Math.max(side, down);
+    if (best >= 0.55) { if (best < 1) wrap.style.zoom = String(best); return; }
+    wrap.classList.remove('oneline', 'across');
+  }
   // an equation reads best on one line, like a balance: shrink it a little rather than break it
   if (S.op === '=') {
     wrap.classList.add('oneline');                    // nothing wraps, so this is its natural width
@@ -506,7 +576,10 @@ function run(fn, animIds) {
     render(); say(r.ok, r.p, 'ok');
     const ms = r.arcs ? animateMoves(rects, origins, true) : 0;
     busy = ms > 0;
-    setTimeout(() => { busy = false; if (isClean(S)) win(); }, ms);
+    // the new bracket closes around what was left only once those pieces have arrived
+    const w = r.wrap != null && ms && board.querySelector(`.tile.p[data-id="${r.wrap}"]`);
+    if (w) w.classList.add('wrapin');
+    setTimeout(() => { busy = false; }, ms);
   };
   if (r.cancel && animIds) {
     busy = true;
@@ -532,8 +605,11 @@ function onTerm(tid) {
   select({ t: 't', id: tid });
 }
 function select(s) {
+  const rects = tileRects(), folded = !!block;
   sel = s; hintIds = new Set(); born = new Set();
   render();
+  if (block || folded) animateMoves(rects, {}, false);   // the brackets visibly fold into blocks
+  if (block) return say('pickedBlock', { x: mx(fx(block.L.f)), ex: mx(blockHTML(block.L.terms, block.key)) }, 'info');
   const has = partnersOf(S, sel).size > 0;
   const canExplode = s.t === 'f' && !$('btnExplode').hidden;
   if (S.op === '=' && !has) return say('pickedEq', {}, 'info');
@@ -551,15 +627,16 @@ function dropAcross(id) {
 }
 let bdrag = null;
 // the other side's fraction: where the piece has to land
-function otherSide(fromRight) {
-  return fromRight ? board.querySelector('.expr > .frac') : board.querySelector('.eqright > .frac');
+function otherSide(fromRight, row) {
+  row = row || board.querySelector('.eqrow');
+  return row && (fromRight ? row.querySelector(':scope > .frac') : row.querySelector('.eqright > .frac'));
 }
 function overOtherSide(x, y) {
-  const wrap = board.querySelector('.expr'), eq = board.querySelector('.opchip.eq'), other = otherSide(bdrag.right);
+  const wrap = board.querySelector('.expr'), row = bdrag.row, eq = row && row.querySelector('.opchip.eq'), other = otherSide(bdrag.right, row);
   if (!eq || !other) return false;
   const e = eq.getBoundingClientRect(), b = board.getBoundingClientRect();
   if (wrap.classList.contains('oneline'))   // on one line: anywhere past the = counts
-    return y >= b.top - 40 && y <= b.bottom + 40 && (bdrag.right ? x < e.left + e.width / 2 : x > e.left + e.width / 2);
+    return (branchCount(S) > 1 ? y >= row.getBoundingClientRect().top - 30 && y <= row.getBoundingClientRect().bottom + 30 : y >= b.top - 40 && y <= b.bottom + 40) && (bdrag.right ? x < e.left + e.width / 2 : x > e.left + e.width / 2);
   const r = other.getBoundingClientRect(), m = 32;
   return x >= r.left - m && x <= r.right + m && y >= r.top - m && y <= r.bottom + m;
 }
@@ -577,7 +654,7 @@ function balanceDown(e) {
   if (e.target.closest('.opchip')) return;
   const el = e.target.closest('#board .tile, #board .term') || pieceNear(e.clientX, e.clientY);
   // a press on nothing still becomes a drag record, so letting go somewhere else isn't read as a tap on the board
-  bdrag = { el, id: el && (el.classList.contains('tile') ? +el.dataset.id : +el.dataset.tid), x: e.clientX, y: e.clientY, pid: e.pointerId, active: false, right: !!(el && el.closest('.eqright')) };
+  bdrag = { el, id: el && (el.classList.contains('tile') ? +el.dataset.id : +el.dataset.tid), x: e.clientX, y: e.clientY, pid: e.pointerId, active: false, right: !!(el && el.closest('.eqright')), row: el && el.closest('.eqrow') };
 }
 function balanceMove(e) {
   const d = bdrag;
@@ -599,7 +676,7 @@ function balanceMove(e) {
   if (!d.el) return;
   d.ghost.style.transform = `translate(${e.clientX - d.ox}px, ${e.clientY - d.oy}px) scale(${d.k * 1.08})`;
   const over = overOtherSide(e.clientX, e.clientY);
-  otherSide(d.right)?.classList.toggle('droptarget', over);
+  otherSide(d.right, d.row)?.classList.toggle('droptarget', over);
 }
 function balanceDrop() {
   if (!bdrag) return;
@@ -678,7 +755,8 @@ board.addEventListener('pointercancel', () => { clearSweep(); drag = null; balan
 board.addEventListener('click', e => {
   if (suppressClick) { suppressClick = false; return; }
   if (busy || won) return;
-  if (e.target.closest('.opchip')) return S.op === '=' ? setBalancing(!balancing) : run(s => opOp(s));
+  const chip = e.target.closest('.opchip');
+  if (chip) { if (S.op !== '=') return run(s => opOp(s)); balBranch = +chip.dataset.b || 0; return setBalancing(!balancing); }
   if (e.target.closest('.fbar')) return run(s => opBar(s));
   const hit = e.target.closest('.tile, .term');
   if (balancing) {
@@ -693,7 +771,9 @@ board.addEventListener('click', e => {
 
 $('btnExplode').onclick = () => sel && run(s => opExplode(s, sel.id));
 $('btnGather').onclick = () => sel && run(s => opGather(s, sel.id));
-$('btnSwap').onclick = () => { if (busy || won) return; balancing = false; run(s => opSwap(s)); };
+$('btnSwap').onclick = () => { if (busy || won) return; balancing = false; run(s => opSwap(s, balBranch)); };
+$('btnZero').onclick = () => { const b = +$('btnZero').dataset.b || 0; run(s => opZero(s, b)); };
+$('btnRoot').onclick = () => { const b = +$('btnRoot').dataset.b || 0; run(s => opRoot(s, b)); };
 $('btnBalType').onclick = () => !busy && !won && showBalance();
 $('btnSplitTwo').onclick = () => sel && !busy && !won && showSplit(splitTermOf(sel.id));
 $('btnUndo').onclick = () => {
@@ -704,7 +784,18 @@ $('btnUndo').onclick = () => {
 };
 $('btnHint').onclick = () => {
   if (won) return;
-  const h = hint(S); sel = null; born = new Set(); hintIds = new Set(h.ids); render(); say(h.k, h.p, 'info');
+  const h = hint(S); sel = null; born = new Set(); hintIds = new Set(h.k === 'hDone' ? ['done'] : h.ids); hintIds.bi = h.bi;
+  if (h.zero) hintIds.add('zero'); if (h.root) hintIds.add('root');
+  render(); say(h.k, h.p, 'info');
+};
+// winning is the player's call: they press Done? when they think nothing is left
+$('btnDone').onclick = () => {
+  if (busy || won) return;
+  sel = null; born = new Set(); hintIds = new Set();
+  const why = whyNotDone(S);
+  render();
+  if (!why) return win();
+  say(why.k, why.p, 'warn');
 };
 $('btnRestart').onclick = () => {
   if (mode === 'levels') return loadLevel(lvl);
@@ -742,7 +833,7 @@ const hudFit = () => {
 if (window.ResizeObserver) { const ro = new ResizeObserver(hudFit); ro.observe($('hudTop')); ro.observe($('hudBottom')); }
 hudFit();
 board.addEventListener('keydown', e => {
-  const p = e.target.closest && e.target.closest('.tile.p');
+  const p = e.target.closest && e.target.closest('.tile.p, .tile.r');
   if (p && e.target === p && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onFactor(+p.dataset.id); }
 });
 document.addEventListener('keydown', e => {
@@ -791,6 +882,7 @@ function win(refresh) {
       <p style="margin-bottom:0">${t(S.goal === 'factor' ? 'winSubF' : S.goal === 'solve' ? 'winSubS' : 'winSub')}</p>
       <div class="result expr-n">${stateHTML(S)}</div>
       <p>${t('winMoves', { n: moves })}${t('winBest', { n: best[lvl] })}${last ? ' ' + t('allDone') : ''}</p>
+      ${LEVELS[lvl].abc ? `<div class="abc">${abcHTML(LEVELS[lvl].abc)}</div>` : ''}
       <div class="row">
         ${last ? '' : `<button class="tool main" type="button" id="wNext">${t('next')} →</button>`}
         <button class="tool" type="button" id="wReplay">${t('replay')}</button>
@@ -804,6 +896,14 @@ function win(refresh) {
   refresh ? show() : setTimeout(show, 650);
 }
 
+// the last quadratic level: what the player did, written for every a, b, c, is the abc-formula
+function abcHTML({ a, b, c }) {
+  const v = n => n < 0 ? '−' + -n : String(n), d = b * b - 4 * a * c;
+  const fr = (top, bot) => `<span class="nfrac"><span class="nn">${top}</span><span class="nd">${bot}</span></span>`;
+  const f = mx(`<i class="mv">x</i> = ${fr(`−<i class="mv">b</i> ± <span class="sq">√<span class="rad"><i class="mv">b</i><sup>2</sup> − 4<i class="mv">a</i><i class="mv">c</i></span></span>`, `2<i class="mv">a</i>`)}`);
+  const ex = mx(`<i class="mv">x</i> = ${fr(`${v(-b)} ± <span class="sq">√<span class="rad">${b * b} ${-4 * a * c < 0 ? '−' : '+'} ${Math.abs(4 * a * c)}</span></span>`, 2 * a)} = ${fr(`${v(-b)} ± <span class="sq">√<span class="rad">${d}</span></span>`, 2 * a)}`);
+  return t('abcReveal', { f, a: v(a), b: v(b), c: v(c), ex });
+}
 function showLevels() {
   sheetFn = showLevels;
   const btns = LEVELS.map((L, i) => `<button type="button" class="lvlbtn${best[i] != null ? ' done' : ''}${i === lvl ? ' cur' : ''}${L.book ? ' book' : ''}" data-l="${i}">
