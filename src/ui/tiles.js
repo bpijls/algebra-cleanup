@@ -33,7 +33,19 @@ function powEl(f) {
   if (ui.born.has(f.id)) b.classList.add('born');
   return b;
 }
+// a kind's own tile (its pieces inside are tiles too, through sideEl): defineTile(k, (f, partners, sideEl) => element)
+const TILES = {};
+export const defineTile = (k, make) => { TILES[k] = make; };
+// the state a tile shows: picked, a partner of the picked one, hinted, just made
+function mark(b, f, partners) {
+  if (ui.sel && ui.sel.t === 'f' && ui.sel.id === f.id) b.classList.add('sel');
+  if (partners.has(f.id)) b.classList.add('partner');
+  if (ui.hintIds.has(f.id)) b.classList.add('hint');
+  if (ui.born.has(f.id)) b.classList.add('born');
+  return b;
+}
 function tileEl(f, partners) {
+  if (TILES[f.k]) return mark(TILES[f.k](f, partners, sideEl), f, partners);
   if (f.k === 'r') {   // √ with a bar over what is inside; the pieces inside are tiles of their own
     const b = document.createElement('div');
     b.className = 'tile r'; b.dataset.id = f.id; b.tabIndex = 0; b.setAttribute('role', 'button'); b.setAttribute('aria-label', 'root');

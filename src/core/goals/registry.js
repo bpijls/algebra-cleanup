@@ -10,6 +10,11 @@
 export const GOALS = {};
 export const defineGoal = (id, goal) => { GOALS[id] = { id, ...goal }; };
 export const goalOf = S => GOALS[S.goal] || GOALS.simplify;
+// a tactic added to a goal from elsewhere (a topic), before the named tactic or at the end
+export const addTactic = (goal, tactic, { before } = {}) => {
+  const list = GOALS[goal].tactics, at = before ? list.findIndex(t => t.name === before) : -1;
+  list.splice(at < 0 ? list.length : at, 0, tactic);
+};
 
 export const DONE = { k: 'hDone', ids: [] };
 export const runTactics = (tactics, S) => { for (const t of tactics) { const h = t(S); if (h) return h; } return DONE; };

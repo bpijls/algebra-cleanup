@@ -5,7 +5,7 @@ import { goalOf } from './goals/registry.js';
 import { quadSplit } from './hints.js';
 import { G } from './kinds/group.js';
 import { N } from './kinds/number.js';
-import { kindOf } from './kinds/registry.js';
+import { KINDS, kindOf } from './kinds/registry.js';
 import { F, T, fkey, sumKey, tHasU } from './kinds/sums.js';
 
 export const MAX_VAR = 16, MAX_GROUP = 8;
@@ -20,7 +20,8 @@ export const mergeF = (x, y) => kindOf(x).merge(x, y);
 
 export const varPart = t => t.f.filter(f => f.k === 'v');
 
-export const sig = t => t.f.filter(f => f.k === 'v' || f.k === 'p' || f.k === 'r').map(f => f.k === 'v' ? f.b + f.e : fkey(f)).sort().join('.');
+// what makes terms like terms: everything but the number (a kind says so with symbolic: true)
+export const sig = t => t.f.filter(f => f.k === 'v' || f.k === 'p' || f.k === 'r' || KINDS[f.k]?.symbolic).map(f => f.k === 'v' ? f.b + f.e : fkey(f)).sort().join('.');
 
 // a root is tidy when it holds one whole number with no pair left inside: √5, √12 is not (12 = 2·2·3)
 // with letters: a clean sum (√(b² − 4ac)) or one tidy term without a square in it (√a, √(3ab))
@@ -46,7 +47,10 @@ export const SIDES = ['num', 'den'];
 /* A term is tidy when it reads as: one number, each letter once (and, if allowed, one clean bracket). */
 export function tidy(t, allowB) {
   let n = 0, p = 0, r = 0; const bs = new Set();
+  const seen = {};   // for kinds with their own rule (tidyIn): how many of each are in the term so far
   for (const f of t.f) {
+    const K = KINDS[f.k];   // (bk, a bracket drawn as a block, is no kind)
+    if (K?.tidyIn) { seen[f.k] = (seen[f.k] || 0) + 1; if (!K.tidyIn(f, seen[f.k])) return false; continue; }
     if (f.k === 'g') return false;
     if (f.k === 'r') { if (!rootClean(f) || r++) return false; continue; }
     if (f.k === 'p') { if (!allowB || f.e !== 1 || !sumClean(f.terms)) return false; p++; }
