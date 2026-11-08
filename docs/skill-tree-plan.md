@@ -172,8 +172,11 @@ Done:
 
 - **Sequences, sums and physics formulas** (`src/topics/formulas`): `opSubstitute` and the `evaluate` goal; sequences (n-th term, which term), sums by their formulas, physics formulas solved for one letter. The Σ spike: a Σ tile that shows Gauss's pairing honestly needs a "write the sum backwards" move and terms that depend on k; not built yet, so the sums skill works from formulas and tells the pairing in its intro.
 
+- **Derivatives** (`src/topics/calculus`): an operator kind `(…)′` whose explode is the sum, constant and product rules, a numeric slope for the judge, and the power rule as an earned shortcut. Skills deriv, derivrules.
+
 To come, in this order:
-7. **Calculus** (derivatives with an operator kind and a numeric-derivative judge; integrals; differential equations), then the rest of goniometry (`π`, radians, trig equations with `k ∈ ℤ`).
+7. **The rest of calculus**: the quotient and chain rules, integrals (guess, then undo `′` on both sides, writing `+ C`), differential equations (`y′ = ky`).
+8. **The rest of goniometry**: `π` and radians, trig equations with `+ k · 360°` (`k ∈ ℤ` as a condition).
 
 Every field comes with:
 - a `src/topics/<field>/` folder;
