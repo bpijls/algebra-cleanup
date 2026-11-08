@@ -14,6 +14,7 @@
 export const SCOPES = [
   ['parts', (S, A, B) => A.p !== B.p],                             // different fractions, or sides of an =
   ['sum', (S, A, B) => A.terms === B.terms],                       // in the same sum (same term or not)
+  ['bar', (S, A, B) => A.in && A.in.k === 'q' && A.in === B.in && A.qs !== B.qs],   // across the bar of a fraction in a sum
   ['wall', (S, A, B) => A.side === B.side || A.depth || B.depth],  // a bracket wall between them
   ['bar', () => true],                                             // across one fraction bar
 ];

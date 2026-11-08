@@ -18,6 +18,7 @@ defineHTML('v', 1, f => `<i class="mv">${f.b}</i>${sup(f.e)}`);
 defineHTML('r', 2, f => sqHTML(sumHTML(f.terms)));
 defineHTML('g', 2, f => `(${factorsHTML(f.f)})${sup(f.e)}`);
 defineHTML('p', 3, f => `(${sumHTML(f.terms)})${sup(f.e)}`);
+defineHTML('q', 0, f => `<span class="nfrac q"><span class="nn">${sumHTML(unbare(f.num))}</span><span class="nd">${sumHTML(unbare(f.den))}</span></span>`);   // ⅔ in front, like a number
 defineHTML('bk', 3, f => `<span class="bk">${sumHTML(f.terms)}</span>${sup(f.e)}`);   // a bracket shown as a block (blockHTML)
 
 export const fx = f => HTML[f.k].html(f);

@@ -20,7 +20,7 @@ test('skill tree: prerequisites exist, no cycles, every level in exactly one ski
   // the rows: a skill sits below every skill it needs
   const row = {}; G.tiers().forEach((r, i) => r.forEach(K => { row[K.id] = i; }));
   for (const K of G.SKILL_LIST) for (const r of K.requires) assert.ok(row[r] < row[K.id], `${r} above ${K.id}`);
-  assert.deepEqual(G.tiers()[0].map(K => K.id), ['powers']);
+  assert.deepEqual(G.tiers()[0].map(K => K.id).sort(), ['numfrac', 'powers']);   // two roots: powers, and number fractions
 });
 
 test('skill tree: soft lock, next level, newly opened skills', () => {
@@ -29,7 +29,7 @@ test('skill tree: soft lock, next level, newly opened skills', () => {
   assert.deepEqual(G.needs(G.SKILLS.sumproduct, none), ['double', 'factor']);
   assert.equal(G.suggested(none).id, 'powers');
   const powers = Object.fromEntries(G.SKILLS.powers.levels.map(id => [id, 3]));
-  assert.deepEqual(G.newlyOpen(none, powers).map(K => K.id).sort(), ['fracpow', 'like']);
+  assert.deepEqual(G.newlyOpen(none, powers).map(K => K.id).sort(), ['fracpow', 'like', 'sqrt']);
   assert.equal(G.nextInSkill('powers.2'), 'powers.3');
   assert.equal(G.nextInSkill('powers.6'), null);
   assert.equal(G.nextLevelIn(G.SKILLS.powers, { 'powers.1': 4 }), 'powers.2');

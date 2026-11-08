@@ -659,7 +659,7 @@
  "level trigid.2": [
   "tan(a)cos(a) = sin(a)",
   "hExplodeTrig [nyTidy] → tanSinCos | [sin(a)cos(a)/cos(a) = sin(a)",
-  "hCancel [nyProve] → cancelVar | sin(a) = sin(a)",
+  "hCancel [nyCancelPiece] → cancelVar | sin(a) = sin(a)",
   "clean"
  ],
  "level trigid.3": [
@@ -744,6 +744,389 @@
   "hMerge [nyTidy] → mergeGroup | cos^2(a) − sin^2(a) = 1 − 2sin^2(a)",
   "hPythSwap [nyProve] → pythSwap | 1 − sin^2(a) − sin^2(a) = 1 − 2sin^2(a)",
   "hLike [nyLike] → likeAdd | 1 − 2sin^2(a) = 1 − 2sin^2(a)",
+  "clean"
+ ],
+ "level numfrac.1": [
+  "[1/5 + [2/5",
+  "hJoinFrac [nyJoin] → joinFrac | [1 + 2/5",
+  "hLike [nyLike] → likeAdd | [3/5",
+  "clean"
+ ],
+ "level numfrac.2": [
+  "[1/2 + [1/4",
+  "hExpandTo [nyCombine] → expandBy | [2/2·2 + [1/4",
+  "hMerge [nyTidy] → mergeNum | [2/4 + [1/4",
+  "hJoinFrac [nyTidy] → joinFrac | [2 + 1/4",
+  "hLike [nyLike] → likeAdd | [3/4",
+  "clean"
+ ],
+ "level numfrac.3": [
+  "[2/3 + [3/4",
+  "hExpandTo [nyCombine] → expandBy | [2·4/3·4 + [3/4",
+  "hMerge [nyTidy] → mergeNum | [8/3·4 + [3/4",
+  "hMerge [nyTidy] → mergeNum | [8/12 + [3/4",
+  "hExpandTo [nyTidy] → expandBy | [8/12 + [3·3/4·3",
+  "hMerge [nyTidy] → mergeNum | [8/12 + [9/4·3",
+  "hMerge [nyTidy] → mergeNum | [8/12 + [9/12",
+  "hJoinFrac [nyTidy] → joinFrac | [8 + 9/12",
+  "hLike [nyLike] → likeAdd | [17/12",
+  "clean"
+ ],
+ "level numfrac.4": [
+  "2 − [3/4",
+  "hExpandTo [nyCombine] → expandBy | [2·4/4 − [3/4",
+  "hMerge [nyTidy] → mergeNum | [8/4 − [3/4",
+  "hJoinFrac [nyTidy] → joinFrac | [8 − 3/4",
+  "hLike [nyLike] → likeAdd | [5/4",
+  "clean"
+ ],
+ "level numfrac.5": [
+  "[2/3[3/4",
+  "hMerge [nyTidy] → mergeGroup | [2·3/3·4",
+  "hCancel [nyTidy] → cancelVar | [2/4",
+  "hExplodeCancel [nyCancelNum] → explodeNum | [2/2·2",
+  "hCancel [nyTidy] → cancelVar | [1/2",
+  "clean"
+ ],
+ "level numfrac.6": [
+  "[2/3 : [4/5",
+  "hDiv [nyTwoParts] → flip | [2/3 · [5/4",
+  "hMove [nyTwoParts] → moveNum | [2·5/3 · [1/4",
+  "hMove [nyTwoParts] → moveDen | [2·5/3·4 · [1/1",
+  "hCancelOnes [nyTwoParts] → cancelOnes | [2·5/3·4",
+  "hExplodeCancel [nyTidy] → explodeNum | [2·5/3·2·2",
+  "hCancel [nyTidy] → cancelVar | [5/3·2",
+  "hMerge [nyTidy] → mergeNum | [5/6",
+  "clean"
+ ],
+ "level sqrt.1": [
+  "√12",
+  "hExplodeRoot [nyTidy] → explodeNum | √2·2·3",
+  "hRootPair [nyTidy] → rootOut | 2√3",
+  "clean"
+ ],
+ "level sqrt.2": [
+  "√2√6",
+  "hMerge [nyTidy] → mergeGroup | √2·6",
+  "hMerge [nyTidy] → mergeNum | √12",
+  "hExplodeRoot [nyTidy] → explodeNum | √2·2·3",
+  "hRootPair [nyTidy] → rootOut | 2√3",
+  "clean"
+ ],
+ "level sqrt.3": [
+  "2√3 + 5√3",
+  "hLike [nyLike] → likeAdd | 7√3",
+  "clean"
+ ],
+ "level sqrt.4": [
+  "√8 + √18",
+  "hExplodeRoot [nyTidy] → explodeNum | √2·2·2 + √18",
+  "hRootPair [nyTidy] → rootOut | 2√2 + √18",
+  "hExplodeRoot [nyTidy] → explodeNum | 2√2 + √2·3·3",
+  "hRootPair [nyTidy] → rootOut | 2√2 + 3√2",
+  "hLike [nyLike] → likeAdd | 5√2",
+  "clean"
+ ],
+ "level sqrt.5": [
+  "[1/√2",
+  "hRationalize [nyRootBelow] → expandBy | [√2/√2√2",
+  "hMerge [nyTidy] → mergeGroup | [√2/√2·2",
+  "hRootPair [nyTidy] → rootOut | [√2/2",
+  "clean"
+ ],
+ "level sqrt.6": [
+  "[6/√3",
+  "hRationalize [nyRootBelow] → expandBy | [6√3/√3√3",
+  "hMerge [nyTidy] → mergeGroup | [6√3/√3·3",
+  "hRootPair [nyTidy] → rootOut | [6√3/3",
+  "hExplodeCancel [nyCancelNum] → explodeNum | [2·3√3/3",
+  "hCancel [nyTidy] → cancelVar | 2√3",
+  "clean"
+ ],
+ "level algfrac.1": [
+  "[x/3 + [x/4",
+  "hExpandTo [nyCombine] → expandBy | [4x/3·4 + [x/4",
+  "hMerge [nyTidy] → mergeNum | [4x/12 + [x/4",
+  "hExpandTo [nyTidy] → expandBy | [4x/12 + [3x/4·3",
+  "hMerge [nyTidy] → mergeNum | [4x/12 + [3x/12",
+  "hJoinFrac [nyTidy] → joinFrac | [4x + 3x/12",
+  "hLike [nyLike] → likeAddTap | [7x/12",
+  "clean"
+ ],
+ "level algfrac.2": [
+  "[1/a + [1/b",
+  "hExpandTo [nyCombine] → expandIf | [b/ab + [1/b",
+  "hExpandTo [nyTidy] → expandIf | [b/ab + [a/ab",
+  "hJoinFrac [nyTidy] → joinFrac | [b + a/ab",
+  "clean"
+ ],
+ "level algfrac.3": [
+  "[3/x − [2/x^2",
+  "hExpandTo [nyCombine] → expandIf | [3x/xx − [2/x^2",
+  "hMerge [nyTidy] → mergeVar | [3x/x^2 − [2/x^2",
+  "hJoinFrac [nyTidy] → joinFrac | [3x − 2/x^2",
+  "clean"
+ ],
+ "level algfrac.4": [
+  "[x + 2/x − [2/x",
+  "hJoinFrac [nyJoin] → joinFrac | [x + 2 − 2/x",
+  "hLike [nyLike] → likeZero | [x/x",
+  "hCancel [nyCancelVar] → cancelVar | 1",
+  "clean"
+ ],
+ "level algfrac.5": [
+  "[a/a + 1 + [1/a + 1",
+  "hJoinFrac [nyJoin] → joinFrac | [a + 1/a + 1",
+  "hCancel [nyCancelPiece] → cancelVar | 1",
+  "clean"
+ ],
+ "level fraceq.1": [
+  "[x/3 + 2 = 5",
+  "hBalanceMul [nyEqAlone] → balance | 3([x/3 + 2) = 3·5",
+  "hOpen [nyEqAlone] → distribute | 3[x/3 + 3·2 = 3·5",
+  "hMerge [nyEqAlone] → mergeNum | 3[x/3 + 6 = 3·5",
+  "hIntoFrac [nyEqAlone] → intoFrac | [3x/3 + 6 = 3·5",
+  "hCancel [nyEqAlone] → cancelVar | x + 6 = 3·5",
+  "hMerge [nyEqAlone] → mergeNum | x + 6 = 15",
+  "hBalanceTerm [nyEqAlone] → balance | x + 6 − 6 = 15 − 6",
+  "hLike [nyEqAlone] → likeZero | x = 15 − 6",
+  "hLike [nyEqTidy] → likeAdd | x = 9",
+  "clean"
+ ],
+ "level fraceq.2": [
+  "[x/2 + [x/3 = 5",
+  "hBalanceMul [nyEqAlone] → balance | 6([x/2 + [x/3) = 6·5",
+  "hOpen [nyEqAlone] → distribute | 6[x/2 + 6[x/3 = 6·5",
+  "hIntoFrac [nyEqAlone] → intoFrac | [6x/2 + 6[x/3 = 6·5",
+  "hExplodeCancel [nyEqAlone] → explodeNum | [2·3x/2 + 6[x/3 = 6·5",
+  "hCancel [nyEqAlone] → cancelVar | 3x + 6[x/3 = 6·5",
+  "hIntoFrac [nyEqAlone] → intoFrac | 3x + [6x/3 = 6·5",
+  "hExplodeCancel [nyEqAlone] → explodeNum | 3x + [2·3x/3 = 6·5",
+  "hCancel [nyEqAlone] → cancelVar | 3x + 2x = 6·5",
+  "hLike [nyEqAlone] → likeAddTap | 5x = 6·5",
+  "hMerge [nyEqAlone] → mergeNum | 5x = 30",
+  "hBalanceDiv [nyEqAlone] → balance | [5x/5 = [30/5",
+  "hCancel [nyEqAlone] → cancelVar | x = [30/5",
+  "hExplodeCancel [nyEqTidy] → explodeNum | x = [2·3·5/5",
+  "hCancel [nyEqTidy] → cancelVar | x = 2·3",
+  "hMerge [nyEqTidy] → mergeNum | x = 6",
+  "clean"
+ ],
+ "level fraceq.3": [
+  "[4/x = 2",
+  "hBalanceMul [nyEqAlone] → balanceIf | [4x/x = 2x",
+  "hCancel [nyEqBoth] → cancelVar | 4 = 2x",
+  "hSwap [nyEqAlone] → swapSides | 2x = 4",
+  "hBalanceDiv [nyEqAlone] → balance | [2x/2 = [4/2",
+  "hCancel [nyEqAlone] → cancelVar | x = [4/2",
+  "hExplodeCancel [nyEqTidy] → explodeNum | x = [2·2/2",
+  "hCancel [nyEqTidy] → cancelVar | x = 2",
+  "clean"
+ ],
+ "level fraceq.4": [
+  "[x + 1/2 = [x − 1/3",
+  "hOpen [nyEqBoth] → unwrapSum | [x + 1/2 = [x − 1/3",
+  "hOpen [nyEqBoth] → unwrapSum | [x + 1/2 = [x − 1/3",
+  "hBalanceMul [nyEqBoth] → balance | [2(x + 1)/2 = [2(x − 1)/3",
+  "hCancel [nyEqBoth] → cancelVar | x + 1 = [2(x − 1)/3",
+  "hOpen [nyEqBoth] → distribute | x + 1 = [2x − 2/3",
+  "hBalanceMul [nyEqBoth] → balance | 3(x + 1) = [3(2x − 2)/3",
+  "hOpen [nyEqBoth] → distribute | 3x + 3 = [3(2x − 2)/3",
+  "hCancel [nyEqBoth] → cancelVar | 3x + 3 = 2x − 2",
+  "hBalanceTerm [nyEqBoth] → balance | 3x + 3 − 2x = 2x − 2 − 2x",
+  "hLike [nyEqBoth] → likeAddTap | x + 3 = 2x − 2 − 2x",
+  "hLike [nyEqBoth] → likeZero | x + 3 = −2",
+  "hBalanceTerm [nyEqAlone] → balance | x + 3 − 3 = −2 − 3",
+  "hLike [nyEqAlone] → likeZero | x = −2 − 3",
+  "hLike [nyEqTidy] → likeAdd | x = −5",
+  "clean"
+ ],
+ "breuken optellen (adding fractions): 1/2+1/3": [
+  "[1/2 + [1/3",
+  "hExpandTo [nyCombine] → expandBy | [3/2·3 + [1/3",
+  "hMerge [nyTidy] → mergeNum | [3/6 + [1/3",
+  "hExpandTo [nyTidy] → expandBy | [3/6 + [2/3·2",
+  "hMerge [nyTidy] → mergeNum | [3/6 + [2/6",
+  "hJoinFrac [nyTidy] → joinFrac | [3 + 2/6",
+  "hLike [nyLike] → likeAdd | [5/6",
+  "clean"
+ ],
+ "breuken optellen (adding fractions): 2/3+3/4": [
+  "[2/3 + [3/4",
+  "hExpandTo [nyCombine] → expandBy | [2·4/3·4 + [3/4",
+  "hMerge [nyTidy] → mergeNum | [8/3·4 + [3/4",
+  "hMerge [nyTidy] → mergeNum | [8/12 + [3/4",
+  "hExpandTo [nyTidy] → expandBy | [8/12 + [3·3/4·3",
+  "hMerge [nyTidy] → mergeNum | [8/12 + [9/4·3",
+  "hMerge [nyTidy] → mergeNum | [8/12 + [9/12",
+  "hJoinFrac [nyTidy] → joinFrac | [8 + 9/12",
+  "hLike [nyLike] → likeAdd | [17/12",
+  "clean"
+ ],
+ "breuken optellen (adding fractions): 2-3/4": [
+  "2 − [3/4",
+  "hExpandTo [nyCombine] → expandBy | [2·4/4 − [3/4",
+  "hMerge [nyTidy] → mergeNum | [8/4 − [3/4",
+  "hJoinFrac [nyTidy] → joinFrac | [8 − 3/4",
+  "hLike [nyLike] → likeAdd | [5/4",
+  "clean"
+ ],
+ "breuken optellen (adding fractions): 5/6-1/4": [
+  "[5/6 − [1/4",
+  "hExpandTo [nyCombine] → expandBy | [5·2/6·2 − [1/4",
+  "hMerge [nyTidy] → mergeNum | [10/6·2 − [1/4",
+  "hMerge [nyTidy] → mergeNum | [10/12 − [1/4",
+  "hExpandTo [nyTidy] → expandBy | [10/12 − [3/4·3",
+  "hMerge [nyTidy] → mergeNum | [10/12 − [3/12",
+  "hJoinFrac [nyTidy] → joinFrac | [10 − 3/12",
+  "hLike [nyLike] → likeAdd | [7/12",
+  "clean"
+ ],
+ "breuken optellen (adding fractions): 2/3·3/4": [
+  "[2/3[3/4",
+  "hMerge [nyTidy] → mergeGroup | [2·3/3·4",
+  "hCancel [nyTidy] → cancelVar | [2/4",
+  "hExplodeCancel [nyCancelNum] → explodeNum | [2/2·2",
+  "hCancel [nyTidy] → cancelVar | [1/2",
+  "clean"
+ ],
+ "breuken optellen (adding fractions): x/3+x/4": [
+  "[x/3 + [x/4",
+  "hExpandTo [nyCombine] → expandBy | [4x/3·4 + [x/4",
+  "hMerge [nyTidy] → mergeNum | [4x/12 + [x/4",
+  "hExpandTo [nyTidy] → expandBy | [4x/12 + [3x/4·3",
+  "hMerge [nyTidy] → mergeNum | [4x/12 + [3x/12",
+  "hJoinFrac [nyTidy] → joinFrac | [4x + 3x/12",
+  "hLike [nyLike] → likeAddTap | [7x/12",
+  "clean"
+ ],
+ "breuken optellen (adding fractions): 1/a+1/b": [
+  "[1/a + [1/b",
+  "hExpandTo [nyCombine] → expandIf | [b/ab + [1/b",
+  "hExpandTo [nyTidy] → expandIf | [b/ab + [a/ab",
+  "hJoinFrac [nyTidy] → joinFrac | [b + a/ab",
+  "clean"
+ ],
+ "breuken optellen (adding fractions): 3/x-2/x^2": [
+  "[3/x − [2/x^2",
+  "hExpandTo [nyCombine] → expandIf | [3x/xx − [2/x^2",
+  "hMerge [nyTidy] → mergeVar | [3x/x^2 − [2/x^2",
+  "hJoinFrac [nyTidy] → joinFrac | [3x − 2/x^2",
+  "clean"
+ ],
+ "wortels (square roots): √12": [
+  "√12",
+  "hExplodeRoot [nyTidy] → explodeNum | √2·2·3",
+  "hRootPair [nyTidy] → rootOut | 2√3",
+  "clean"
+ ],
+ "wortels (square roots): √8+√18": [
+  "√8 + √18",
+  "hExplodeRoot [nyTidy] → explodeNum | √2·2·2 + √18",
+  "hRootPair [nyTidy] → rootOut | 2√2 + √18",
+  "hExplodeRoot [nyTidy] → explodeNum | 2√2 + √2·3·3",
+  "hRootPair [nyTidy] → rootOut | 2√2 + 3√2",
+  "hLike [nyLike] → likeAdd | 5√2",
+  "clean"
+ ],
+ "wortels (square roots): √2·√6": [
+  "√2√6",
+  "hMerge [nyTidy] → mergeGroup | √2·6",
+  "hMerge [nyTidy] → mergeNum | √12",
+  "hExplodeRoot [nyTidy] → explodeNum | √2·2·3",
+  "hRootPair [nyTidy] → rootOut | 2√3",
+  "clean"
+ ],
+ "wortels (square roots): 3√2·4√2": [
+  "3√2·4√2",
+  "hMerge [nyTidy] → mergeNum | 12√2√2",
+  "hMerge [nyTidy] → mergeGroup | 12√2·2",
+  "hRootPair [nyTidy] → rootOut | 12·2",
+  "hMerge [nyTidy] → mergeNum | 24",
+  "clean"
+ ],
+ "wortels (square roots): √50-√2": [
+  "√50 − √2",
+  "hExplodeRoot [nyTidy] → explodeNum | √2·5·5 − √2",
+  "hRootPair [nyTidy] → rootOut | 5√2 − √2",
+  "hLike [nyLike] → likeAdd | 4√2",
+  "clean"
+ ],
+ "vergelijkingen met breuken (equations with fractions): x/3+2=5": [
+  "[x/3 + 2 = 5",
+  "hBalanceMul [nyEqAlone] → balance | 3([x/3 + 2) = 3·5",
+  "hOpen [nyEqAlone] → distribute | 3[x/3 + 3·2 = 3·5",
+  "hMerge [nyEqAlone] → mergeNum | 3[x/3 + 6 = 3·5",
+  "hIntoFrac [nyEqAlone] → intoFrac | [3x/3 + 6 = 3·5",
+  "hCancel [nyEqAlone] → cancelVar | x + 6 = 3·5",
+  "hMerge [nyEqAlone] → mergeNum | x + 6 = 15",
+  "hBalanceTerm [nyEqAlone] → balance | x + 6 − 6 = 15 − 6",
+  "hLike [nyEqAlone] → likeZero | x = 15 − 6",
+  "hLike [nyEqTidy] → likeAdd | x = 9",
+  "clean"
+ ],
+ "vergelijkingen met breuken (equations with fractions): x/2+x/3=5": [
+  "[x/2 + [x/3 = 5",
+  "hBalanceMul [nyEqAlone] → balance | 6([x/2 + [x/3) = 6·5",
+  "hOpen [nyEqAlone] → distribute | 6[x/2 + 6[x/3 = 6·5",
+  "hIntoFrac [nyEqAlone] → intoFrac | [6x/2 + 6[x/3 = 6·5",
+  "hExplodeCancel [nyEqAlone] → explodeNum | [2·3x/2 + 6[x/3 = 6·5",
+  "hCancel [nyEqAlone] → cancelVar | 3x + 6[x/3 = 6·5",
+  "hIntoFrac [nyEqAlone] → intoFrac | 3x + [6x/3 = 6·5",
+  "hExplodeCancel [nyEqAlone] → explodeNum | 3x + [2·3x/3 = 6·5",
+  "hCancel [nyEqAlone] → cancelVar | 3x + 2x = 6·5",
+  "hLike [nyEqAlone] → likeAddTap | 5x = 6·5",
+  "hMerge [nyEqAlone] → mergeNum | 5x = 30",
+  "hBalanceDiv [nyEqAlone] → balance | [5x/5 = [30/5",
+  "hCancel [nyEqAlone] → cancelVar | x = [30/5",
+  "hExplodeCancel [nyEqTidy] → explodeNum | x = [2·3·5/5",
+  "hCancel [nyEqTidy] → cancelVar | x = 2·3",
+  "hMerge [nyEqTidy] → mergeNum | x = 6",
+  "clean"
+ ],
+ "vergelijkingen met breuken (equations with fractions): 4/x=2": [
+  "[4/x = 2",
+  "hBalanceMul [nyEqAlone] → balanceIf | [4x/x = 2x",
+  "hCancel [nyEqBoth] → cancelVar | 4 = 2x",
+  "hSwap [nyEqAlone] → swapSides | 2x = 4",
+  "hBalanceDiv [nyEqAlone] → balance | [2x/2 = [4/2",
+  "hCancel [nyEqAlone] → cancelVar | x = [4/2",
+  "hExplodeCancel [nyEqTidy] → explodeNum | x = [2·2/2",
+  "hCancel [nyEqTidy] → cancelVar | x = 2",
+  "clean"
+ ],
+ "vergelijkingen met breuken (equations with fractions): (x+1)/2=(x-1)/3": [
+  "[x + 1/2 = [x − 1/3",
+  "hOpen [nyEqBoth] → unwrapSum | [x + 1/2 = [x − 1/3",
+  "hOpen [nyEqBoth] → unwrapSum | [x + 1/2 = [x − 1/3",
+  "hBalanceMul [nyEqBoth] → balance | [2(x + 1)/2 = [2(x − 1)/3",
+  "hCancel [nyEqBoth] → cancelVar | x + 1 = [2(x − 1)/3",
+  "hOpen [nyEqBoth] → distribute | x + 1 = [2x − 2/3",
+  "hBalanceMul [nyEqBoth] → balance | 3(x + 1) = [3(2x − 2)/3",
+  "hOpen [nyEqBoth] → distribute | 3x + 3 = [3(2x − 2)/3",
+  "hCancel [nyEqBoth] → cancelVar | 3x + 3 = 2x − 2",
+  "hBalanceTerm [nyEqBoth] → balance | 3x + 3 − 2x = 2x − 2 − 2x",
+  "hLike [nyEqBoth] → likeAddTap | x + 3 = 2x − 2 − 2x",
+  "hLike [nyEqBoth] → likeZero | x + 3 = −2",
+  "hBalanceTerm [nyEqAlone] → balance | x + 3 − 3 = −2 − 3",
+  "hLike [nyEqAlone] → likeZero | x = −2 − 3",
+  "hLike [nyEqTidy] → likeAdd | x = −5",
+  "clean"
+ ],
+ "vergelijkingen met breuken (equations with fractions): x/4=x/6+1": [
+  "[x/4 = [x/6 + 1",
+  "hBalanceMul [nyEqBoth] → balance | [12x/4 = 12([x/6 + 1)",
+  "hExplodeCancel [nyEqBoth] → explodeNum | [2·2·3x/2·2 = 12([x/6 + 1)",
+  "hCancel [nyEqBoth] → cancelVar | [2·3x/2 = 12([x/6 + 1)",
+  "hCancel [nyEqBoth] → cancelVar | 3x = 12([x/6 + 1)",
+  "hOpen [nyEqBoth] → distribute | 3x = 12[x/6 + 12",
+  "hIntoFrac [nyEqBoth] → intoFrac | 3x = [12x/6 + 12",
+  "hExplodeCancel [nyEqBoth] → explodeNum | 3x = [2·2·3x/2·3 + 12",
+  "hCancel [nyEqBoth] → cancelVar | 3x = [2·3x/3 + 12",
+  "hCancel [nyEqBoth] → cancelVar | 3x = 2x + 12",
+  "hBalanceTerm [nyEqBoth] → balance | 3x − 2x = 2x + 12 − 2x",
+  "hLike [nyEqBoth] → likeAddTap | x = 2x + 12 − 2x",
+  "hLike [nyEqBoth] → likeZero | x = 12",
   "clean"
  ],
  "machten (powers): 3a^2·2a^5": [
@@ -3654,13 +4037,13 @@
  "practice trigid d1 #2": [
   "tan(b)cos(b) = sin(b)",
   "hExplodeTrig [nyTidy] → tanSinCos | [sin(b)cos(b)/cos(b) = sin(b)",
-  "hCancel [nyProve] → cancelVar | sin(b) = sin(b)",
+  "hCancel [nyCancelPiece] → cancelVar | sin(b) = sin(b)",
   "clean"
  ],
  "practice trigid d1 #3": [
   "tan(a)cos(a) = sin(a)",
   "hExplodeTrig [nyTidy] → tanSinCos | [sin(a)cos(a)/cos(a) = sin(a)",
-  "hCancel [nyProve] → cancelVar | sin(a) = sin(a)",
+  "hCancel [nyCancelPiece] → cancelVar | sin(a) = sin(a)",
   "clean"
  ],
  "practice trigid d2 #0": [

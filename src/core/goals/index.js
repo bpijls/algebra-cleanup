@@ -3,6 +3,7 @@ import './simplify.js';
 import './solve.js';
 import './prove.js';
 import './play.js';
+import '../fractions.js';
 import { DONE, GOALS, HINT_MOVES, goalOf, runTactics } from './registry.js';
 
 // the next suggested move (an equation is solved, whatever its goal says, unless it is an identity to show)

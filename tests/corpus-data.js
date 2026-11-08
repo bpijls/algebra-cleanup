@@ -1,6 +1,16 @@
 // Textbook exercises, chapter by chapter (Dutch klas 2–3 algebra), typed the way a student would type them:
 // [typed, the answer the hints leave, goal]. Shared by corpus.test.js and golden.test.js.
 const CHAPTERS = {
+  'breuken optellen (adding fractions)': [
+    ['1/2+1/3', '[5/6', 'combine'], ['2/3+3/4', '[17/12', 'combine'], ['2-3/4', '[5/4', 'combine'], ['5/6-1/4', '[7/12', 'combine'],
+    ['2/3·3/4', '[1/2', 'combine'], ['x/3+x/4', '[7x/12', 'combine'], ['1/a+1/b', '[b + a/ab', 'combine'], ['3/x-2/x^2', '[3x − 2/x^2', 'combine'],
+  ],
+  'wortels (square roots)': [
+    ['√12', '2√3'], ['√8+√18', '5√2'], ['√2·√6', '2√3'], ['3√2·4√2', '24'], ['√50-√2', '4√2'],
+  ],
+  'vergelijkingen met breuken (equations with fractions)': [
+    ['x/3+2=5', 'x = 9'], ['x/2+x/3=5', 'x = 6'], ['4/x=2', 'x = 2'], ['(x+1)/2=(x-1)/3', 'x = −5'], ['x/4=x/6+1', 'x = 12'],
+  ],
   'machten (powers)': [
     ['3a^2·2a^5', '6a^7'], ['a^3·a^4·a', 'a^8'], ['(a^2)^3', 'a^6'], ['(2a)^3', '8a^3'], ['(3a^2b)^2', '9a^4b^2'],
     ['-2a·5a^3', '−10a^4'], ['2a^3·(a^2)^4', '2a^11'], ['3a^4b·2ab^3', '6a^5b^4'],

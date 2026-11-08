@@ -2,6 +2,7 @@
 import { numProd } from './hints.js';
 import { Pr } from './kinds/bracket.js';
 import { V } from './kinds/letter.js';
+import { Q } from './kinds/fraction.js';
 import { N } from './kinds/number.js';
 import { T, cloneF, cloneT, fHasU, tHasU } from './kinds/sums.js';
 import { SIDES, addCond, eachFactor, hasU, isClean, isOne, params, unknownOf, walkTerms } from './model.js';
@@ -35,8 +36,8 @@ export function opBalance(S, op, v, bi = 0) {
   const born = [];
   let cond = null;
   if (!mul) {
-    if (parts.some(P => !isOne(P.den))) return { no: 'balanceFrac', ids: ['op'] };
     for (const P of parts) {
+      if (!isOne(P.den)) { P.num = [T([Q(P.num, P.den)])]; P.den = [T([N(1)])]; }   // x/3 − 2: the fraction is a term now
       const t = cloneT(v); if (op === '-') t.neg = !t.neg;
       born.push(...t.f.map(f => f.id));
       // b² added to −4ac reads b² − 4ac
@@ -45,8 +46,10 @@ export function opBalance(S, op, v, bi = 0) {
       else P.num.push(t);
     }
   } else {
-    // the unknown could be 0, and a letter that isn't in the equation means nothing here
-    if (v.f.some(f => (f.k === 'v' && (f.b === u || !ps.includes(f.b))) || (f.k === 'p' && f.terms.some(t => t.f.some(g => g.k === 'v' && !ps.includes(g.b))))))
+    // the unknown could be 0 (unless it is below a bar already: 4/x = 2 has x ≠ 0), and a letter that isn't in
+    // the equation means nothing here
+    const under = parts.some(P => hasU(P.den, u) || P.num.some(t => t.f.some(f => f.k === 'q' && hasU(f.den, u))));
+    if (v.f.some(f => (f.k === 'v' && (f.b === u ? !under || op !== '·' : !ps.includes(f.b))) || (f.k === 'p' && f.terms.some(t => t.f.some(g => g.k === 'v' && !ps.includes(g.b))))))
       return { no: 'balanceLetter', p: { v: shown }, ids: ['op'] };
     const sym = v.f.filter(f => f.k !== 'n');
     if (!sym.length && vNum === 1 && !v.neg) return { no: 'balanceOne', ids: ['op'] };
@@ -72,7 +75,9 @@ export function opBalance(S, op, v, bi = 0) {
     if (sym.length) cond = sym.map(f => condHTML(addCond(S, f.k === 'p' ? f.terms : [T([V(f.b, 1)])], 'ne'))).join(', ');
   }
   const sides = parts.map(P => fracHTML(P));
-  return { ok: cond ? 'balanceIf' : 'balance', p: { op: BOPS[op], v: shown, ex: mx(sides.join(' = ')), c: cond }, born };
+  // times the unknown: L − R is multiplied by it too, not by a constant (the judge checks it is exactly that)
+  const scale = mul && v.f.some(f => f.k === 'v' && f.b === u) ? v : undefined;
+  return { ok: cond ? 'balanceIf' : 'balance', p: { op: BOPS[op], v: shown, ex: mx(sides.join(' = ')), c: cond }, born, scale };
 }
 
 export function opSwap(S, bi = 0) {
@@ -107,7 +112,11 @@ export function dragBalance(S, id) {
     walkTerms([top], { depth: 0 }, M => { if (!L && (M.kind === 't' ? M.term.id : M.f.id) === id) L = M; });
     if (!L) continue;
     const ts = P[side], bi = branchOf(pi);
+    // a piece below the bar of a fraction in the sum: multiply by that bottom (x/3 + 2: drag 3 → · 3)
+    if (L.kind === 'f' && L.qs === 'den' && top.f.includes(L.in))
+      return L.in.den.length === 1 ? { op: '·', value: T(L.in.den[0].f.map(cloneF), L.in.den[0].neg), bi } : { no: 'dragDenSum' };
     if (side === 'num' && L.kind === 'f' && L.f.k === 'n' && L.f.v === 0 && isZeroSide(ts) && isOne(P.den)) return { zero: true, bi };
+    if (side === 'num' && !isOne(P.den)) return { no: 'dragFracTop' };   // x/3 = 4: the 3 below the bar is what to drag
     if (side === 'den') return ts.length === 1 ? { op: '·', value: T(top.f.map(cloneF), top.neg), bi } : { no: 'dragDenSum' };
     const whole = { op: top.neg ? '+' : '-', value: T(top.f.map(cloneF)), bi };
     if (ts.length > 1 || L.kind === 't') return whole;

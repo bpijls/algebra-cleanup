@@ -49,40 +49,32 @@ Applied leaves:
 
 ## 2. The tree
 
+The tree has two roots in algebra (powers and number fractions). The order is **keystones first**: an engine change that several skills depend on comes before the skills that need it.
+
 ```
 ALGEBRA
 powers ─┬─ like terms ─ brackets ─┬─ double brackets ─┐
         │                        ├─ factoring ───────┴─ sum-product ─┐
         │                        └─ linear eq ─┬─ formulas ──────────┼─ generic quadratic
-        ├─ power fractions ─ textbook mix    │                     │
+        ├─ power fractions ─ textbook mix    ├─ inequalities      │
         ├─ square roots ─────────────────────┴──── quadratic eq ───┘─ complex numbers
-        ├─ exponents (← power fractions, roots) ─ logs ─ exponential eq
-        └─ algebraic fractions (← factoring, power fractions, linear eq)
-GONIOMETRY      trig basics (← roots, alg. fractions) ─ identities (← double brackets) ─ trig equations (← quadratic eq)
-CALCULUS        derivatives (← exponents, brackets) ─ derivative rules (← trig basics, logs) ─ integrals ─ differential eq (← exponential eq)
-LOGIC           logic basics ─ simplifying ─ De Morgan ─ circuits
-APPLIED leaves  physics formulas (← formulas, alg. fractions) · growth & decay (← exponential eq) · kinematics, marginal (← derivatives) · cooling/RC (← differential eq)
+        ├─ negative exp (← power fractions, number fractions) ─ fractional exp (← roots)
+        └─ logs ─ log rules (← alg. fractions) ─ exponential eq (← negative exp) ─ growth & decay
+number fractions ─ algebraic fractions (← factoring, power fractions) ─ equations with fractions (← linear eq)
+SEQUENCES       sequences (← formulas, exponential eq) ─ sums
+GONIOMETRY      unit circle ─ identities ─ sum formulas · trig equations (← quadratic eq), π and radians
+CALCULUS        derivatives (← exponents, brackets) ─ derivative rules (← trig, logs) ─ integrals ─ differential eq
+LOGIC           logic basics ─ simplifying ─ De Morgan
+APPLIED leaves  physics formulas (← formulas, eq. with fractions) · growth & decay · kinematics, marginal · cooling/RC
 ```
 
-The current 51 levels map onto the first 13 algebra skills:
+Built so far: 20 skills, 91 levels.
 
-| Skill | Levels |
-|---|---|
-| powers | 1–4, 7, 8 |
-| like terms | 5, 6 |
-| power fractions | 9–11, 14 |
-| textbook mix | 12, 13, 15 |
-| brackets | 16, 17 |
-| double brackets | 18, 19 |
-| factoring | 20–24 |
-| sum-product | 25, 26 |
-| linear equations | 27–33 |
-| quadratic equations | 34–41 |
-| formulas | 42–44 |
-| generic quadratic | 45–48 |
-| logs | 49–51 |
-
-**Square roots** gets new levels; the `√` kind and `rootOut` already exist.
+| Skill | Levels | Since |
+|---|---|---|
+| powers, like terms, power fractions, textbook mix, brackets, double brackets, factoring, sum-product, linear eq, quadratic eq, formulas, generic quadratic, logs | the first 51 | tree phase 1 |
+| unit circle, identities, sum formulas | 19 (`src/topics/trig`) | goniometry |
+| number fractions (`numfrac`, a second root), square roots (`sqrt`), algebraic fractions (`algfrac`), equations with fractions (`fraceq`) | 21 (`src/content/fractions.js`) | keystone A |
 
 ## 3. A new mechanism: earned shortcuts
 
@@ -161,22 +153,19 @@ This keeps the rule "nothing happens that the player can't see the reason for": 
 
 ## 6. Phases (each phase leaves `npm test` green and is its own commit)
 
-1. **Tree with the existing 51 levels.**
-   - Skills registry, level ids and progress migration.
-   - Map, skill card, practice pick mode, level line.
-   - Goldens rekeyed by level id; the only diff is the key rename, which gets reviewed.
-2. **Algebra gaps**, in this order:
-   - square roots (new levels, the expand-a-fraction move);
-   - `Fr` + algebraic fractions;
-   - `Num`/`Pow` + exponents;
-   - log quotient and exponential equations (with the first earned shortcut, `log(aˣ)`);
-   - complex numbers.
-3. **Applied leaves** on the algebra: physics formulas, growth and decay.
-4. **Boolean logic** (`S.algebra = 'bool'`, truth-table judge).
-5. **Goniometry** (function factory, `π`, the identities, trig equations with `k`). *Started ahead of phase 2, at the user's request (Nov 2026): exact values, identities (a new `prove` goal) and sum formulas are in `src/topics/trig`, with one `trig` kind instead of a function factory. Still to do: `π` and radians, trig equations with `k`.*
-6. **Derivatives**, plus the kinematics and marginal leaves (operator kind, numeric-derivative judge, power-rule shortcut).
-7. **Integrals.**
-8. **Differential equations**, plus the cooling and RC leaves.
+Done:
+- **Tree with the existing 51 levels**: skills registry, level ids, progress migration, the map, skill card and practice pick mode.
+- **Goniometry**, ahead of the rest at the user's request: exact values, identities (the `prove` goal) and sum formulas, with one `trig` kind.
+- **Keystone A, the fraction as a factor** (`Q`, `src/core/kinds/fraction.js`): a fraction can be part of a sum (`x/3 + 2`, `½ + ⅓`, `1/a + 1/b`). Moves: expand (top and bottom times the same piece, also rationalising `1/√2`), join over the same bottom, a piece in front onto the top, split a sum on top. The `combine` goal (write as one fraction) and `rootFree` (no root below the bar). Skills numfrac, sqrt, algfrac, fraceq. Lifted `trigValueSum`.
+
+To come, in this order:
+1. **Keystone B, rational exponents**: `a⁻²` explodes to `1/(a·a)`; mixed signs don't merge before the player sees it; `a^½ ↔ √a`. Skills: negative exponents, fractional exponents.
+2. **Keystone C, a ring-aware evaluator** (`evalTerms` over a ring, `S.algebra`), plus **inequalities** (`<`, `≤`: times a negative flips the sign, visibly; the judge compares solution sets; a number line on the win sheet).
+3. **Keystone D, a symbolic exponent** (`Ex(base, terms)`: `2ˣ`, `3^(x+1)`), the log quotient rule, exponential equations, growth and decay, and the first **earned shortcut** (`log(aˣ) = x log a`, `defineShortcut`).
+4. **Complex numbers** (the `COMPLEX` ring, `i · i = −1`, `quadHint` past `D < 0`).
+5. **Boolean logic** (`S.algebra = 'bool'`, truth-table judge, `a·a = a`, De Morgan as an explode).
+6. **Sequences and sums** (`opSubstitute`; a design spike for a `Σ` kind, Gauss's pairing), plus **physics formulas**.
+7. **Calculus** (derivatives with an operator kind and a numeric-derivative judge; integrals; differential equations), then the rest of goniometry (`π`, radians, trig equations with `k ∈ ℤ`).
 
 Every field comes with:
 - a `src/topics/<field>/` folder;

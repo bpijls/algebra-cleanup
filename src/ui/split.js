@@ -1,7 +1,10 @@
 /* Splitting a term in two (5x = 2x + 3x) and the result previews on the move buttons. */
 import { N } from '../core/kinds/number.js';
-import { T, cloneF } from '../core/kinds/sums.js';
-import { coef, locate, tidy, varPart } from '../core/model.js';
+import { T, cloneF, cloneT } from '../core/kinds/sums.js';
+import { V } from '../core/kinds/letter.js';
+import { Rt } from '../core/kinds/root.js';
+import { expandTarget, opExpand } from '../core/fractions.js';
+import { coef, eachFactor, locate, tidy, varPart } from '../core/model.js';
 import { opSplitTwo } from '../core/moves.js';
 import { play } from '../core/rules/engine.js';
 import { t } from '../i18n.js';
@@ -59,6 +62,42 @@ export function showSplit(tid) {
   };
   range.addEventListener('input', update);
   go.addEventListener('click', () => { closeSheet(); run(s => opSplitTwo(s, tid, p)); });
+  update();
+  setTimeout(() => range.focus(), 50);
+}
+
+/* ---- expand a fraction: top and bottom times the same thing ---- */
+// what to expand by: a number from the slider, or a letter or root that is below the bar somewhere (1/a, 1/√2)
+export function showExpand(id) {
+  const tg = expandTarget(ui.S, id);
+  if (!tg) return;
+  const chips = [], seen = new Set();
+  eachFactor(ui.S, L => {
+    const below = L.qs === 'den' || (!L.qs && L.side === 'den');
+    if (!below || !(L.f.k === 'v' || L.f.k === 'r')) return;
+    const f = L.f.k === 'v' ? V(L.f.b, 1) : Rt(L.f.terms.map(cloneT)), key = JSON.stringify(L.f.k === 'v' ? L.f.b : L.f.terms.map(t => t.f.map(g => g.v || g.b)));
+    if (!seen.has(key)) { seen.add(key); chips.push(f); }
+  });
+  let pick = null, k = 2;
+  const shown = play(ui.S, s => opExpand(s, id, T([N(2)]))).r;
+  ui.sheetFn = null;
+  const host = openSheet(`<h2 style="font-size:1.6rem">${t('expandTitle', { x: shown && shown.p ? shown.p.x : '' })}</h2><p>${t('expandHow')}</p>
+    <div class="splitprev expr-n" id="ePrev" aria-live="polite"></div>
+    <input type="range" class="slider" id="eRange" min="2" max="12" step="1" value="2" aria-label="${t('expandTitle', { x: '' })}">
+    <div class="sliderends"><span>2</span><span>12</span></div>
+    ${chips.length ? `<div class="row" style="margin-top:10px">${chips.map((f, i) => `<button type="button" class="pchip" data-c="${i}" aria-pressed="false">${mx(sumHTML([T([f])]))}</button>`).join('')}</div>` : ''}
+    <div class="row" style="margin-top:16px"><button class="tool main" type="button" id="eDo">${t('expandDo')}</button></div>`);
+  const range = host.querySelector('#eRange'), prev = host.querySelector('#ePrev');
+  const value = () => T([pick != null ? chips[pick] : N(k)].map(f => JSON.parse(JSON.stringify(f))));
+  const update = () => {
+    k = +range.value;
+    const { r } = play(ui.S, s => opExpand(s, id, value()));
+    prev.innerHTML = r && r.ok ? `${r.p.x} = ${r.p.ex}` : '';
+    host.querySelectorAll('[data-c]').forEach(b => { const on = +b.dataset.c === pick; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
+  };
+  range.addEventListener('input', () => { pick = null; update(); });
+  host.querySelectorAll('[data-c]').forEach(b => b.addEventListener('click', () => { pick = pick === +b.dataset.c ? null : +b.dataset.c; update(); }));
+  host.querySelector('#eDo').addEventListener('click', () => { const v = value(); closeSheet(); run(s => opExpand(s, id, v)); });
   update();
   setTimeout(() => range.focus(), 50);
 }

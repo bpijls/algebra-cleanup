@@ -3,7 +3,8 @@ import { isZeroSide, letters, loneSquare } from './balance.js';
 import { hint } from './goals/index.js';
 import { V } from './kinds/letter.js';
 import { N } from './kinds/number.js';
-import { T, cloneF, fHasU, tHasU } from './kinds/sums.js';
+import { T, cloneF, fHasU, sumKey, tHasU } from './kinds/sums.js';
+import { lcdTerm } from './fractions.js';
 import { canMerge, hasU, isOne, locate, walkTerms } from './model.js';
 import { opRoot, opZero, sideView } from './quadratic.js';
 import { bx, fx, mx, sumHTML, termHTML } from '../render/text.js';
@@ -143,6 +144,16 @@ export function pairHint(S) {
     const id = terms.length > 1 ? t.id : (t.f.find(f => f.k !== 'n') || t.f[0]).id;
     return { k: 'hBalanceTerm', p: { x: mx(sumHTML([t])), op: t.neg ? '+' : '−', v: mx(termHTML(t)), side }, ids: [id, 'op'], drag: id, balance: { op: t.neg ? '+' : '-', value: monoOf(t) } };
   };
+  // fractions in a sum, or a letter below a bar: multiply both sides by a common bottom of them all
+  // (x/2 + x/3 = 5: · 6; 4/x = 2: · x, which writes x ≠ 0)
+  const qs = S.parts.flatMap(P => P.num.flatMap(t => t.f.filter(f => f.k === 'q')));
+  if (qs.length || S.parts.some(P => !isOne(P.den) && P.den.some(t => t.f.some(f => f.k !== 'n')))) {
+    const m = lcdTerm([...qs.map(q => q.den), ...S.parts.filter(P => !isOne(P.den)).map(P => P.den)]);
+    if (!m) return { k: 'hDone', ids: [] };
+    const key = sumKey([m]), whole = [...S.parts.filter(P => !isOne(P.den)).map(P => P.den), ...qs.map(q => q.den)].find(d => sumKey(d) === key);
+    const drag = whole && whole[0].f[0].id;
+    return { k: 'hBalanceMul', p: { v: mx(termHTML(m)) }, ids: [drag || 'op', 'op'], ...(drag ? { drag } : {}), balance: { op: '·', value: m } };
+  }
   // a fraction: multiply both sides by what is below the bar
   for (const P of S.parts) if (!isOne(P.den)) {
     if (P.den.length !== 1 || P.den[0].f.some(f => f.k !== 'n')) return { k: 'hDone', ids: [] };

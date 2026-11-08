@@ -4,6 +4,7 @@ import { Pr } from '../kinds/bracket.js';
 import { V } from '../kinds/letter.js';
 import { N } from '../kinds/number.js';
 import { KINDS } from '../kinds/registry.js';
+import { Q } from '../kinds/fraction.js';
 import { T, cloneF, fkey, sumKey } from '../kinds/sums.js';
 import { canMerge, cleanTerm, gcd, locate, mergeF, negate, sig, tidy, varPart } from '../model.js';
 import { cancelCheck, groupHasBase, opFactor, opMove, related, restOf, termPair, usedUp } from '../moves.js';
@@ -40,6 +41,8 @@ definePairRule('sum', 'rootOut', (S, A, B) => {
   if (x.v !== y.v && x.v > 1 && y.v > 1) return { type: 'merge' };
   return undefined;
 });
+// 3 · x/4: a piece beside a fraction goes onto its top, (3·x)/4 (tap the piece, then the fraction)
+definePairRule('sum', 'intoFracTile', (S, A, B) => A.term === B.term && (A.f.k === 'q') !== (B.f.k === 'q') ? { type: 'into', out: A.f.k === 'q' ? 'B' : 'A' } : undefined);
 // two pieces of one term: they multiply into one when they can
 definePairRule('sum', 'sameTerm', (S, A, B) => A.term === B.term ? (canMerge(A.f, B.f) ? { type: 'merge' } : NONE) : undefined);
 // a(x+2) + 3(x+2): the same bracket in both terms goes outside
@@ -47,6 +50,13 @@ definePairRule('sum', 'sharedBracket', (S, A, B) => {
   const x = A.f, y = B.f;
   if (!(x.k === 'p' && y.k === 'p' && canMerge(x, y))) return undefined;
   return x.e === y.e ? { type: 'factor', useless: false } : { type: 'fizzle', msg: 'explodeFirstVar', p: unequal(x, y) };
+});
+// two fractions over the same bottom join into one: a/6 + b/6 = (a + b)/6
+definePairRule('sum', 'joinFrac', (S, A, B) => {
+  if (A.f.k !== 'q' || B.f.k !== 'q') return undefined;
+  if (A.term.f.length > 1 || B.term.f.length > 1) return { type: 'fizzle', msg: 'joinInto' };
+  if (sumKey(A.f.den) === sumKey(B.f.den)) return { type: 'join' };
+  return { type: 'fizzle', msg: 'joinUnequal', p: { x: mx(fx(A.f)), y: mx(fx(B.f)) } };
 });
 // from here on: the same kind of piece in two terms
 definePairRule('sum', 'different', (S, A, B) => {
@@ -74,6 +84,14 @@ definePairRule('sum', 'powers', (S, A, B) => {
 definePairRule('sum', 'factor', (S, A, B) => ({ type: 'factor', useless: S.goal !== 'factor' && tidy(A.term) && tidy(B.term) }));
 
 /* ---- a bracket wall between them ---- */
+// a piece in front of a fraction, and a piece of that fraction: onto its top; with its bottom, onto the top first
+definePairRule('wall', 'intoFrac', (S, A, B) => {
+  const inner = (O, I) => I.in && I.in.k === 'q' && I.qs && O.term.f.includes(I.in) && O.f !== I.in;
+  const [O, I] = inner(A, B) ? [A, B] : inner(B, A) ? [B, A] : [];
+  if (!O) return undefined;
+  if (I.qs === 'den') return related(O.f, I.f) || (O.f.k === 'n' && I.f.k === 'n') ? { type: 'fizzle', msg: 'intoFracTop', p: { x: mx(fx(O.f)) } } : NONE;
+  return { type: 'into', out: O === A ? 'A' : 'B' };
+});
 definePairRule('wall', 'wall', (S, A, B) => {
   if (!related(A.f, B.f)) return NONE;
   return { type: 'fizzle', msg: A.side === B.side ? 'bracketWall' : 'cancelSum' };
@@ -81,10 +99,10 @@ definePairRule('wall', 'wall', (S, A, B) => {
 
 /* ---- across one fraction bar ---- */
 // a used-up fraction while multiplying: 1 over 1 cancels away, and the fraction with it
-definePairRule('bar', 'ones', (S, A) => S.op === '·' && usedUp(S.parts[A.p]) ? { type: 'ones' } : undefined);
+definePairRule('bar', 'ones', (S, A) => S.op === '·' && !A.qs && usedUp(S.parts[A.p]) ? { type: 'ones' } : undefined);
 // only exactly equal pieces cancel, and never out of a sum
 definePairRule('bar', 'cancel', (S, A, B) => {
-  const x = A.f, y = B.f, P = S.parts[A.p];
+  const x = A.f, y = B.f, P = A.qs ? A.in : S.parts[A.p];   // the bar of the whole problem, or of a fraction in a sum
   const sameVar = x.k === 'v' && y.k === 'v' && x.b === y.b;
   const nums = x.k === 'n' && y.k === 'n';
   const brk = x.k === 'p' && y.k === 'p' && sumKey(x.terms) === sumKey(y.terms);
@@ -163,4 +181,25 @@ defineAction('cancel', (S, A, B) => {
   const x = A.f, y = B.f, shown = mx(fx(x));
   if (x.k === 'n') { x.v = 1; y.v = 1; } else { x.e = 0; y.e = 0; }
   return { ok: 'cancelVar', p: { x: shown }, cancel: true };
+});
+
+// 3 · x/4 → (3·x)/4: the piece goes onto the top (a sum on top is multiplied as a whole)
+defineAction('into', (S, A, B, v) => {
+  const [O, I] = v.out === 'A' ? [A, B] : [B, A], q = I.f.k === 'q' ? I.f : I.in, term = O.term;
+  const before = mx(termHTML(term));
+  term.f.splice(term.f.indexOf(O.f), 1);
+  if (q.num.length === 1) q.num[0].f.unshift(O.f);
+  else q.num = [T([O.f, Pr(q.num)])];
+  return { ok: 'intoFrac', p: { x: mx(fx(O.f)), ex: before, r: mx(termHTML(term)) }, born: [O.f.id] };
+});
+
+// a/6 + b/6 → (a + b)/6: the tops become one sum over the shared bottom; a minus in front goes onto its top
+defineAction('join', (S, A, B) => {
+  const ts = A.terms, [P, R] = [A, B].sort((p, q) => ts.indexOf(p.term) - ts.indexOf(q.term));
+  const ex = mx(sumHTML([P.term, R.term]));
+  const top = [P, R].flatMap(L => L.f.num.map(t => { if (L.term.neg) t.neg = !t.neg; return t; }));
+  const q = Q(top.length > 1 ? [T([Pr(top)])] : top, P.f.den), nt = T([q]);   // a sum on top stays one piece: (a + 1)/(a + 1) cancels
+  ts.splice(ts.indexOf(P.term), 1, nt);
+  ts.splice(ts.indexOf(R.term), 1);
+  return { ok: 'joinFrac', p: { ex, r: mx(fx(q)), d: mx(sumHTML(P.f.den)) }, born: [q.id] };
 });

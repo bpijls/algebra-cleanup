@@ -40,21 +40,37 @@ function solutions(S) {
   const out = [];
   for (let b = 0; b < S.parts.length / 2; b++) {
     const [L, R] = S.parts.slice(2 * b, 2 * b + 2);
-    const f = x => evP(L, envOf(S, x)) - evP(R, envOf(S, x));
-    const [f0, f1, f2, f3, f4] = [0, 1, 2, 3, 4].map(f);
+    // with the unknown below a bar (4/x = 2), L − R times every bottom is a polynomial again; its roots where a
+    // bottom is 0 are no solutions
+    const dens = []; G.walk({ parts: [L, R] }, M => { if (M.kind === 'f' && M.f.k === 'q') dens.push(M.f.den); });
+    dens.push(L.den, R.den);
+    const below = x => dens.reduce((p, d) => p * evTerms(d, envOf(S, x)), 1);
+    const f = x => (evP(L, envOf(S, x)) - evP(R, envOf(S, x))) * below(x);
+    // sampled at 0 … 4; a bottom that is 0 at one of them (4/x at 0) moves the samples half a step
+    const nan = h => [0, 1, 2, 3, 4].map(k => f(k + h)).some(Number.isNaN);
+    const h = nan(0) && !nan(0.5) && dens.some(d => d.some(t => t.f.some(g => g.k === 'v'))) ? 0.5 : 0;
+    const [f0, f1, f2, f3, f4] = [0, 1, 2, 3, 4].map(k => f(k + h));
     if ([f0, f1, f2, f3, f4].some(Number.isNaN)) continue;
     const a = (f2 - 2 * f1 + f0) / 2, bb = f1 - f0 - a, c = f0;
     const tol = 1e-7 * Math.max(1, Math.abs(f3), Math.abs(f4));
     assert.ok(Math.abs(9 * a + 3 * bb + c - f3) < tol && Math.abs(16 * a + 4 * bb + c - f4) < tol, `branch is not of degree ≤ 2: ${G.stateHTML(S)}`);
     const small = v => Math.abs(v) < 1e-9 * Math.max(1, Math.abs(f0), Math.abs(f1), Math.abs(f2));
     if (small(a) && small(bb)) { if (small(c)) return 'all'; continue; }
-    if (small(a)) { out.push(-c / bb); continue; }
-    const d = bb * bb - 4 * a * c, scale = bb * bb + Math.abs(4 * a * c);
-    if (Math.abs(d) < 1e-9 * scale) out.push(-bb / (2 * a));
-    else if (d > 0) out.push((-bb + Math.sqrt(d)) / (2 * a), (-bb - Math.sqrt(d)) / (2 * a));
+    const roots = [];
+    if (small(a)) roots.push(-c / bb);
+    else {
+      const d = bb * bb - 4 * a * c, scale = bb * bb + Math.abs(4 * a * c);
+      if (Math.abs(d) < 1e-9 * scale) roots.push(-bb / (2 * a));
+      else if (d > 0) roots.push((-bb + Math.sqrt(d)) / (2 * a), (-bb - Math.sqrt(d)) / (2 * a));
+    }
+    out.push(...roots.map(t => t + h).filter(x => Math.abs(below(x)) > 1e-9));
   }
   return [...new Set(out.map(v => +v.toPrecision(10)))].sort((p, q) => p - q);
 }
+// the unknown below a bar somewhere (4/x = 2, x/(x + 1) …): L − R is not a polynomial
+const belowBar = S => { const u = G.unknownOf(S); let b = false; G.walk(S, L => { if (L.kind === 'f' && L.f.k === 'v' && L.f.b === u && (L.qs === 'den' || L.side === 'den')) b = true; }); return b; };
+// each answer makes the two sides of the equation equal
+const satisfies = (S, xs) => xs !== 'all' && xs.length > 0 && xs.every(x => { const [L, R] = S.parts, l = evP(L, envOf(S, x)), r = evP(R, envOf(S, x)); return Math.abs(l - r) <= 1e-7 * Math.max(1, Math.abs(l)); });
 const sameSolutions = (u, v) => u === 'all' || v === 'all' ? u === v
   : u.length === v.length && u.every((x, i) => Math.abs(x - v[i]) <= 1e-6 * Math.max(1, Math.abs(x)));
 // an equation keeps its solutions when L − R changes by the same nonzero constant for every value of the unknown
@@ -65,6 +81,8 @@ function equivalent(u, v) {
   const r = u.map((x, i) => v[i] / x);
   return r.every(k => isFinite(k) && Math.abs(k) > 1e-9 && Math.abs(k - r[0]) <= 1e-7 * Math.max(1, Math.abs(r[0])));
 }
+// times the unknown (4/x = 2 · x, allowed because x is below a bar and so not 0): L − R is multiplied by exactly that
+const scaled = (u, t, ref) => u.map((v, i) => v * evT(t, envOf(ref, XS[i])));
 const same = (u, v) => u.some((x, i) => x !== null && v[i] !== null)
   && u.every((x, i) => x === null || v[i] === null || (!isFinite(x) && !isFinite(v[i])) || Math.abs(x - v[i]) <= 1e-7 * Math.max(1, Math.abs(x)));
 
@@ -82,6 +100,7 @@ function argsOf(S, gesture) {
     case 'split': return ts.flatMap(id => [-3, 1, 2].map(k => [id, k]));
     case 'sweep': return pairs(fs).map(ab => [ab]);
     case 'board': return [[]];
+    case 'expand': return fs.flatMap(id => [G.T([G.N(2)]), G.T([G.N(3)]), G.T([G.V('a')]), G.T([G.N(0)]), G.T([G.N(1)])].map(v => [id, v]));   // 0 and 1: refused
     case 'drag': return eq ? [...fs, ...ts, ...fs.map(id => -id)].map(id => [id]) : [];   // a piece, or the ² of a lone square
     case 'branch': return branches.map(b => [b]);
     case 'balance': {
@@ -114,7 +133,7 @@ function fuzz(start, steps, label) {
     for (const m of moves) {
       const trial = JSON.parse(snap);
       let r;
-      try { r = m(trial); } catch (e) { assert.fail(`${label}: a move threw ${e.message}\n${snap}`); }
+      try { r = m(trial); } catch (e) { assert.fail(`${label}: a move threw ${e.message}\n${(e.stack || "").split("\n").slice(1, 4).join("\n")}\n${snap}`); }
       if (!r) continue;
       const key = r.ok || r.no;
       assert.ok(G.I18N.en[key] && G.I18N.nl[key], `${label}: message ${key} has no text`);
@@ -129,7 +148,8 @@ function fuzz(start, steps, label) {
       const sides = X => X.parts.map(P => VALS.map(env => holds(trial.conds, env) ? evP(P, env) : null));
       const kept = S.goal === 'prove' ? sides(old).every((u, i) => same(u, sides(trial)[i]))
         : branching ? sameSolutions(solutions(old), solutions(trial))
-        : S.op === '=' ? old.parts.every((_, i) => i % 2 || equivalent(eqValues(pair(old, i / 2), old), eqValues(pair(trial, i / 2), old)))
+        : S.op === '=' ? old.parts.every((_, i) => i % 2 || equivalent(eqValues(pair(old, i / 2), old), eqValues(pair(trial, i / 2), old))
+          || (r.scale && equivalent(scaled(eqValues(pair(old, i / 2), old), r.scale, old), eqValues(pair(trial, i / 2), old))))
         : same(values(old, trial.conds), values(trial));
       assert.ok(kept, `${label}: move ${r.ok} changed the ${S.op === '=' ? 'solutions' : 'value'}\nbefore ${G.stateHTML(JSON.parse(snap))}\nafter  ${G.stateHTML(trial)}`);
       S = trial; moved = true; break;
@@ -139,4 +159,4 @@ function fuzz(start, steps, label) {
 }
 
 const hasText = k => !!(G.I18N.en[k] && G.I18N.nl[k]);
-module.exports = { hasText, G, values, same, equivalent, fuzz, solutions, sameSolutions };
+module.exports = { hasText, G, values, same, equivalent, fuzz, solutions, sameSolutions, belowBar, satisfies };

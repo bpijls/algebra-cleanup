@@ -272,6 +272,12 @@ button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 .ortag { font-family: var(--f-math); font-size: 1.7rem; color: var(--muted); line-height: 1; }
 /* a square root: √ with a bar over what is inside */
 /* the √ is drawn as one line with the bar (a stretched √ glyph doesn't meet its bar); the glyph stays as hidden text */
+.tile.q { flex-direction: column; align-items: stretch; background: var(--card); border: 2px solid var(--line); padding: 4px 6px; gap: 4px; cursor: pointer; }
+.tile.q > .qbar { height: 3px; border-radius: 2px; background: var(--ink); margin: 2px 2px; }
+.tile.q > .side { justify-content: center; gap: 4px; }
+.tile.q .term { padding: 4px; }
+.tile.q.sel { transform: translateY(-3px); }
+.nfrac.q { font-size: .82em; }
 .tile.r { position: relative; background: var(--card); border: 2px solid var(--line); padding: 6px 10px 6px 30px; gap: 0; align-items: stretch; cursor: pointer; }
 .tile.r > .rsvg { position: absolute; left: 6px; top: 7.5px; width: 23px; height: calc(100% - 17px); overflow: visible; }
 .rsvg path, .rs-svg path { fill: none; stroke: var(--ink); stroke-width: 3px; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }

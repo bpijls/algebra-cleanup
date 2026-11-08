@@ -55,9 +55,14 @@ export function groups(S) {
   return h;
 }
 
-// a fraction: cancel equal pieces, or explode until they are equal
+// a fraction (the whole problem, or one inside a sum): cancel equal pieces, or explode until they are equal
 export function cancelAcross(S) {
-  const P = S.parts[0];
+  const fracs = [S.parts[0]];
+  eachFactor(S, L => { if (L.f.k === 'q') fracs.push(L.f); });
+  for (const P of fracs) { const h = cancelIn(P); if (h) return h; }
+  return null;
+}
+export function cancelIn(P) {
   if (!(P.num.length === 1 && P.den.length === 1 && !isOne(P.den))) return null;
   const a = P.num[0], b = P.den[0];
   for (const x of a.f) for (const y of b.f)

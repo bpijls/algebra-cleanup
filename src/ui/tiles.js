@@ -12,7 +12,8 @@ import { balSync } from './balance.js';
 import { run } from './controller.js';
 import { SVGNS } from './input.js';
 import { fitBoard } from './layout.js';
-import { previewOf, splitTermOf } from './split.js';
+import { previewOf, showExpand, splitTermOf } from './split.js';
+import { expandTarget } from '../core/fractions.js';
 import { $, board, ui } from './state.js';
 
 const VARCOL = { a: '--va', b: '--vb', x: '--vx', y: '--vy' };
@@ -62,6 +63,12 @@ function tileEl(f, partners) {
     if (ui.hintIds.has(f.id)) b.classList.add('hint');
     if (ui.born.has(f.id)) b.classList.add('born');
     return b;
+  }
+  if (f.k === 'q') {   // a fraction inside a sum: its top and bottom are tiles of their own; tap the bar to pick it
+    const b = document.createElement('div');
+    b.className = 'tile q'; b.dataset.id = f.id; b.tabIndex = 0; b.setAttribute('role', 'button'); b.setAttribute('aria-label', 'fraction');
+    b.append(sideEl(f.num, partners), Object.assign(document.createElement('div'), { className: 'qbar' }), sideEl(f.den, partners));
+    return mark(b, f, partners);
   }
   if (f.k === 'p' && ui.block && ui.block.ids.has(f.id)) {
     const b = document.createElement('div');
@@ -194,7 +201,7 @@ export function render() {
     // the skill and where in it: "Powers · 3/6"
     const id = LEVELS[ui.lvl].id, K = skillOfLevel(id);
     $('lvlTitle').textContent = K ? `${K.title[lang]} · ${K.levels.indexOf(id) + 1}/${K.levels.length}` : t('level', { n: ui.lvl + 1 });
-    $('lvlBadge').hidden = !LEVELS[ui.lvl].book && !LEVELS[ui.lvl].goal; $('lvlBadge').textContent = LEVELS[ui.lvl].book ? t('book') : t({ solve: 'solveBadge', prove: 'proveBadge' }[LEVELS[ui.lvl].goal] || 'factorBadge');
+    $('lvlBadge').hidden = !LEVELS[ui.lvl].book && !LEVELS[ui.lvl].goal; $('lvlBadge').textContent = LEVELS[ui.lvl].book ? t('book') : t({ solve: 'solveBadge', prove: 'proveBadge', combine: 'combineBadge' }[LEVELS[ui.lvl].goal] || 'factorBadge');
     $('moves').innerHTML = t('moves', { n: ui.moves }) + (ui.done[id] != null ? t('best', { n: ui.done[id] }) : '');
   }
   $('writtenLabel').textContent = t('written');
@@ -222,6 +229,15 @@ export function render() {
   // from a piece only when factoring (a lone −x is hard to hit as a term); elsewhere it would just be noise
   const twoId = tSel || (fSel && (ui.S.goal === 'factor' || ui.S.goal === 'solve' || ui.S.goal === 'prove' || locate(ui.S, ui.sel.id)?.depth)) ? splitTermOf(ui.sel.id) : null;
   $('btnSplitTwo').hidden = !twoId;
+  // expand a fraction (top and bottom times the same thing): the sheet picks what by
+  let ex = $('btnExpand');
+  if (!ex) {
+    ex = Object.assign(document.createElement('button'), { className: 'tool', id: 'btnExpand', type: 'button', innerHTML: '<span></span>' });
+    ex.onclick = () => ui.sel && showExpand(ui.sel.id);
+    $('btnSplitTwo').after(ex);
+  }
+  ex.hidden = !(fSel && expandTarget(ui.S, ui.sel.id));
+  ex.querySelector('span').textContent = t('expandBtn') + ' ×ⁿ⁄ₙ';
   for (const tm of TOOL_MOVES) {
     let b = $('tm-' + tm.id);
     if (!b) {

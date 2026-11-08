@@ -1,9 +1,10 @@
 /* "Done?" pressed too early: say what is still left, without giving the move away. */
 import { quadSplit } from './hints.js';
 import { sumKey } from './kinds/sums.js';
-import { SIDES, coefAbs, gcd, hasU, isClean, isOne, sig, sumClean, tidy, unbare, unknownOf, varPart } from './model.js';
+import { SIDES, coefAbs, fracTerm, gcd, hasU, isClean, isOne, joinablePair, rootBelow, sig, sumClean, tidy, unbare, unknownOf, varPart } from './model.js';
+import { cancelCheck } from './moves.js';
 import { branchCount, eqView, isBranched } from './problem.js';
-import { bx, fx, mx, termHTML } from '../render/text.js';
+import { bx, fx, mx, sumHTML, termHTML } from '../render/text.js';
 
 /* "Done?" pressed too early: say what is still left, without giving the move away */
 export function whyNotDone(S) {
@@ -14,6 +15,8 @@ export function whyNotDone(S) {
     for (const P of S.parts) { const w = whyNotDone({ parts: [P], op: null, goal: 'simplify', conds: S.conds }); if (w) return w; }
     return { k: 'nyProve' };
   }
+  // one fraction: first what simplifying still leaves, then that it is not one fraction yet
+  if (S.goal === 'combine') return whyNotDone({ ...S, goal: 'simplify' }) || (S.parts.length > 1 ? { k: 'nyTwoParts' } : { k: 'nyCombine' });
   if (S.goal === 'solve' && isBranched(S)) {
     for (let b = 0; b < branchCount(S); b++) { const w = whyNotDone(eqView(S, b)); if (w) return w; }
     return null;
@@ -51,11 +54,19 @@ export function whyNotDone(S) {
     if (bad) return { k: !S.allowB && bad.f.some(f => f.k === 'p' || f.k === 'g') ? 'nyBracket' : 'nyTidy', p: { t: th(bad) } };
     const sigs = ts.map(sig), j = sigs.findIndex((s, i) => sigs.indexOf(s) !== i);
     if (j >= 0) return { k: 'nyLike', p: { a: th(ts[sigs.indexOf(sigs[j])]), b: th(ts[j]) } };
+    const pair = joinablePair(ts);
+    if (pair) return { k: 'nyJoin', p: { d: mx(sumHTML(fracTerm(pair[0]).den)) } };
   }
+
+  if (S.rootFree && rootBelow(P)) return { k: 'nyRootBelow', p: { x: mx(fx(rootBelow(P))) } };
   const all = [...unbare(P.num), ...unbare(P.den)];
   let g = 0; for (const t of all) g = gcd(g, coefAbs(t));
   if (g > 1) return { k: 'nyCancelNum' };
   const b = varPart(all[0]).map(f => f.b).find(b => all.every(t => varPart(t).some(f => f.b === b)));
   if (b) return { k: 'nyCancelVar', p: { b: bx(b) } };
+  // the same piece on top and below: sin a cos a / cos a, (a + 1)/(a + 1)
+  const same = P.num.length === 1 && P.den.length === 1 && P.num[0].f.find(x => P.den[0].f.some(y => cancelCheck(x, y)?.type === 'cancel'));
+  if (same) return { k: 'nyCancelPiece', p: { x: mx(fx(same)) } };
+  if (!isOne(P.den) && sumKey(unbare(P.num)) === sumKey(unbare(P.den))) return { k: 'nyCancelPiece', p: { x: mx('(' + sumHTML(unbare(P.num)) + ')') } };
   return { k: 'nyTidyAll' };
 }

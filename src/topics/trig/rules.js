@@ -14,6 +14,7 @@ import { addTactic, defineHintMove } from '../../core/goals/registry.js';
 import { Pr } from '../../core/kinds/bracket.js';
 import { V } from '../../core/kinds/letter.js';
 import { N } from '../../core/kinds/number.js';
+import { Q } from '../../core/kinds/fraction.js';
 import { Rt } from '../../core/kinds/root.js';
 import { F, T, cloneF, cloneT, fkey } from '../../core/kinds/sums.js';
 import { MAX_GROUP, containers, eachFactor, locate } from '../../core/model.js';
@@ -76,8 +77,14 @@ defineExplode('trig', (S, L, id) => {
       const z = N(0); L.term.f = [z]; L.term.neg = false;
       return { ok: 'trigValue', p: { x, v: mx('0') }, born: [z.id] };
     }
-    if (v.den === 2 && (L.depth || P[L.side].length !== 1 || P[other].length !== 1)) return { no: 'trigValueSum', p: { x, v: mx(valueHTML(v)) }, ids: [id] };
     const top = v.root > 1 ? Rt([T([N(v.root)])]) : N(1);
+    // inside a sum (or a bracket) the half is a fraction of its own: sin 30° + cos 60° = ½ + ½
+    if (v.den === 2 && (L.depth || P[L.side].length !== 1 || P[other].length !== 1)) {
+      const q = Q([T([top])], [T([N(2)])]);
+      L.term.f.splice(L.i, 1, q);
+      if (v.sign < 0) L.term.neg = !L.term.neg;
+      return { ok: 'trigValue', p: { x, v: mx(valueHTML(v)) }, born: [q.id] };
+    }
     L.term.f.splice(L.i, 1, top);
     if (v.sign < 0) L.term.neg = !L.term.neg;
     const born = [top.id];

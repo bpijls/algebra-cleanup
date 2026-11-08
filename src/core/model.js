@@ -3,6 +3,8 @@ import './kinds/index.js';   // registers every kind of node
 import { letters } from './balance.js';
 import { goalOf } from './goals/registry.js';
 import { quadSplit } from './hints.js';
+import { cancelCheck } from './moves.js';
+import { Pr } from './kinds/bracket.js';
 import { G } from './kinds/group.js';
 import { N } from './kinds/number.js';
 import { KINDS, kindOf } from './kinds/registry.js';
@@ -81,6 +83,19 @@ export function normTerms(terms, keepBare) {
         const v = f.terms.length === 1 && !f.terms[0].neg && f.terms[0].f.length === 1 && f.terms[0].f[0].k === 'n' ? f.terms[0].f[0].v : -1;
         if (v === 0 || v === 1) { nf.push(N(v)); continue; }
       }
+      // a fraction inside a term: a top and a bottom of its own; over 1 it is just its top
+      if (f.k === 'q') {
+        normTerms(f.num, true); normTerms(f.den, true);
+        if (!f.num.length) f.num = [T([N(0)])];
+        if (!f.den.length) f.den = [T([N(1)])];
+        if (f.den.length === 1 && f.den[0].neg) { f.den[0].neg = false; negate(f.num); }
+        if (isUnit(f.den)) {
+          if (f.num.length > 1) nf.push(Pr(f.num));
+          else { if (f.num[0].neg) t.neg = !t.neg; nf.push(...f.num[0].f); }
+          continue;
+        }
+        if (f.num.length === 1 && f.num[0].f.length === 1 && f.num[0].f[0].k === 'n' && f.num[0].f[0].v === 0) { nf.push(N(0)); continue; }
+      }
       if (f.k === 'p') {
         normTerms(f.terms);
         if (f.terms.length === 1) {
@@ -115,12 +130,22 @@ export function negate(side) {
   else side.forEach(t => { t.neg = !t.neg; });
 }
 
+export function liftFrac(P) {
+  const t = P.num[0];
+  if (!isOne(P.den) || P.num.length !== 1 || t.f.length !== 1 || t.f[0].k !== 'q') return P;
+  P.num = t.f[0].num; P.den = t.f[0].den;
+  if (t.neg) negate(P.num);
+  return P;
+}
+
 export function normalize(S) {
   for (const P of S.parts) for (const side of SIDES) {
     // (x+2)/(x+2)(x+3): a bracket that is the whole top or bottom stays a bracket, so it can cancel as one piece
     normTerms(P[side], !isUnit(P[side === 'num' ? 'den' : 'num']) && S.op !== '·');
     if (!P[side].length) P[side] = [T([N(side === 'num' ? 0 : 1)])];
   }
+  // a fraction that is the whole of a side is the side's own bar: x/3 = 4, not (x/3) = 4
+  S.parts.forEach(liftFrac);
   // a minus below the bar goes on top: 6/−2 is −6/2 (dividing both sides of an equation by −2 makes these)
   for (const P of S.parts) if (P.den.length === 1 && P.den[0].neg) { P.den[0].neg = false; negate(P.num); }
   // a fraction that is used up (1 over 1) stays on the board: the player cancels the 1's (opPair, 'ones')
@@ -163,8 +188,13 @@ export function isSimplified(S) {
     if (!ts.every(t => tidy(t, !!S.allowB))) return false;
     const sigs = ts.map(sig);
     if (new Set(sigs).size !== sigs.length) return false;
+    if (joinablePair(ts)) return false;
   }
   if (isOne(P.den)) return true;
+  if (S.rootFree && rootBelow(P)) return false;   // 1/√2 is written √2/2: no root below the bar
+  // (a + 1)/(a + 1), x(x + 2)/(x + 2): equal pieces top and bottom cancel
+  if (P.num.length === 1 && P.den.length === 1 && P.num[0].f.some(x => P.den[0].f.some(y => cancelCheck(x, y)?.type === 'cancel'))) return false;
+  if (sumKey(unbare(P.num)) === sumKey(unbare(P.den))) return false;
   const all = [...unbare(P.num), ...unbare(P.den)];
   let g = 0; for (const t of all) g = gcd(g, coefAbs(t));
   if (g > 1) return false;
@@ -178,8 +208,9 @@ export function walkTerms(terms, ctx, fn) {
     fn({ kind: 't', ...ctx, t, term, terms });
     term.f.forEach((f, i) => {
       fn({ kind: 'f', ...ctx, t, i, term, terms, f });
-      const inner = kindOf(f).terms(f);   // a bracket's or a root's terms are tiles too
-      if (inner) walkTerms(inner, { ...ctx, depth: ctx.depth + 1, in: f }, fn);
+      const K = kindOf(f), inner = K.terms(f);   // a bracket's or a root's terms are tiles too
+      if (inner) walkTerms(inner, { ...ctx, depth: ctx.depth + 1, in: f, qs: undefined }, fn);
+      if (K.sides) for (const [qs, ts] of Object.entries(K.sides(f))) walkTerms(ts, { ...ctx, depth: ctx.depth + 1, in: f, qs }, fn);   // a fraction's top and bottom
     });
   });
 }
@@ -218,3 +249,25 @@ export function addCond(S, terms, rel) {
   if (!S.conds.some(d => d.key === key)) S.conds.push(c);
   return c;
 }
+
+/* ---- fractions inside a sum ---- */
+// a term that is only a fraction (with its sign): 2/x, −1/a
+export const fracTerm = t => t.f.length === 1 && t.f[0].k === 'q' ? t.f[0] : null;
+// two terms of one sum that are fractions over the same bottom: they join into one fraction
+export function joinablePair(ts) {
+  for (let i = 0; i < ts.length; i++) for (let j = i + 1; j < ts.length; j++) {
+    const a = fracTerm(ts[i]), b = fracTerm(ts[j]);
+    if (a && b && sumKey(a.den) === sumKey(b.den)) return [ts[i], ts[j]];
+  }
+  return null;
+}
+// a fraction is tidy when nothing in it cancels, and it stands alone in its term, or is a number like ⅔ in ⅔x
+KINDS.q.tidyIn = (f, n, t) => {
+  if (n > 1 || isOne(f.den) || !isSimplified({ parts: [{ num: f.num, den: f.den }], op: null, goal: 'simplify' })) return false;
+  const others = t.f.filter(g => g !== f);
+  return !others.length || (f.num.length === 1 && f.den.length === 1 && [...f.num, ...f.den].every(u => u.f.every(g => g.k === 'n')) && !others.some(g => g.k === 'n'));
+};
+// written as one fraction: no fraction left inside the sum, and simplified (the combine goal)
+export const isCombined = S => S.parts.length === 1 && ![...S.parts[0].num, ...S.parts[0].den].some(t => t.f.some(f => f.k === 'q')) && isSimplified(S);
+// a root in the bottom of the fraction: 1/√2 (a level can ask for it to be gone: S.rootFree)
+export const rootBelow = P => P.den.length === 1 ? P.den[0].f.find(f => f.k === 'r') || null : null;

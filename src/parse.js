@@ -6,8 +6,10 @@ import { Pr } from './core/kinds/bracket.js';
 import { G } from './core/kinds/group.js';
 import { V } from './core/kinds/letter.js';
 import { N } from './core/kinds/number.js';
+import { Q } from './core/kinds/fraction.js';
+import { Rt } from './core/kinds/root.js';
 import { F, T } from './core/kinds/sums.js';
-import { isClean, isOne, normalize } from './core/model.js';
+import { isClean, isOne, liftFrac, normalize } from './core/model.js';
 import { isEquation } from './core/problem.js';
 
 export const SUP = { '⁰': 0, '¹': 1, '²': 2, '³': 3, '⁴': 4, '⁵': 5, '⁶': 6, '⁷': 7, '⁸': 8, '⁹': 9 };
@@ -27,6 +29,7 @@ export function tokenize(src) {
     }
     if (/[a-z]/i.test(ch)) { out.push({ t: 'var', v: ch.toLowerCase(), at: i }); i++; continue; }
     if ('+-·:/()='.includes(ch)) { out.push({ t: ch, at: i }); i++; continue; }
+    if (ch === '√') { out.push({ t: 'sqrt', at: i }); i++; continue; }
     return { err: 'pChar', at: i, ch };
   }
   return { toks: out };
@@ -50,13 +53,28 @@ export function parseProblem(src, goal, unknown) {
     while (peek() && (peek().t === '+' || peek().t === '-')) { neg = peek().t === '-'; i++; terms.push(term(neg)); }
     return terms;
   }
-  // term := factor ([·] factor)*
+  // term := product [/ product] [· term]: x/3 + 2 is (x/3) + 2, 12a⁵/4a² is 12a⁵ over 4a² (the whole product
+  // below), and 2/3 · 3/4 is two fractions in one term
   function term(neg) {
+    const top = product(neg);
+    if (!peek() || peek().t !== '/') return top;
+    i++;
+    const bottom = product(false, true);
+    if (peek() && peek().t === '/') fail('pFracTwo');
+    if (bottom.f.length === 1 && bottom.f[0].k === 'n' && bottom.f[0].v === 0) { i--; fail('pDivZero'); }
+    const t = T([Q([T(top.f)], [T(bottom.f, bottom.neg)])], top.neg);
+    if (peek() && peek().t === '·') { i++; const more = term(false); t.f.push(...more.f); if (more.neg) t.neg = !t.neg; }
+    return t;
+  }
+  // product := factor ([·] factor)*; below a bar it stops at a ·, so 2/3 · 3/4 is not 2 over 3·3
+  function product(neg, bottom) {
     const fs = [];
     for (;;) {
       const p = peek();
       if (!p) break;
+      if (p.t === '·' && bottom) break;
       if (p.t === '·') { if (!fs.length) fail('pMissing'); i++; fs.push(...factor()); continue; }
+      if (p.t === 'sqrt') { fs.push(...factor()); continue; }
       if (p.t === 'num' || p.t === 'var' || p.t === '(') { fs.push(...factor()); continue; }
       break;
     }
@@ -71,10 +89,17 @@ export function parseProblem(src, goal, unknown) {
     const p = toks[i++];
     if (p.t === 'num') { const e = power(); return [e > 1 && p.v ? G([N(p.v)], e) : N(p.v)]; }
     if (p.t === 'var') return [V(p.v, power())];
+    // √12, √(x + 1): the root of what follows (a number, a letter, or a bracket)
+    if (p.t === 'sqrt') {
+      const n = peek();
+      if (!n || !['num', 'var', '('].includes(n.t)) fail('pMissing');
+      if (n.t === '(') { i++; const inner = sum(); if (!peek() || peek().t !== ')') fail('pParen'); i++; return [Rt(inner)]; }
+      i++;
+      return [Rt([T([n.t === 'num' ? N(n.v) : V(n.v)])])];
+    }
     if (p.t !== '(') { i--; fail('pMissing'); }
     const open = i - 1;
     const inner = sum();
-    if (peek() && peek().t === '/') fail('pFracInside');
     if (!peek() || peek().t !== ')') { i = open; fail('pParen'); }
     i++;
     const e = power();
@@ -85,18 +110,8 @@ export function parseProblem(src, goal, unknown) {
     if (simple && !it.neg) return [G(it.f, e)];
     return [Pr(inner, e)];                                            // (−2a)³: normalize turns it into a sign and a power
   }
-  // fraction := sum [/ sum]; a whole parenthesised side may hold a sum: (x+2)/(x+3)
-  // x/3 + 2 would read as x/(3 + 2): a sum on either side of / must be in brackets
-  function fraction() {
-    const num = sum();
-    if (peek() && peek().t === '/') {
-      if (num.length > 1) fail('pFracSum');
-      i++; const den = sum();
-      if (den.length > 1) { i--; fail('pFracSum'); }
-      return F(num, den);
-    }
-    return F(num);
-  }
+  // a side: a sum of terms, each of which may be a fraction (x/3 + 2); a side that is one fraction is its own bar
+  function fraction() { return liftFrac(F(sum())); }
   // a fraction in brackets, for (8x/3y) : (3x/y)
   function bracketFraction() {
     const save = i;

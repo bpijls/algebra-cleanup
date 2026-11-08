@@ -3,7 +3,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { strip } = require('./load');
-const { G, values, same, fuzz, hasText, solutions, sameSolutions } = require('./judge');
+const { G, values, same, fuzz, hasText, solutions, sameSolutions, belowBar, satisfies } = require('./judge');
 
 const { CHAPTERS } = require('./corpus-data');
 
@@ -20,7 +20,9 @@ for (const [chapter, list] of Object.entries(CHAPTERS)) {
         if (h.k === 'hDone' || G.autoSolveStep(T) == null) break;
       }
       assert.notEqual(G.autoSolve(S), null, `${src}: the hints do not solve it`);
-      assert.ok(S.op === '=' ? sameSolutions(solutions(r.S), solutions(S)) : same(v0, values(S)), `${src}: solving changed the ${S.op === '=' ? 'solutions' : 'value'}`);
+      // the unknown below a bar (4/x = 2) is no polynomial: then every answer must make the two sides equal
+      if (S.op === '=' && belowBar(r.S)) assert.ok(satisfies(r.S, solutions(S)), `${src}: an answer doesn't fit the equation`);
+      else assert.ok(S.op === '=' ? sameSolutions(solutions(r.S), solutions(S)) : same(v0, values(S)), `${src}: solving changed the ${S.op === '=' ? 'solutions' : 'value'}`);
       assert.equal(strip(G.stateHTML(S)), want, `${src}`);
       for (let k = 0; k < 4; k++) fuzz(r.S, 30, src);   // random play keeps the value too
     }
@@ -28,7 +30,7 @@ for (const [chapter, list] of Object.entries(CHAPTERS)) {
 }
 
 test('typing: the parser refuses what the game cannot do, with a reason', () => {
-  for (const [src, err] of [['x=4=5', 'pTwoEq'], ['2y+a=b', 'pEqWhich'], ['x/3+2=5', 'pFracSum'], ['3=4', 'pEqNoLetter'], ['3a + ', 'pMissing'], ['(x+2', 'pParen'], ['x^', 'pPower'], ['', 'pEmpty'], ['2x ? 3', 'pChar']])
+  for (const [src, err] of [['x=4=5', 'pTwoEq'], ['2y+a=b', 'pEqWhich'], ['x/3/2=5', 'pFracTwo'], ['x/0', 'pDivZero'], ['3=4', 'pEqNoLetter'], ['3a + ', 'pMissing'], ['(x+2', 'pParen'], ['x^', 'pPower'], ['', 'pEmpty'], ['2x ? 3', 'pChar']])
     { assert.equal(G.parseProblem(src).err, err, src); assert.ok(hasText(err), err); }
   assert.equal(G.guessGoal('x^2+5x+6'), 'factor');
   assert.equal(G.guessGoal('3x+5=20'), 'solve');
@@ -88,9 +90,12 @@ test('equations: a term only crosses the = by doing the same to both sides', () 
   assert.equal(strip(G.stateHTML(S)), '3x + 5 − 5 = 20 − 5');                      // written out, then combined by the player
   assert.equal(G.opBalance(S, '·', G.T([G.V('x')])).no, 'balanceLetter');          // could be multiplying by 0
   assert.equal(G.opBalance(S, ':', G.T([G.N(0)])).no, 'balanceDivZero');
-  const F = G.parseProblem('x/3+2=5'); assert.equal(F.err, 'pFracSum');
+  const F = G.parseProblem('x/3+2=5').S; assert.equal(strip(G.stateHTML(F)), '[x/3 + 2 = 5');   // a fraction in a sum
   const H = G.parseProblem('x/3=4').S;
-  assert.equal(G.opBalance(H, '+', G.T([G.N(1)])).no, 'balanceFrac');             // fractions first
+  assert.equal(G.opBalance(H, '+', G.T([G.N(1)])).ok, 'balance'); G.normalize(H);   // the side's fraction becomes a term
+  assert.equal(strip(G.stateHTML(H)), '[x/3 + 1 = 4 + 1');
+  const X = G.parseProblem('4/x=2').S;                                               // x below a bar is not 0: · x is allowed
+  assert.equal(G.opBalance(X, '·', G.T([G.V('x')])).ok, 'balanceIf');
 });
 
 test('equations: dragging a piece across the = undoes it on both sides', () => {
@@ -101,10 +106,11 @@ test('equations: dragging a piece across the = undoes it on both sides', () => {
   assert.equal(drag('-3x=15', S => S.parts[0].num[0].f[0].id), '[3x/3 = [−15/3');            // by −3, so x keeps no minus
   assert.equal(drag('x/3=4', S => S.parts[0].den[0].f[0].id), '[3x/3 = 3·4');                   // below the bar: multiply
   assert.equal(drag('-x=4', S => S.parts[0].num[0].f[0].id), 'x = −4');                      // a lone −x: divide by −1
-  assert.equal(drag('x/3=4', S => S.parts[0].num[0].f[0].id), 'balanceFrac');                // fractions first
+  assert.equal(drag('x/3=4', S => S.parts[0].num[0].f[0].id), 'dragFracTop');                // the bottom is what to drag
+  assert.equal(drag('x/3+2=5', S => S.parts[0].num[0].f[0].den[0].f[0].id), '3([x/3 + 2) = 3·5');   // below a bar in a sum: multiply
   assert.equal(drag('2(x+3)=4x-2', S => S.parts[0].num[0].f[1].terms[0].f[0].id), 'dragBracket');
   // the hint's piece, dragged, does exactly the hinted move
-  for (const src of ['x+3=7', '3x=12', '5x+3=2x+12', 'x/3=4', '-x=4', '7=2x+1', '5x+3=2x', '4x-3=2x+6']) {
+  for (const src of ['x+3=7', '3x=12', '5x+3=2x+12', 'x/3=4', '-x=4', '7=2x+1', '5x+3=2x', '4x-3=2x+6', 'x/2+x/3=5', '4/x=2', 'x/4=x/6+1']) {
     let S = G.parseProblem(src).S;
     for (let k = 0; k < 40 && !G.isSolved(S); k++) {
       const h = G.hint(S);

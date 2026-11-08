@@ -6,3 +6,4 @@ export * from './letter.js';
 export * from './group.js';
 export * from './bracket.js';
 export * from './root.js';
+export * from './fraction.js';
