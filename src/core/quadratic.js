@@ -42,6 +42,7 @@ export function quadOf(S) {
 export function opRoot(S, bi = 0) {
   if (S.goal === 'prove') return { no: 'proveNoBalance', ids: [] };   // an identity is shown by rewriting each side, not by doing things to both
   if (!hasBranch(S, bi)) return null;
+  if (S.rel) return { no: 'ineqBranch', ids: [] };   // x² < 9 has no two branches like x² = 9: not yet
   const parts = pairOf(S, bi);
   const u = unknownOf(S);
   const qi = parts.findIndex(P => hasU(P.num, u) || hasU(P.den, u));
@@ -69,6 +70,7 @@ export function opRoot(S, bi = 0) {
 export function opZero(S, bi = 0) {
   if (S.goal === 'prove') return { no: 'proveNoBalance', ids: [] };   // an identity is shown by rewriting each side, not by doing things to both
   if (!hasBranch(S, bi)) return null;
+  if (S.rel) return { no: 'ineqBranch', ids: [] };   // x² < 9 has no two branches like x² = 9: not yet
   const parts = pairOf(S, bi);
   const zi = parts.findIndex(P => isZeroSide(P.num) && isOne(P.den));
   if (zi < 0) return null;

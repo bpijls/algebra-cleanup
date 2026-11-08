@@ -68,7 +68,7 @@ LOGIC           logic basics ─ simplifying ─ De Morgan
 APPLIED leaves  physics formulas (← formulas, eq. with fractions) · growth & decay · kinematics, marginal · cooling/RC
 ```
 
-Built so far: 22 skills, 103 levels.
+Built so far: 23 skills, 110 levels.
 
 | Skill | Levels | Since |
 |---|---|---|
@@ -76,6 +76,7 @@ Built so far: 22 skills, 103 levels.
 | unit circle, identities, sum formulas | 19 (`src/topics/trig`) | goniometry |
 | number fractions (`numfrac`, a second root), square roots (`sqrt`), algebraic fractions (`algfrac`), equations with fractions (`fraceq`) | 21 (`src/content/fractions.js`) | keystone A |
 | negative exponents (`negexp`), fractional exponents (`fracexp`) | 12 (`src/content/exponents.js`) | keystone B |
+| inequalities (`ineq`) | 7 (`src/content/inequalities.js`) | phase 3 |
 
 ## 3. A new mechanism: earned shortcuts
 
@@ -161,8 +162,9 @@ Done:
 
 - **Keystone B, negative and half exponents** (`core/exponents.js`): `a⁻²` explodes to `1/a²` across the bar; mixed signs don't merge before the player has seen it; `a^½ = √a`; write-back buttons `1/a² = a⁻²`, `√a = a^½` for "as a power" levels. Skills negexp, fracexp. Only halves (no cube roots yet).
 
+- **Inequalities** (`S.rel` on an equation): times a negative turns the sign round, visibly; the judge compares where it holds; a number line on the win sheet. The ring-aware evaluator moved to phase 5, where complex numbers first need it.
+
 To come, in this order:
-2. **Keystone C, a ring-aware evaluator** (`evalTerms` over a ring, `S.algebra`), plus **inequalities** (`<`, `≤`: times a negative flips the sign, visibly; the judge compares solution sets; a number line on the win sheet).
 3. **Keystone D, a symbolic exponent** (`Ex(base, terms)`: `2ˣ`, `3^(x+1)`), the log quotient rule, exponential equations, growth and decay, and the first **earned shortcut** (`log(aˣ) = x log a`, `defineShortcut`).
 4. **Complex numbers** (the `COMPLEX` ring, `i · i = −1`, `quadHint` past `D < 0`).
 5. **Boolean logic** (`S.algebra = 'bool'`, truth-table judge, `a·a = a`, De Morgan as an explode).

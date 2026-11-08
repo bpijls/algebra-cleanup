@@ -126,6 +126,12 @@ function candidates(S) {
   return G.MOVES.flatMap(m => argsOf(S, m.gesture).map(args => s => m.run(s, ...args)));
 }
 
+// an inequality keeps its solution set: at many values of the unknown, it holds before exactly when it holds after
+const XT = [-7.3, -3.7, -1.6, -0.3, 0.61, 1.45, 2.2, 3.3, 4.9, 7.3, 11.9];
+const REL = { '<': (a, b) => a < b, '>': (a, b) => a > b, '≤': (a, b) => a <= b, '≥': (a, b) => a >= b };
+const truths = (S, ref) => XT.map(x => { const [L, R] = S.parts, l = evP(L, envOf(ref, x)), r = evP(R, envOf(ref, x)); return Number.isNaN(l - r) ? null : REL[S.rel](l, r); });
+const sameTruth = (S, T) => { const u = truths(S, S), v = truths(T, S); return u.every((x, i) => x === null || v[i] === null || x === v[i]); };
+
 function fuzz(start, steps, label) {
   let S = JSON.parse(JSON.stringify(start));
   for (let k = 0; k < steps; k++) {
@@ -153,6 +159,7 @@ function fuzz(start, steps, label) {
         : S.op === '=' ? old.parts.every((_, i) => i % 2 || equivalent(eqValues(pair(old, i / 2), old), eqValues(pair(trial, i / 2), old))
           || (r.scale && equivalent(scaled(eqValues(pair(old, i / 2), old), r.scale, old), eqValues(pair(trial, i / 2), old))))
         : same(values(old, trial.conds), values(trial));
+      if (old.rel) assert.ok(sameTruth(old, trial), `${label}: move ${r.ok} changed where the inequality holds\nbefore ${G.stateHTML(old)}\nafter  ${G.stateHTML(trial)}`);
       assert.ok(kept, `${label}: move ${r.ok} changed the ${S.op === '=' ? 'solutions' : 'value'}\nbefore ${G.stateHTML(JSON.parse(snap))}\nafter  ${G.stateHTML(trial)}`);
       S = trial; moved = true; break;
     }
@@ -161,4 +168,4 @@ function fuzz(start, steps, label) {
 }
 
 const hasText = k => !!(G.I18N.en[k] && G.I18N.nl[k]);
-module.exports = { hasText, G, values, same, equivalent, fuzz, solutions, sameSolutions, belowBar, satisfies };
+module.exports = { hasText, G, values, same, equivalent, fuzz, solutions, sameSolutions, belowBar, satisfies, sameTruth };

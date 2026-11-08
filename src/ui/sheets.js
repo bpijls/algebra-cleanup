@@ -2,6 +2,7 @@
 import { newlyOpen, nextInSkill, skillDone, suggested } from '../content/progress.js';
 import { LEVELS, SKILL_LIST, levelIndex, skillOfLevel } from '../content/registry.js';
 import { lang, t } from '../i18n.js';
+import { evalTerms } from '../core/kinds/sums.js';
 import { condHTML, mx, sqHTML, stateHTML } from '../render/text.js';
 import { loadLevel, nextProblem } from './controller.js';
 import { showMap, showSkill } from './map.js';
@@ -26,7 +27,7 @@ export function win(refresh) {
       const host = openSheet(`
         <h2>${t('win')}</h2>
         <p style="margin-bottom:0">${t({ factor: 'winSubF', solve: 'winSubS', prove: 'winSubP', combine: 'winSubC' }[ui.S.goal] || 'winSub')}</p>
-        <div class="result expr-n">${stateHTML(ui.S)}</div>${condsHTML()}
+        <div class="result expr-n">${stateHTML(ui.S)}</div>${condsHTML()}${numberLine()}
         <p>${t('winMoves', { n: ui.moves })} ${t('winPractice', { n: ui.session.solved })}</p>
         <div class="row">
           <button class="tool main" type="button" id="wNext">${t(custom ? 'ownAnother' : 'nextProblem')} →</button>
@@ -53,7 +54,7 @@ export function win(refresh) {
     const host = openSheet(`
       <h2>${t('win')}</h2>
       <p style="margin-bottom:0">${t({ factor: 'winSubF', solve: 'winSubS', prove: 'winSubP', combine: 'winSubC' }[ui.S.goal] || 'winSub')}</p>
-      <div class="result expr-n">${stateHTML(ui.S)}</div>${condsHTML()}
+      <div class="result expr-n">${stateHTML(ui.S)}</div>${condsHTML()}${numberLine()}
       <p>${t('winMoves', { n: ui.moves })}${t('winBest', { n: ui.done[id] })}</p>
       ${LEVELS[ui.lvl].abc ? `<div class="abc">${abcHTML(LEVELS[ui.lvl].abc)}</div>` : ''}
       ${!next && K && skillDone(K, ui.done) ? `<p class="skilldone">${t('skillDone', { s: `<b>${K.title[lang]}</b>` })}${opened.length ? ' ' + t('skillsOpened', { list: opened.map(S => `<b>${S.title[lang]}</b>`).join(', ') }) : all ? ' ' + t('allDone') : ''}</p>` : ''}
@@ -72,6 +73,20 @@ export function win(refresh) {
   refresh ? show() : setTimeout(show, 650);
 }
 // a − c ≠ 0, b² − 4ac ≥ 0: what dividing by letters and taking roots of them took for granted
+// an inequality's answer on a number line: the boundary as a dot (filled when it belongs to it), the rest as a ray
+function numberLine() {
+  if (!ui.S.rel || ui.S.parts.length !== 2) return '';
+  const R = ui.S.parts[1], v = evalTerms(R.num, {}) / evalTerms(R.den, {});
+  if (!isFinite(v)) return '';
+  const lo = Math.floor(v) - 4, hi = Math.ceil(v) + 4, X = x => (20 + (x - lo) / (hi - lo) * 280).toFixed(1);
+  const up = ui.S.rel === '>' || ui.S.rel === '≥', closed = ui.S.rel === '≤' || ui.S.rel === '≥';
+  let ticks = '';
+  for (let k = lo; k <= hi; k++) ticks += `<line x1="${X(k)}" x2="${X(k)}" y1="26" y2="34"/><text x="${X(k)}" y="52">${k < 0 ? '−' + -k : k}</text>`;
+  const end = up ? 312 : 8, ar = up ? `M${end} 30 l-10 -6 v12 z` : `M${end} 30 l10 -6 v12 z`;
+  return `<svg class="numline" viewBox="0 0 320 60" role="img" aria-label="${t('numLine')}"><line class="axis" x1="4" x2="316" y1="30" y2="30"/>${ticks}
+    <line class="ray" x1="${X(v)}" x2="${end}" y1="30" y2="30"/><path class="ray" d="${ar}"/>
+    <circle class="${closed ? 'dot in' : 'dot'}" cx="${X(v)}" cy="30" r="6"/></svg>`;
+}
 const condsHTML = () => ui.S.conds && ui.S.conds.length ? `<p class="conds">${t('condsLine', { c: ui.S.conds.map(condHTML).join(lang === 'nl' ? ' en ' : ' and ') })}</p>` : '';
 // the last quadratic level: what the player did, written for every a, b, c, is the abc-formula
 function abcHTML(abc) {

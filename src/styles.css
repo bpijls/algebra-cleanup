@@ -442,3 +442,11 @@ button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 /* goniometry: a sine/cosine tile is drawn like a log tile; an angle in degrees gets its ° on the number */
 .tile.trig .lname sup { font-family: var(--f-body); font-size: 13px; font-weight: 700; margin-left: 1px; }
 .tile .deg { font-family: var(--f-math); font-size: .8em; margin-left: 1px; align-self: flex-start; }
+
+/* an inequality's answer on the win sheet */
+.numline { display: block; width: 100%; max-width: 360px; margin: 10px auto 0; }
+.numline line { stroke: var(--ink); stroke-width: 1.5; }
+.numline text { fill: var(--muted); font: 600 11px var(--f-body); text-anchor: middle; }
+.numline .ray { stroke: var(--accent); stroke-width: 5; fill: var(--accent); stroke-linecap: butt; }
+.numline .dot { fill: var(--paper); stroke: var(--accent); stroke-width: 3; }
+.numline .dot.in { fill: var(--accent); }

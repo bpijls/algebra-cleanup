@@ -239,6 +239,13 @@ export const I18N = {
     pPowHalf: 'Only whole numbers and halves as powers for now: 1/2, 3/2, −2.',
     pPowSum: 'A negative or half power of a sum isn’t possible yet.',
     asPowerBadge: 'As a power',
+    tp_ineq: 'Inequalities', ti_ineq: 'Balance as with an equation. Times or divided by a negative number: the sign turns round.',
+    balanceFlip: '{op} {v} on both sides: {ex}. Times or divided by a negative number turns the sign round, {was} becomes {now}: −2 &lt; 3, but 2 &gt; −3.',
+    ineqLetter: 'Not by {v} in an inequality: a letter could be negative, and then the sign would have to turn round. Use a number.',
+    ineqBranch: 'Not with an inequality yet: x² &lt; 9 doesn’t split like x² = 9.',
+    pIneqLetters: 'An inequality with one letter only for now: a letter for a number could be negative.',
+    nyIneqLeft: 'Not done yet: an inequality is read with the letter on the left. Swap the sides (the sign turns round with them).',
+    numLine: 'the answer on a number line', ineqBadge: 'Inequality',
     tp_trigvals: 'The unit circle', ti_trigvals: 'Explode each sin, cos and tan, then clean up.', tp_trigid: 'Identities', ti_trigid: 'Show that both sides are the same: rewrite them until they read alike.',
   },
   nl: {
@@ -480,6 +487,13 @@ export const I18N = {
     pPowHalf: 'Voorlopig alleen hele getallen en halven als macht: 1/2, 3/2, −2.',
     pPowSum: 'Een negatieve of halve macht van een som kan nog niet.',
     asPowerBadge: 'Als macht',
+    tp_ineq: 'Ongelijkheden', ti_ineq: 'Balanceer zoals bij een vergelijking. Keer of gedeeld door een negatief getal: het teken draait om.',
+    balanceFlip: '{op} {v} aan beide kanten: {ex}. Keer of gedeeld door een negatief getal draait het teken om, {was} wordt {now}: −2 &lt; 3, maar 2 &gt; −3.',
+    ineqLetter: 'Niet met {v} in een ongelijkheid: een letter kan negatief zijn, en dan zou het teken om moeten. Gebruik een getal.',
+    ineqBranch: 'Nog niet bij een ongelijkheid: x² &lt; 9 splitst niet zoals x² = 9.',
+    pIneqLetters: 'Voorlopig een ongelijkheid met maar één letter: een letter voor een getal kan negatief zijn.',
+    nyIneqLeft: 'Nog niet klaar: een ongelijkheid lees je met de letter links. Verwissel de kanten (het teken draait mee).',
+    numLine: 'het antwoord op een getallenlijn', ineqBadge: 'Ongelijkheid',
     tp_trigvals: 'De eenheidscirkel', ti_trigvals: 'Laat elke sin, cos en tan ontploffen en ruim op.', tp_trigid: 'Identiteiten', ti_trigid: 'Laat zien dat beide kanten gelijk zijn: herschrijf ze tot ze er hetzelfde uitzien.',
   }
 };

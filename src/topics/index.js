@@ -7,3 +7,4 @@ import './trig/levels.js';
 // algebra skills that came after the topics: registered last, so the levels' old order (LEGACY_ORDER) is unchanged
 import '../content/fractions.js';
 import '../content/exponents.js';
+import '../content/inequalities.js';

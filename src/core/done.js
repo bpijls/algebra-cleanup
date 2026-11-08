@@ -26,6 +26,7 @@ export function whyNotDone(S) {
     const u = unknownOf(S), has = P => hasU([...P.num, ...P.den], u);
     const [l, r] = S.parts.map(has);
     if (l && r) return { k: 'nyEqBoth' };
+    if (S.rel && !l && r) return { k: 'nyIneqLeft' };   // 3 > x reads as x < 3
     const P = S.parts[l ? 0 : 1], t = P.num[0];
     if (P.num.length !== 1 || !isOne(P.den) || t.neg || t.f.length !== 1 || t.f[0].k !== 'v' || t.f[0].e !== 1) return { k: 'nyEqAlone' };
     return { k: 'nyEqTidy' };

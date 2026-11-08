@@ -6,6 +6,11 @@
 import { unknownOf } from './model.js';
 
 export const isEquation = S => S.op === '=';
+/* An inequality is an equation with another sign: S.rel = '<' | '>' | '≤' | '≥' (no S.rel: '='). Every balance
+   move works on it; times or divided by a negative number turns the sign round, and so does swapping the sides. */
+export const relOf = S => S.rel || '=';
+export const isInequality = S => isEquation(S) && !!S.rel;
+export const FLIP = { '<': '>', '>': '<', '≤': '≥', '≥': '≤', '=': '=' };
 export const isFractionPair = S => S.parts.length === 2 && !isEquation(S);
 export const branchCount = S => isEquation(S) ? S.parts.length >> 1 : 1;
 export const isBranched = S => isEquation(S) && S.parts.length > 2;
@@ -14,6 +19,6 @@ export const hasBranch = (S, bi) => isEquation(S) && bi < branchCount(S);
 export const branchOf = p => p >> 1;
 export const isRight = p => p % 2 === 1;
 export const pairOf = (S, bi) => S.parts.slice(2 * bi, 2 * bi + 2);
-export const eqView = (S, bi) => ({ parts: pairOf(S, bi), op: '=', goal: 'solve', unknown: unknownOf(S) });   // shares the tiles with S
+export const eqView = (S, bi) => ({ parts: pairOf(S, bi), op: '=', goal: 'solve', unknown: unknownOf(S), ...(S.rel ? { rel: S.rel } : {}) });   // shares the tiles with S
 // branch bi becomes the given parts: [L, R] to change it, [L1, R1, L2, R2 …] to split it into branches
 export const setBranch = (S, bi, parts) => { S.parts.splice(2 * bi, 2, ...parts); };

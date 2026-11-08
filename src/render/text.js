@@ -3,7 +3,7 @@
 import { expText, showsExp } from '../core/kinds/exponent.js';
 import { sumKey } from '../core/kinds/sums.js';
 import { isOne, tidy, unbare } from '../core/model.js';
-import { branchCount, eqView, isBranched } from '../core/problem.js';
+import { branchCount, eqView, isBranched, relOf } from '../core/problem.js';
 import { I18N, lang } from '../i18n.js';
 
 /* ---- notation (HTML) ---- */
@@ -23,6 +23,8 @@ defineHTML('q', 0, f => `<span class="nfrac q"><span class="nn">${sumHTML(unbare
 defineHTML('bk', 3, f => `<span class="bk">${sumHTML(f.terms)}</span>${sup(f.e)}`);   // a bracket shown as a block (blockHTML)
 
 export const fx = f => HTML[f.k].html(f);
+// a relation sign as HTML (< and > are escaped)
+export const relHTML = r => r === '<' ? '&lt;' : r === '>' ? '&gt;' : r;
 
 export function factorsHTML(fs, sort) {
   let list = fs;
@@ -50,7 +52,7 @@ export function stateHTML(S) {
     return Array.from({ length: branchCount(S) }, (_, b) => `<span class="branch">${stateHTML(eqView(S, b))}</span>`).join(` <span class="nop or">${orWord()}</span> `);
   if (S.parts.length > 1 && S.op === '/')
     return `<span class="nfrac big"><span class="nn">${fracHTML(S.parts[0])}</span><span class="nd">${fracHTML(S.parts[1])}</span></span>`;
-  return S.parts.map(P => fracHTML(P, S.op === '·')).join(` <span class="nop">${S.op || ''}</span> `);
+  return S.parts.map(P => fracHTML(P, S.op === '·')).join(` <span class="nop">${S.op === '=' ? relHTML(relOf(S)) : S.op || ''}</span> `);
 }
 
 export const mx = h => `<span class="mx">${h}</span>`;

@@ -46,6 +46,10 @@ export function tokenize(src) {
       out.push({ t: 'pow', v: neg ? -v : v, at: i }); i = j; continue;
     }
     if (/[a-z]/i.test(ch)) { out.push({ t: 'var', v: ch.toLowerCase(), at: i }); i++; continue; }
+    if ('<>≤≥'.includes(ch)) {   // an inequality: x < 3, x <= 3, x ≥ 3
+      const eq = s[i + 1] === '=' && (ch === '<' || ch === '>');
+      out.push({ t: '=', rel: eq ? (ch === '<' ? '≤' : '≥') : ch, at: i }); i += eq ? 2 : 1; continue;
+    }
     if ('+-·:/()='.includes(ch)) { out.push({ t: ch, at: i }); i++; continue; }
     if (ch === '√') { out.push({ t: 'sqrt', at: i }); i++; continue; }
     return { err: 'pChar', at: i, ch };
@@ -164,12 +168,14 @@ export function parseProblem(src, goal, unknown) {
   try {
     let S;
     const A = bracketFraction() || fraction();
-    if (peek() && peek().t === '=') {   // an equation: solve it with the balance method
+    if (peek() && peek().t === '=') {   // an equation (or inequality): solve it with the balance method
+      const rel = toks[i].rel;
       i++;
       if (!peek()) fail('pMissing');
       const B = bracketFraction() || fraction();
       if (peek()) fail(peek().t === '=' ? 'pTwoEq' : peek().t === ')' ? 'pParen' : 'pMissing');
       S = { parts: [A, B], op: '=', goal: 'solve' };
+      if (rel) S.rel = rel;
       normalize(S);
       // the unknown: the one asked for, else x, else the only letter (a, b, p … are then parameters)
       const bs = letters(S);
@@ -177,6 +183,7 @@ export function parseProblem(src, goal, unknown) {
       if (unknown && !bs.includes(unknown)) return { err: 'pEqUnknown', at: 0, p: { b: unknown } };
       const u = unknown || (bs.includes('x') ? 'x' : bs.length === 1 ? bs[0] : null);
       if (!u) return { err: 'pEqWhich', at: 0 };
+      if (rel && bs.length > 1) return { err: 'pIneqLetters', at: 0 };   // a letter for a number could be negative
       if (bs.length > 1) S.unknown = u;
       return { S };
     }

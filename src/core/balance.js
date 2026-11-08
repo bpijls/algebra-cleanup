@@ -6,10 +6,10 @@ import { Q } from './kinds/fraction.js';
 import { N } from './kinds/number.js';
 import { T, cloneF, cloneT, fHasU, tHasU } from './kinds/sums.js';
 import { SIDES, addCond, eachFactor, hasU, isClean, isOne, params, unknownOf, walkTerms } from './model.js';
-import { branchCount, branchOf, eqView, hasBranch, isBranched, isEquation, pairOf, setBranch } from './problem.js';
+import { FLIP, branchCount, branchOf, eqView, hasBranch, isBranched, isEquation, pairOf, relOf, setBranch } from './problem.js';
 import { hasLetter, opRoot, opZero } from './quadratic.js';
 import { defineMove } from './rules/registry.js';
-import { condHTML, factorsHTML, fracHTML, mx } from '../render/text.js';
+import { condHTML, factorsHTML, fracHTML, mx, relHTML } from '../render/text.js';
 
 /* ---- equations: the balance method ----
    S = { parts: [left, right], op: '=', goal: 'solve' }. Each side keeps every simplifying move.
@@ -53,6 +53,8 @@ export function opBalance(S, op, v, bi = 0) {
       return { no: 'balanceLetter', p: { v: shown }, ids: ['op'] };
     const sym = v.f.filter(f => f.k !== 'n');
     if (!sym.length && vNum === 1 && !v.neg) return { no: 'balanceOne', ids: ['op'] };
+    // an inequality only by numbers: a letter could be negative, and then the sign would have to turn round
+    if (S.rel && sym.length) return { no: 'ineqLetter', p: { v: shown }, ids: ['op'] };
     // numbers past exact arithmetic (only random play gets there)
     let big = 1; parts.forEach(P => walkTerms([...P.num, ...P.den], { depth: 0 }, M => { if (M.kind === 't') big = Math.max(big, numProd(M.term)); }));
     if (big * vNum > 1e12) return { no: 'tooBig', ids: ['op'] };
@@ -74,10 +76,15 @@ export function opBalance(S, op, v, bi = 0) {
     // each letter or bracket must not be 0
     if (sym.length) cond = sym.map(f => condHTML(addCond(S, f.k === 'p' ? f.terms : [T([V(f.b, 1)])], 'ne'))).join(', ');
   }
+  // times or divided by a negative number: −2 < 3 but 2 > −3, so the sign of an inequality turns round
+  const flip = S.rel && mul && v.neg;
+  const was = relOf(S);
+  if (flip) S.rel = FLIP[S.rel];
   const sides = parts.map(P => fracHTML(P));
   // times the unknown: L − R is multiplied by it too, not by a constant (the judge checks it is exactly that)
   const scale = mul && v.f.some(f => f.k === 'v' && f.b === u) ? v : undefined;
-  return { ok: cond ? 'balanceIf' : 'balance', p: { op: BOPS[op], v: shown, ex: mx(sides.join(' = ')), c: cond }, born, scale };
+  if (flip) return { ok: 'balanceFlip', p: { op: BOPS[op], v: shown, ex: mx(sides.join(` ${relHTML(S.rel)} `)), was: relHTML(was), now: relHTML(S.rel) }, born, flip: true };
+  return { ok: cond ? 'balanceIf' : 'balance', p: { op: BOPS[op], v: shown, ex: mx(sides.join(` ${relHTML(relOf(S))} `)), c: cond }, born, scale };
 }
 
 export function opSwap(S, bi = 0) {
@@ -85,7 +92,8 @@ export function opSwap(S, bi = 0) {
   if (!hasBranch(S, bi)) return null;
   const [a, b] = pairOf(S, bi);
   setBranch(S, bi, [b, a]);
-  return { ok: 'swapSides', p: { ex: mx(fracHTML(b) + ' = ' + fracHTML(a)) } };
+  if (S.rel) S.rel = FLIP[S.rel];   // 3 > x is x < 3: the sign is read from the other side
+  return { ok: 'swapSides', p: { ex: mx(fracHTML(b) + ` ${relHTML(relOf(S))} ` + fracHTML(a)) } };
 }
 
 // dragging a piece across the = undoes what it does on its side, on both sides:
@@ -138,6 +146,7 @@ export function opDrag(S, id) {
   if (!d) return null;
   if (d.no) return { no: d.no, ids: [id] };
   if (d.root || d.zero) {
+    if (S.rel) return { no: 'ineqBranch', ids: [id] };   // x² < 9 is not x < 3 or x < −3: not yet
     const r = d.root ? opRoot(S, d.bi) : opZero(S, d.bi);
     if (r && r.no) r.ids = [id];
     return r;
@@ -153,6 +162,7 @@ export function isSolved(S) {
   if (!isEquation(S) || S.parts.length < 2 || S.parts.length % 2) return false;
   if (isBranched(S)) return Array.from({ length: branchCount(S) }, (_, b) => isSolved(eqView(S, b))).every(Boolean);
   return S.parts.some((P, i) => {
+    if (S.rel && i) return false;   // an inequality reads with the unknown on the left: x < 3, not 3 > x
     const t = P.num[0];
     if (P.num.length !== 1 || !isOne(P.den) || t.neg || t.f.length !== 1 || t.f[0].k !== 'v' || t.f[0].e !== 1 || t.f[0].b !== unknownOf(S)) return false;
     const other = S.parts[1 - i], b = t.f[0].b;

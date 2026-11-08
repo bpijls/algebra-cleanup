@@ -5,7 +5,7 @@ import { loneSquare } from '../core/balance.js';
 import { sumKey } from '../core/kinds/sums.js';
 import { canMerge, isOne, locate } from '../core/model.js';
 import { opGather, partnersOf } from '../core/moves.js';
-import { branchOf, isEquation, isRight } from '../core/problem.js';
+import { branchOf, isEquation, isRight, relOf } from '../core/problem.js';
 import { opExplode } from '../core/rules/engine.js';
 import { lang, t } from '../i18n.js';
 import { fx, mx, stateHTML, sumHTML } from '../render/text.js';
@@ -161,7 +161,7 @@ export function render() {
     if (pi > 0 && (!isEquation(ui.S) || isRight(pi))) {
       const op = document.createElement('button'); op.type = 'button'; op.dataset.op = '1';
       op.className = stacked ? 'opchip bigbar' : 'opchip';
-      op.textContent = stacked ? '' : ui.S.op;
+      op.textContent = stacked ? '' : isEquation(ui.S) ? relOf(ui.S) : ui.S.op;
       op.setAttribute('aria-label', stacked ? 'fraction bar' : isEquation(ui.S) ? 'equals: do the same to both sides' : ui.S.op === ':' ? 'divide' : 'times');
       if (isEquation(ui.S)) { op.classList.add('eq'); op.dataset.b = branchOf(pi); const on = ui.balancing && ui.balBranch === branchOf(pi); op.classList.toggle('on', on); op.setAttribute('aria-pressed', String(on)); }
       if (ui.hintIds.has('op') && (ui.hintIds.bi == null || ui.hintIds.bi === branchOf(pi))) op.classList.add('hint');
@@ -207,7 +207,7 @@ export function render() {
     // the skill and where in it: "Powers · 3/6"
     const id = LEVELS[ui.lvl].id, K = skillOfLevel(id);
     $('lvlTitle').textContent = K ? `${K.title[lang]} · ${K.levels.indexOf(id) + 1}/${K.levels.length}` : t('level', { n: ui.lvl + 1 });
-    $('lvlBadge').hidden = !LEVELS[ui.lvl].book && !LEVELS[ui.lvl].goal && !ui.S.asPower; $('lvlBadge').textContent = LEVELS[ui.lvl].book ? t('book') : t(ui.S.asPower ? 'asPowerBadge' : { solve: 'solveBadge', prove: 'proveBadge', combine: 'combineBadge' }[LEVELS[ui.lvl].goal] || 'factorBadge');
+    $('lvlBadge').hidden = !LEVELS[ui.lvl].book && !LEVELS[ui.lvl].goal && !ui.S.asPower; $('lvlBadge').textContent = LEVELS[ui.lvl].book ? t('book') : t(ui.S.asPower ? 'asPowerBadge' : ui.S.rel ? 'ineqBadge' : { solve: 'solveBadge', prove: 'proveBadge', combine: 'combineBadge' }[LEVELS[ui.lvl].goal] || 'factorBadge');
     $('moves').innerHTML = t('moves', { n: ui.moves }) + (ui.done[id] != null ? t('best', { n: ui.done[id] }) : '');
   }
   $('writtenLabel').textContent = t('written');
