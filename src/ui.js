@@ -6,8 +6,9 @@ import { hint } from './core/hints.js';
 import { V } from './core/kinds/letter.js';
 import { N } from './core/kinds/number.js';
 import { T, cloneF, sumKey } from './core/kinds/sums.js';
-import { branchCount, canMerge, coef, isClean, isOne, locate, normalize, pairOf, params, tidy, unknownOf, varPart, walkTerms } from './core/model.js';
+import { canMerge, coef, isClean, isOne, locate, normalize, params, tidy, unknownOf, varPart, walkTerms } from './core/model.js';
 import { opBar, opExplode, opGather, opOp, opPair, opSplitTwo, opSweep, partnersOf, termPair } from './core/moves.js';
+import { branchCount, branchOf, isBranched, isEquation, isRight, pairOf } from './core/problem.js';
 import { lang, setLang, t } from './i18n.js';
 import { guessGoal, parseProblem } from './parse.js';
 import { autoSolve, autoSolveStep, makeProblem } from './practice.js';
@@ -153,7 +154,7 @@ function termText(t) {
 // + and − take a positive number (the sign is the operation); · and : can be negative (· −1 flips both sides)
 // with parameters there are letter chips too: each one cycles off → a → a² → off, so · 4a and + b² can be made
 const bal = { op: '+', v: 1, lets: {} };
-const balLetters = () => S.op === '=' ? params(S).sort() : [];
+const balLetters = () => isEquation(S) ? params(S).sort() : [];
 // the value as a term: 4a is the number 4 with the letter a on
 function balTerm() {
   const vs = balLetters().filter(b => bal.lets[b]).map(b => V(b, bal.lets[b]));
@@ -372,29 +373,29 @@ function sideEl(terms, partners) {
 function render() {
   const partners = partnersOf(S, sel);
   block = blockOf(S, sel);
-  detached = new Set(S.op === '=' ? S.parts.map(loneSquare).filter(Boolean).map(f => f.id) : []);
+  detached = new Set(isEquation(S) ? S.parts.map(loneSquare).filter(Boolean).map(f => f.id) : []);
   born.idx = 0;
   const wrap = document.createElement('div'); wrap.className = 'expr';
   const stacked = S.parts.length > 1 && S.op === '/';
   if (stacked) wrap.classList.add('stack');
-  if (S.op === '=') wrap.classList.add('eqs');
+  if (isEquation(S)) wrap.classList.add('eqs');
   let row = wrap;
   S.parts.forEach((P, pi) => {
     // an equation: one row per branch (x = 3 ∨ x = −3); the = stays with the right-hand side,
     // so a line break can only come before the =
-    if (S.op === '=' && pi % 2 === 0) {
+    if (isEquation(S) && !isRight(pi)) {
       if (pi) wrap.append(Object.assign(document.createElement('span'), { className: 'ortag', textContent: t('orWord') }));
       row = wrap.appendChild(Object.assign(document.createElement('div'), { className: 'eqrow' }));
-      row.dataset.b = pi >> 1;
+      row.dataset.b = branchOf(pi);
     }
-    const host = S.op === '=' ? (pi % 2 ? row.appendChild(Object.assign(document.createElement('div'), { className: 'eqright' })) : row) : wrap;
-    if (pi > 0 && (S.op !== '=' || pi % 2)) {
+    const host = isEquation(S) ? (isRight(pi) ? row.appendChild(Object.assign(document.createElement('div'), { className: 'eqright' })) : row) : wrap;
+    if (pi > 0 && (!isEquation(S) || isRight(pi))) {
       const op = document.createElement('button'); op.type = 'button'; op.dataset.op = '1';
       op.className = stacked ? 'opchip bigbar' : 'opchip';
       op.textContent = stacked ? '' : S.op;
-      op.setAttribute('aria-label', stacked ? 'fraction bar' : S.op === '=' ? 'equals: do the same to both sides' : S.op === ':' ? 'divide' : 'times');
-      if (S.op === '=') { op.classList.add('eq'); op.dataset.b = pi >> 1; const on = balancing && balBranch === pi >> 1; op.classList.toggle('on', on); op.setAttribute('aria-pressed', String(on)); }
-      if (hintIds.has('op') && (hintIds.bi == null || hintIds.bi === pi >> 1)) op.classList.add('hint');
+      op.setAttribute('aria-label', stacked ? 'fraction bar' : isEquation(S) ? 'equals: do the same to both sides' : S.op === ':' ? 'divide' : 'times');
+      if (isEquation(S)) { op.classList.add('eq'); op.dataset.b = branchOf(pi); const on = balancing && balBranch === branchOf(pi); op.classList.toggle('on', on); op.setAttribute('aria-pressed', String(on)); }
+      if (hintIds.has('op') && (hintIds.bi == null || hintIds.bi === branchOf(pi))) op.classList.add('hint');
       host.append(op);
     }
     const fr = document.createElement('div'); fr.className = 'frac';
@@ -472,7 +473,7 @@ function fitBoard(wrap) {
   wrap.querySelectorAll('.term > .lb').forEach(el => el.remove());
   // several branches (x = 3 ∨ x = −3): below each other, or next to each other when that needs less shrinking
   // (a phone on its side has width to spare and little height)
-  if (S.op === '=' && branchCount(S) > 1) {
+  if (isBranched(S)) {
     const cs = getComputedStyle(board), room = board.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
     const W = wrap.parentElement.clientWidth * 0.94;
     wrap.classList.add('oneline');
@@ -486,7 +487,7 @@ function fitBoard(wrap) {
     wrap.classList.remove('oneline', 'across');
   }
   // an equation reads best on one line, like a balance: shrink it a little rather than break it
-  if (S.op === '=') {
+  if (isEquation(S)) {
     wrap.classList.add('oneline');                    // nothing wraps, so this is its natural width
     const k = wrap.parentElement.clientWidth * 0.94 / wrap.scrollWidth;
     if (k >= 1) return;
@@ -666,13 +667,13 @@ function select(s) {
   if (block) return say('pickedBlock', { x: mx(fx(block.L.f)), ex: mx(blockHTML(block.L.terms, block.key)) }, 'info');
   const has = partnersOf(S, sel).size > 0;
   const canExplode = s.t === 'f' && !$('btnExplode').hidden;
-  if (S.op === '=' && !has) return say('pickedEq', {}, 'info');
+  if (isEquation(S) && !has) return say('pickedEq', {}, 'info');
   say(s.t === 'f' ? (has ? 'pickedP' : canExplode ? 'picked' : 'pickedAtom') : (has ? 'pickedTermP' : 'pickedTerm'), {}, 'info');
 }
 
 /* ---- balance mode: tap =, then drag a piece across it; it is undone on both sides ---- */
 function setBalancing(on) {
-  balancing = on && S.op === '=';
+  balancing = on && isEquation(S);
   if (balancing) { bal.lets = {}; balFromHint(); }
   sel = null; born = new Set();
   if (!balancing || !(lastHint && lastHint.balance && lastHint.drag == null)) hintIds = new Set();
@@ -812,7 +813,7 @@ board.addEventListener('click', e => {
   if (suppressClick) { suppressClick = false; return; }
   if (busy || won) return;
   const chip = e.target.closest('.opchip');
-  if (chip) { if (S.op !== '=') return run(s => opOp(s)); balBranch = +chip.dataset.b || 0; return setBalancing(!balancing); }
+  if (chip) { if (!isEquation(S)) return run(s => opOp(s)); balBranch = +chip.dataset.b || 0; return setBalancing(!balancing); }
   if (e.target.closest('.fbar')) return run(s => opBar(s));
   const hit = e.target.closest('.tile, .term');
   if (balancing) {

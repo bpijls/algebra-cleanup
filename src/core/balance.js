@@ -4,7 +4,8 @@ import { Pr } from './kinds/bracket.js';
 import { V } from './kinds/letter.js';
 import { N } from './kinds/number.js';
 import { T, cloneF, cloneT, fHasU, tHasU } from './kinds/sums.js';
-import { SIDES, addCond, branchCount, eachFactor, eqView, hasU, isClean, isOne, pairOf, params, unknownOf, walkTerms } from './model.js';
+import { SIDES, addCond, eachFactor, hasU, isClean, isOne, params, unknownOf, walkTerms } from './model.js';
+import { branchCount, branchOf, eqView, hasBranch, isBranched, isEquation, pairOf, setBranch } from './problem.js';
 import { hasLetter, opRoot, opZero } from './quadratic.js';
 import { condHTML, factorsHTML, fracHTML, mx } from '../render/text.js';
 
@@ -20,7 +21,7 @@ export const isZeroSide = side => side.length === 1 && side[0].f.length === 1 &&
 
 // v: a monomial Term (its sign counts). op: '+', '-', '·', ':'
 export function opBalance(S, op, v, bi = 0) {
-  if (S.op !== '=' || !v || !v.f || !v.f.length || bi >= branchCount(S)) return null;
+  if (!hasBranch(S, bi) || !v || !v.f || !v.f.length) return null;
   const u = unknownOf(S), ps = params(S);
   const vNum = v.f.filter(f => f.k === 'n').reduce((a, f) => a * f.v, 1);
   const shown = mx((v.neg ? '−' : '') + factorsHTML(v.f, true));
@@ -73,9 +74,9 @@ export function opBalance(S, op, v, bi = 0) {
 }
 
 export function opSwap(S, bi = 0) {
-  if (S.op !== '=' || bi >= branchCount(S)) return null;
+  if (!hasBranch(S, bi)) return null;
   const [a, b] = pairOf(S, bi);
-  S.parts.splice(2 * bi, 2, b, a);
+  setBranch(S, bi, [b, a]);
   return { ok: 'swapSides', p: { ex: mx(fracHTML(b) + ' = ' + fracHTML(a)) } };
 }
 
@@ -93,16 +94,16 @@ export function loneSquare(P) {
 // the ² of a lone square has the id −(the square's id); dragging it takes the root of both sides,
 // and dragging the 0 of '… = 0' onto a product splits it (a product is 0 when one of its factors is)
 export function dragBalance(S, id) {
-  if (S.op !== '=') return null;
+  if (!isEquation(S)) return null;
   if (id < 0) {
     const pi = S.parts.findIndex(P => loneSquare(P)?.id === -id && hasU(P.num, unknownOf(S)));
-    return pi < 0 ? null : { root: true, bi: pi >> 1 };
+    return pi < 0 ? null : { root: true, bi: branchOf(pi) };
   }
   for (const [pi, P] of S.parts.entries()) for (const side of SIDES) for (const top of P[side]) {
     let L = null;
     walkTerms([top], { depth: 0 }, M => { if (!L && (M.kind === 't' ? M.term.id : M.f.id) === id) L = M; });
     if (!L) continue;
-    const ts = P[side], bi = pi >> 1;
+    const ts = P[side], bi = branchOf(pi);
     if (side === 'num' && L.kind === 'f' && L.f.k === 'n' && L.f.v === 0 && isZeroSide(ts) && isOne(P.den)) return { zero: true, bi };
     if (side === 'den') return ts.length === 1 ? { op: '·', value: T(top.f.map(cloneF), top.neg), bi } : { no: 'dragDenSum' };
     const whole = { op: top.neg ? '+' : '-', value: T(top.f.map(cloneF)), bi };
@@ -136,8 +137,8 @@ export function opDrag(S, id) {
 
 // solved: one side is the letter on its own, the other side a clean value without it
 export function isSolved(S) {
-  if (S.op !== '=' || S.parts.length < 2 || S.parts.length % 2) return false;
-  if (S.parts.length > 2) return Array.from({ length: branchCount(S) }, (_, b) => isSolved(eqView(S, b))).every(Boolean);
+  if (!isEquation(S) || S.parts.length < 2 || S.parts.length % 2) return false;
+  if (isBranched(S)) return Array.from({ length: branchCount(S) }, (_, b) => isSolved(eqView(S, b))).every(Boolean);
   return S.parts.some((P, i) => {
     const t = P.num[0];
     if (P.num.length !== 1 || !isOne(P.den) || t.neg || t.f.length !== 1 || t.f[0].k !== 'v' || t.f[0].e !== 1 || t.f[0].b !== unknownOf(S)) return false;

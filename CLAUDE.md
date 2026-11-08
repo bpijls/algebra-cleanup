@@ -42,7 +42,8 @@ Native ES modules, no framework, no build step needed to run (`index.html` loads
 | File | What it holds |
 |---|---|
 | `src/core/kinds/` | The node-type registry (`registry.js`: `defineKind`, `kindOf`) and one file per kind: `number.js` (`N`), `letter.js` (`V`), `group.js` (`G`), `bracket.js` (`Pr`), `root.js` (`Rt`), plus `sums.js` (`T`, `F`, `cloneF`, `fkey`, `sumKey`, `evalF`). Each kind implements `clone, key, canMerge, merge, terms, has, eval`; generic code calls those instead of switching on `f.k`. `index.js` registers them all. |
-| `src/core/model.js` | The model: `canMerge`/`mergeF` (via the kinds), tidiness, `normalize`, `isClean`, `walk`/`locate`, branches (`branchCount`, `pairOf`, `eqView`), the unknown and parameters, `addCond`. No DOM. |
+| `src/core/model.js` | The model: `canMerge`/`mergeF` (via the kinds), tidiness, `normalize`, `isClean`, `walk`/`locate`, the unknown and parameters, `addCond`. No DOM. |
+| `src/core/problem.js` | The shape of a problem in one place: `isEquation`, `isFractionPair`, `isBranched`, `hasBranch`, `branchCount`, `branchOf(p)`, `isRight(p)`, `pairOf`, `eqView`, `setBranch`. Nothing else reads the flat branch layout or tests `S.op === '='`. |
 | `src/render/text.js` | The text renderer: HTML for states, terms, sums and conditions (`stateHTML`, `termHTML`, `sqHTML`, `mx`, `blockHTML`, `orWord`, `condHTML`). The model (`core/model.js`) holds no HTML and doesn't import it; moves and hints call it only for the math inside their message params. |
 | `src/core/moves.js` | The tile moves: `opExplode`, `pairCheck`/`opPair`, `opFactor`, `opSplitTwo`, sweeps, `termPair`, the fraction sign (`opOp`, `opBar`). |
 | `src/core/hints.js` | Simplify and factor hints (`factorHint`, `sumProductHint`) and the `hint` entry point. |
@@ -74,7 +75,7 @@ Native ES modules, no framework, no build step needed to run (`index.html` loads
 
 ### Data model (`core/model.js`)
 
-- State `S = { parts: [Fraction, ...], op: null | ':' | '·' | '/' | '=', goal: 'simplify' | 'factor' | 'solve', allowB? }`. Two parts only while dividing/multiplying fractions, or for an equation (`op: '='`, left and right). An equation that has branched (`x = 3 ∨ x = −3`) keeps them flat: `parts = [L1, R1, L2, R2, …]`; `branchCount`, `pairOf(S, bi)`, `eqView(S, bi)` (a view that shares tiles), and `stateHTML` joins them with `orWord()` (`or` / `∨`). `isClean` for `goal: 'solve'` is `isSolved`: in every branch one side is the letter alone, the other a clean value without it (`x = 9/2`, `x = 2√3`, `x = (√17 − 3)/4` count). `normalize` moves a minus from below a bar to the top (`6/−2` → `−6/2`) and drops `+ 0` terms.
+- State `S = { parts: [Fraction, ...], op: null | ':' | '·' | '/' | '=', goal: 'simplify' | 'factor' | 'solve', allowB? }`. Two parts only while dividing/multiplying fractions, or for an equation (`op: '='`, left and right). An equation that has branched (`x = 3 ∨ x = −3`) keeps them flat: `parts = [L1, R1, L2, R2, …]`, read only through `core/problem.js` (`branchCount`, `branchOf`, `pairOf(S, bi)`, `eqView(S, bi)` (a view that shares tiles), `setBranch`), and `stateHTML` joins them with `orWord()` (`or` / `∨`). `isClean` for `goal: 'solve'` is `isSolved`: in every branch one side is the letter alone, the other a clean value without it (`x = 9/2`, `x = 2√3`, `x = (√17 − 3)/4` count). `normalize` moves a minus from below a bar to the top (`6/−2` → `−6/2`) and drops `+ 0` terms.
 - `Fraction = { num: Term[], den: Term[] }` (each side is a sum of terms).
 - `Term = { k:'t', f: Factor[], neg }`.
 - Factors: `N(v)` number, `V(b, e)` letter with exponent, `G(f, e)` bracket around a *product* with exponent, `Pr(terms, e)` bracket around a *sum* with exponent, `Rt(terms)` root. Each is a kind in `core/kinds/`; **a new kind** (log, sin, π) is a new file there calling `defineKind`, a `defineHTML(k, rank, html)` in `render/text.js` and a tile in ui.js, and the judge evaluates it through its `eval`. Every node has a unique `id`; tiles in the DOM carry it as `data-id`. `sumKey(terms)` compares sums regardless of term and factor order.
@@ -148,7 +149,7 @@ Config is in `.env` (copy `.env.example`): `APP_DOMAIN`, `CADDY_NETWORK`, `HOST_
 
 ## Refactoring towards an algebra system
 
-`docs/refactor-plan.md` is the agreed plan (SOLID): node-type and rule registries, explicit problem types, goals built from tactics, rendering out of core, ES modules, in steps that each keep `npm test` and the golden traces green. Done: step 0 (golden traces), step 1 (ES modules), step 2 (rendering out of the model). step 3 (node-type registry). Next: step 4 (problem types).
+`docs/refactor-plan.md` is the agreed plan (SOLID): node-type and rule registries, explicit problem types, goals built from tactics, rendering out of core, ES modules, in steps that each keep `npm test` and the golden traces green. Done: step 0 (golden traces), step 1 (ES modules), step 2 (rendering out of the model). step 3 (node-type registry). step 4 (problem shape behind `core/problem.js`). Next: step 5 (rule engine).
 
 ## Known limitations and ideas
 

@@ -1,14 +1,15 @@
 /* "Done?" pressed too early: say what is still left, without giving the move away. */
 import { quadSplit } from './hints.js';
 import { sumKey } from './kinds/sums.js';
-import { SIDES, branchCount, coefAbs, eqView, gcd, hasU, isClean, isOne, sig, sumClean, tidy, unbare, unknownOf, varPart } from './model.js';
+import { SIDES, coefAbs, gcd, hasU, isClean, isOne, sig, sumClean, tidy, unbare, unknownOf, varPart } from './model.js';
+import { branchCount, eqView, isBranched } from './problem.js';
 import { bx, fx, mx, termHTML } from '../render/text.js';
 
 /* "Done?" pressed too early: say what is still left, without giving the move away */
 export function whyNotDone(S) {
   if (isClean(S)) return null;
   const th = t => mx(termHTML(t));
-  if (S.goal === 'solve' && S.parts.length > 2) {
+  if (S.goal === 'solve' && isBranched(S)) {
     for (let b = 0; b < branchCount(S); b++) { const w = whyNotDone(eqView(S, b)); if (w) return w; }
     return null;
   }

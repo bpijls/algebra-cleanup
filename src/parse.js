@@ -8,6 +8,7 @@ import { V } from './core/kinds/letter.js';
 import { N } from './core/kinds/number.js';
 import { F, T } from './core/kinds/sums.js';
 import { isClean, isOne, normalize } from './core/model.js';
+import { isEquation } from './core/problem.js';
 
 export const SUP = { '⁰': 0, '¹': 1, '²': 2, '³': 3, '⁴': 4, '⁵': 5, '⁶': 6, '⁷': 7, '⁸': 8, '⁹': 9 };
 export function tokenize(src) {
@@ -153,7 +154,7 @@ export function guessGoal(src) {
   const r = parseProblem(src, 'simplify');
   if (r.err) return 'simplify';
   const S = r.S;
-  if (S.op === '=') return 'solve';
+  if (isEquation(S)) return 'solve';
   if (S.parts.length === 1 && isOne(S.parts[0].den) && S.parts[0].num.length >= 2 && isClean(S)) return 'factor';
   return 'simplify';
 }

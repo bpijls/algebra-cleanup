@@ -5,6 +5,7 @@ import { V } from './kinds/letter.js';
 import { N } from './kinds/number.js';
 import { F, T, cloneF, cloneT, fkey, sumKey } from './kinds/sums.js';
 import { MAX_GROUP, MAX_VAR, canMerge, cleanTerm, coef, eachFactor, eachTerm, gcd, isOne, isUnit, locate, mergeF, negate, primeFactors, sig, tidy, varPart } from './model.js';
+import { branchOf, isEquation, isFractionPair } from './problem.js';
 import { blockHTML, bx, factorsHTML, fx, mx, sumHTML, termHTML } from '../render/text.js';
 
 /* ---- moves ---- each returns {ok,p,born} after mutating, or {no,p,ids} without mutating ---- */
@@ -105,7 +106,7 @@ export function restOf(A, B) {
 export function pairCheck(S, A, B) {
   const x = A.f, y = B.f;
   if (A.p !== B.p) {
-    if (S.op === '=') return { type: 'fizzle', msg: A.p >> 1 !== B.p >> 1 ? 'diffBranch' : 'diffSides' };   // no "move it across and flip the sign"
+    if (isEquation(S)) return { type: 'fizzle', msg: branchOf(A.p) !== branchOf(B.p) ? 'diffBranch' : 'diffSides' };   // no "move it across and flip the sign"
     if (S.op !== '·') return { type: 'fizzle', msg: 'diffFrac' };
     if (A.side === B.side) return { type: 'move' };
     const PA = S.parts[A.p], PB = S.parts[B.p];
@@ -327,7 +328,7 @@ export function opSweep(S, ids) {
 
 export function termPair(S, aId, bId) {
   const A = locate(S, aId), B = locate(S, bId);
-  if (A.p !== B.p) return { no: S.op === '=' ? 'diffSides' : 'diffFrac', ids: [aId, bId] };
+  if (A.p !== B.p) return { no: isEquation(S) ? 'diffSides' : 'diffFrac', ids: [aId, bId] };
   if (A.terms !== B.terms) return { no: A.side !== B.side ? 'termSide' : 'bracketWall', ids: [aId, bId] };
   if (!tidy(A.term) || !tidy(B.term)) return { no: 'untidy', ids: [aId, bId] };
   if (sig(A.term) !== sig(B.term)) return { no: 'notLike', p: { v1: mx(termHTML(A.term)), v2: mx(termHTML(B.term)) }, ids: [aId, bId] };
@@ -349,7 +350,7 @@ export function joinable(S) {
 }
 
 export function opOp(S) {
-  if (S.parts.length < 2 || S.op === '=') return null;
+  if (!isFractionPair(S)) return null;
   if (S.op === '/') { S.op = ':'; return { ok: 'toDiv' }; }
   if (S.op === ':') { const born = flipPart(S.parts[1]); S.op = '·'; return { ok: 'flip', born }; }
   // tops times tops, bottoms times bottoms: with only 1's left to multiply by, the two fractions become one

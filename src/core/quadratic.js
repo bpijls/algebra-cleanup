@@ -8,7 +8,8 @@ import { V } from './kinds/letter.js';
 import { N } from './kinds/number.js';
 import { Rt } from './kinds/root.js';
 import { F, T, cloneF, cloneT, evalTerms, fHasU, fkey } from './kinds/sums.js';
-import { addCond, branchCount, canMerge, cleanTerm, eqView, hasU, isOne, pairOf, params, unknownOf, walkTerms } from './model.js';
+import { addCond, canMerge, cleanTerm, hasU, isOne, params, unknownOf, walkTerms } from './model.js';
+import { branchCount, eqView, hasBranch, pairOf, setBranch } from './problem.js';
 import { bx, condHTML, fracHTML, fx, mx, orWord, sumHTML, termHTML } from '../render/text.js';
 
 /* ---- quadratic equations: two moves that split an equation into branches ("or") ----
@@ -38,7 +39,7 @@ export function quadOf(S) {
 
 // "take the root of both sides": the square on one side, a number ≥ 0 on the other → two branches
 export function opRoot(S, bi = 0) {
-  if (S.op !== '=' || bi >= branchCount(S)) return null;
+  if (!hasBranch(S, bi)) return null;
   const parts = pairOf(S, bi);
   const u = unknownOf(S);
   const qi = parts.findIndex(P => hasU(P.num, u) || hasU(P.den, u));
@@ -57,14 +58,14 @@ export function opRoot(S, bi = 0) {
   const add = v != null && Math.abs(v) < 1e-12 ? [...branch(false)] : [...branch(false), ...branch(true)];
   const before = mx(fracHTML(parts[0]) + ' = ' + fracHTML(parts[1]));
   const cond = v == null ? condHTML(addCond(S, O.num, 'ge')) : null;
-  S.parts.splice(2 * bi, 2, ...add);
+  setBranch(S, bi, add);
   const ex = Array.from({ length: add.length / 2 }, (_, k) => fracHTML(add[2 * k]) + ' = ' + fracHTML(add[2 * k + 1])).join(` ${orWord()} `);
   return { ok: cond ? 'rootBothIf' : add.length > 2 ? 'rootBoth' : 'rootZero', p: { x: before, ex: mx(ex), s: mx(fx(sq)), c: cond }, born: add.flatMap(P => P.num.flatMap(t => t.f.map(f => f.id))) };
 }
 
 // a product that is 0: one of its factors is 0 → a branch for each factor with a letter in it
 export function opZero(S, bi = 0) {
-  if (S.op !== '=' || bi >= branchCount(S)) return null;
+  if (!hasBranch(S, bi)) return null;
   const parts = pairOf(S, bi);
   const zi = parts.findIndex(P => isZeroSide(P.num) && isOne(P.den));
   if (zi < 0) return null;
@@ -79,7 +80,7 @@ export function opZero(S, bi = 0) {
   if (bases.length < 2 && !fs.some(f => f.e > 1)) return { no: 'zeroOne', ids: ['op'] };
   const add = bases.flatMap(b => { const pair = [F([T([b])]), F([T([N(0)])])]; return zi === 0 ? pair.reverse() : pair; });
   const before = mx(sumHTML([t]) + ' = 0');
-  S.parts.splice(2 * bi, 2, ...add);
+  setBranch(S, bi, add);
   const ex = bases.map(b => (b.k === 'p' ? sumHTML(b.terms) : fx(b)) + ' = 0').join(` ${orWord()} `);
   return { ok: 'zeroProduct', p: { x: before, ex: mx(ex) }, born: add.flatMap(P => P.num.flatMap(t => t.f.map(f => f.id))) };
 }

@@ -192,12 +192,6 @@ export const eachTerm = (S, fn) => walk(S, L => L.kind === 't' && fn(L));
 
 export function containers(S) { const out = []; walk(S, L => { if (L.kind === 't' && !out.includes(L.terms)) out.push(L.terms); }); return out; }
 
-export const branchCount = S => S.op === '=' ? S.parts.length >> 1 : 1;
-
-export const pairOf = (S, bi) => S.parts.slice(2 * bi, 2 * bi + 2);
-
-export const eqView = (S, bi) => ({ parts: pairOf(S, bi), op: '=', goal: 'solve', unknown: unknownOf(S) });   // shares the tiles with S
-
 // the letter an equation is solved for; the other letters are parameters (a, b, c in ax² + bx + c = 0)
 export function unknownOf(S) {
   if (S.unknown) return S.unknown;

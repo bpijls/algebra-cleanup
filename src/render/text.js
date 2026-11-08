@@ -1,7 +1,8 @@
 /* The text renderer: states, terms, sums and conditions as HTML (the board's formula line, notes, win sheets).
    The model and the moves hold no HTML; they call these for the math inside their messages. */
 import { sumKey } from '../core/kinds/sums.js';
-import { branchCount, eqView, isOne, tidy, unbare } from '../core/model.js';
+import { isOne, tidy, unbare } from '../core/model.js';
+import { branchCount, eqView, isBranched } from '../core/problem.js';
 import { I18N, lang } from '../i18n.js';
 
 /* ---- notation (HTML) ---- */
@@ -43,7 +44,7 @@ export function fracHTML(P, showOne) {
 export const orWord = () => (typeof I18N !== 'undefined' && typeof lang !== 'undefined' && I18N[lang] && I18N[lang].orWord) || '∨';
 
 export function stateHTML(S) {
-  if (S.op === '=' && S.parts.length > 2)
+  if (isBranched(S))
     return Array.from({ length: branchCount(S) }, (_, b) => `<span class="branch">${stateHTML(eqView(S, b))}</span>`).join(` <span class="nop or">${orWord()}</span> `);
   if (S.parts.length > 1 && S.op === '/')
     return `<span class="nfrac big"><span class="nn">${fracHTML(S.parts[0])}</span><span class="nd">${fracHTML(S.parts[1])}</span></span>`;

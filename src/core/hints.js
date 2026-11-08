@@ -1,6 +1,7 @@
 /* Hints for simplify and factor goals, and the hint() entry point. */
 import { SIDES, canMerge, coef, containers, eachFactor, eachTerm, gcd, isOne, isUnit, primeFactors, sig, squareFactor, tidy, varPart } from './model.js';
 import { cancelCheck, joinable, restOf, usedUp } from './moves.js';
+import { isEquation } from './problem.js';
 import { eqHint } from './quadratic.js';
 import { bx, fx, mx, sumHTML, termHTML } from '../render/text.js';
 
@@ -83,7 +84,7 @@ export function sumProductHint(S) {
 }
 
 export function hint(S) {
-  if (S.op === '=') return eqHint(S);
+  if (isEquation(S)) return eqHint(S);
   if (S.parts.length > 1) {
     if (S.op === '/') return { k: 'hBar', ids: ['op'] };
     if (S.op === ':') return { k: 'hDiv', ids: ['op'] };
