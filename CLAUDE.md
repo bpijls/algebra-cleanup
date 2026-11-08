@@ -60,7 +60,8 @@ Plain browser scripts sharing globals, no framework, no build step needed to run
 | `tests/done.test.js` | Done?: `whyNotDone` gives a reason with EN and NL text on every unfinished state along the hint path, and accepts every finished one; the block wording. |
 | `tests/generic.test.js` | Letters for numbers: each generic form (`ax + b = cx + d` … `ax² + bx + c = 0`) is solved by the hints to its textbook answer with its conditions, and the answers equal the closed formulas at the judge's parameter values; ·/: by letters (and refusals); another unknown (`v = u + at` for t); the practice topic. |
 | `tests/quadratic.test.js` | Root of both sides, product = 0, dragging the ² and the 0 across, `rootOut`, `diffBranch`, `factorRest`; every quadratic level and practice problem solved by the hints with the same solutions (fuzzing from branched states); `4a` + completing the square lands on `(−b ± √D)/2a`. |
-| `tests/corpus.test.js` | Textbook exercises per chapter (machten … ontbinden, vergelijkingen, kwadratische vergelijkingen), typed as a student would; each must parse, be solved by the hints to the textbook answer, and keep its value. Add new exercise types here first. |
+| `tests/corpus.test.js` | Textbook exercises per chapter (machten … ontbinden, vergelijkingen, kwadratische vergelijkingen), typed as a student would; each must parse, be solved by the hints to the textbook answer, and keep its value. The exercises themselves are in `tests/corpus-data.js` (`CHAPTERS`); add new exercise types there first. |
+| `tests/golden.test.js` | Characterisation net for refactoring: the full hint path (hint key, `whyNotDone` key, move result, state) of every level, corpus exercise, generic form and a fixed-seed set of practice problems (`Math.random` seeded in the sandbox) must equal `tests/golden/traces.json`. After a deliberate behaviour change: `GOLDEN=update npm test`, then review the diff of that file. |
 
 ### Data model (`core.js`)
 
@@ -108,7 +109,7 @@ npm run build   # write dist/algebra-cleanup.html
 npm start       # serve the folder locally (or just open index.html)
 ```
 
-Run `npm test` after any change to `core.js`, `practice.js` or `parse.js`; the suite checks that every level, generated problem and corpus exercise is still solvable, that random play never changes an expression's value, and that the no-magic rules hold. A new move needs nothing extra to be judged: `fuzz` in `tests/judge.js` tries every move on every state it reaches (add new move functions to its `candidates`).
+Run `npm test` after any change to `core.js`, `practice.js` or `parse.js`; the suite checks that no hint path changed (`golden.test.js`; a refactor must leave it untouched), that every level, generated problem and corpus exercise is still solvable, that random play never changes an expression's value, and that the no-magic rules hold. A new move needs nothing extra to be judged: `fuzz` in `tests/judge.js` tries every move on every state it reaches (add new move functions to its `candidates`).
 
 ## Running the stack
 
@@ -135,6 +136,10 @@ Service workers need a trusted HTTPS origin (or `localhost`). huiswerk.paws.home
 If you change `icons/icon.svg`, re-render the PNGs at the same sizes (headless Chromium with the Google Fonts loaded, so the `a²` uses STIX Two Text and Atkinson Hyperlegible).
 
 Config is in `.env` (copy `.env.example`): `APP_DOMAIN`, `CADDY_NETWORK`, `HOST_PORT` (only for the commented-out `ports:` block).
+
+## Refactoring towards an algebra system
+
+`docs/refactor-plan.md` is the agreed plan (SOLID): node-type and rule registries, explicit problem types, goals built from tactics, rendering out of core, ES modules, in steps that each keep `npm test` and the golden traces green. Done: step 0 (golden traces). Next: step 1 (ES modules, mechanical split).
 
 ## Known limitations and ideas
 
