@@ -1,5 +1,5 @@
 /* All player-facing text, English and Dutch. Every key must exist in both. */
-const I18N = {
+export const I18N = {
   en: {
     practice: 'Practice', practiceTitle: 'Practice', newProblem: 'New problem', topics: 'Topics', difficulty: 'Difficulty', start: 'Start practising',
     solved: '<b>{n}</b> solved', streak: ' · streak {n}', nextProblem: 'Next problem', changeTopics: 'Change topics', pickOne: 'Pick at least one topic.',
@@ -321,3 +321,7 @@ const I18N = {
     pTimes: 'Keer een hele breuk: schrijf ze allebei als breuk, zoals (2a/3)·(9/a).',
   }
 };
+
+/* the language being shown; unset outside the browser (tests), where orWord falls back to ∨ */
+export let lang;
+export const setLang = l => { lang = l; };

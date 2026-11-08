@@ -13,6 +13,9 @@ test('service worker precaches only files that exist, including every script ind
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
   const refs = [...html.matchAll(/(?:src|href)="((?:src|icons)\/[^"]+|manifest\.webmanifest)"/g)].map(m => m[1]);
   refs.forEach(r => assert.ok(shell.includes(r), `${r} is loaded by index.html but not precached`));
+  // the modules ui.js imports, directly or not: every script under src/
+  const scripts = fs.readdirSync(path.join(root, 'src'), { recursive: true }).filter(f => f.endsWith('.js')).map(f => 'src/' + f.split(path.sep).join('/'));
+  scripts.forEach(f => assert.ok(shell.includes(f), `${f} is a module but not precached`));
 });
 
 test('manifest icons exist', () => {

@@ -1,9 +1,20 @@
-/* Rendering, input (tap, swipe), animation, levels/practice screens. Uses globals from core.js, practice.js, i18n.js. */
+/* Rendering, input (tap, swipe), animation, levels/practice screens. The entry point: index.html loads it as a module. */
+import { LEVELS, buildLevel } from './content/levels.js';
+import { BOPS, letters, loneSquare, opBalance, opDrag, opSwap } from './core/balance.js';
+import { whyNotDone } from './core/done.js';
+import { hint } from './core/hints.js';
+import { N, T, V, branchCount, canMerge, cloneF, coef, isClean, isOne, locate, normalize, pairOf, params, sumKey, tidy, unknownOf, varPart, walkTerms } from './core/model.js';
+import { opBar, opExplode, opGather, opOp, opPair, opSplitTwo, opSweep, partnersOf, termPair } from './core/moves.js';
+import { blockHTML, bx, fx, mx, sqHTML, stateHTML, sumHTML } from './core/notation.js';
+import { I18N, lang, setLang } from './i18n.js';
+import { guessGoal, parseProblem } from './parse.js';
+import { autoSolve, autoSolveStep, makeProblem } from './practice.js';
+
 const VARCOL = { a: '--va', b: '--vb', x: '--vx', y: '--vy' };
 const store = { get(k, d) { try { const v = localStorage.getItem('alg-cleanup:' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
   set(k, v) { try { localStorage.setItem('alg-cleanup:' + k, JSON.stringify(v)); } catch {} } };
 
-let lang = store.get('lang', (navigator.language || '').toLowerCase().startsWith('nl') ? 'nl' : 'en');
+setLang(store.get('lang', (navigator.language || '').toLowerCase().startsWith('nl') ? 'nl' : 'en'));
 let lvl = Math.min(store.get('level', 0), LEVELS.length - 1);
 let best = store.get('best', {});
 let S, history, moves, sel, born, hintIds, lastNote, busy = false, won = false, balancing = false, balBranch = 0;
@@ -856,7 +867,7 @@ $('btnRestart').onclick = () => {
 $('btnPractice').onclick = showPractice;
 $('btnSkip').onclick = () => { if (busy) return; if (mode === 'custom') return showOwn(); session.streak = 0; nextProblem(); say('skipped', {}, 'info'); };
 $('btnLang').onclick = () => {
-  lang = lang === 'nl' ? 'en' : 'nl'; store.set('lang', lang); render();
+  setLang(lang === 'nl' ? 'en' : 'nl'); store.set('lang', lang); render();
   if (lastNote) say(lastNote.key, lastNote.p, lastNote.type, lastNote.raw);
   if (won) win(true);
   else if (sheetFn && $('sheetHost').children.length) sheetFn();
@@ -971,3 +982,10 @@ function showLevels() {
 }
 
 loadLevel(lvl);
+
+// for devtools and the browser playthrough scripts: the module's state and entry points (alg.S, alg.loadLevel(3) …)
+window.alg = {
+  get S() { return S; }, get busy() { return busy; }, get balancing() { return balancing; }, get bdrag() { return bdrag; },
+  get mode() { return mode; }, get won() { return won; }, set won(v) { won = v; }, bal, board,
+  loadLevel, render, closeSheet, showOwn, overOtherSide, hint, autoSolveStep, setLang,
+};

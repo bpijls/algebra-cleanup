@@ -8,7 +8,7 @@ English and Dutch. Works on phones and desktop.
 
 ## Run it
 
-Open `index.html` in a browser, or run `npm start` and open the address it prints.
+Run `npm start` and open the address it prints (the game is made of ES modules, which browsers do not load from a `file://` page).
 
 On the server: `cp .env.example .env && docker compose up -d` serves it at `APP_DOMAIN` (https://huiswerk.paws.home) through Caddy. It is a progressive web app: install it from the browser menu ("Add to Home Screen") and it works offline after the first visit.
 

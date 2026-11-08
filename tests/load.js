@@ -1,16 +1,11 @@
-// Loads the browser scripts (plain globals, no modules) into a sandbox so tests can call them.
-const vm = require('node:vm');
-const fs = require('node:fs');
-const path = require('node:path');
+// The game's modules (no DOM) as one object, so tests can call everything by name: G.normalize, G.LEVELS …
+const MODULES = ['core/model', 'core/notation', 'core/moves', 'core/hints', 'core/balance', 'core/done', 'core/quadratic',
+  'core/generic', 'content/levels', 'practice', 'parse', 'i18n'];
 
 function load() {
-  const ctx = vm.createContext({ console });
-  for (const f of ['core.js', 'practice.js', 'parse.js', 'i18n.js'])
-    vm.runInContext(fs.readFileSync(path.join(__dirname, '../src', f), 'utf8'), ctx, { filename: f });
-  const api = vm.runInContext(`({ LEVELS, buildLevel, autoSolve, autoSolveStep, makeProblem, GEN, hint, normalize, isClean, stateHTML, locate,
-    opPair, opExplode, opSweep, opOp, opBar, termPair, walk, opSplitTwo, parseProblem, guessGoal, isFactored, isSolved, opBalance, opSwap, opDrag, dragBalance, whyNotDone, blockHTML, sumKey, opRoot, opZero, loneSquare, unknownOf, params, PVAL, quadOf, isZeroSide, Rt, letters, cloneF, I18N, F, T, N, V, G, Pr })`, ctx);
-  api.__ctx = ctx;   // lets a test seed the sandbox's Math.random (golden.test.js)
+  const api = {};
+  for (const m of MODULES) Object.assign(api, require(`../src/${m}.js`));
   return api;
 }
 const strip = h => h.replace(/<sup>(\d+)<\/sup>/g, '^$1').replace(/<span class="nn">/g, '[').replace(/<span class="nd">/g, '/').replace(/<[^>]+>/g, '');
-module.exports = { load, strip };
+module.exports = { load, strip, MODULES };

@@ -1,8 +1,11 @@
 /* ===== PARSE: typed problems → game state. Uses N, V, G, Pr, T, F from core.js. =====
    Accepts textbook notation: 3a²·2a, (x+3)(x−2), −2(x−4), (2a)^3, 12a^5/4a^2, 12a⁵ : 4a², (8x/3y) : (3x/y).
    Returns { S } or { err: messageKey, at: index }. */
-const SUP = { '⁰': 0, '¹': 1, '²': 2, '³': 3, '⁴': 4, '⁵': 5, '⁶': 6, '⁷': 7, '⁸': 8, '⁹': 9 };
-function tokenize(src) {
+import { letters } from './core/balance.js';
+import { F, G, N, Pr, T, V, isClean, isOne, normalize } from './core/model.js';
+
+export const SUP = { '⁰': 0, '¹': 1, '²': 2, '³': 3, '⁴': 4, '⁵': 5, '⁶': 6, '⁷': 7, '⁸': 8, '⁹': 9 };
+export function tokenize(src) {
   const out = [];
   const s = src.replace(/[−–—]/g, '-').replace(/[×⋅∙*]/g, '·').replace(/[[{]/g, '(').replace(/[\]}]/g, ')');
   for (let i = 0; i < s.length;) {
@@ -23,7 +26,7 @@ function tokenize(src) {
   return { toks: out };
 }
 
-function parseProblem(src, goal, unknown) {
+export function parseProblem(src, goal, unknown) {
   const tk = tokenize(src || '');
   if (tk.err) return tk;
   const toks = tk.toks;
@@ -141,7 +144,7 @@ function parseProblem(src, goal, unknown) {
 }
 
 // which kind of exercise this looks like: a plain sum with nothing to simplify asks to be factored
-function guessGoal(src) {
+export function guessGoal(src) {
   const r = parseProblem(src, 'simplify');
   if (r.err) return 'simplify';
   const S = r.S;
@@ -149,4 +152,3 @@ function guessGoal(src) {
   if (S.parts.length === 1 && isOne(S.parts[0].den) && S.parts[0].num.length >= 2 && isClean(S)) return 'factor';
   return 'simplify';
 }
-/* ===== END PARSE ===== */

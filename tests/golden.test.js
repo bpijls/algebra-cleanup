@@ -6,7 +6,6 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const vm = require('node:vm');
 const { load, strip } = require('./load');
 const { CHAPTERS } = require('./corpus-data');
 
@@ -15,9 +14,10 @@ const GENERIC = ['ax=b', 'ax+b=c', 'ax+b=cx+d', 'ax-b=cx', 'a(x-b)=cx', '3x+a=x+
   '(x-a)(x-b)=0', 'px^2+qx=0', 'x^2+2px+q=0', 'x^2+px+q=0', 'ax^2+bx+c=0'];
 const TOPICS = ['powers', 'like', 'frac', 'open', 'double', 'square', 'trinomial', 'factor', 'equations', 'quadratic', 'generic', 'mixed'];
 
-function seeded(G, seed) {   // mulberry32, installed as the sandbox's Math.random
-  vm.runInContext(`(() => { let a = ${seed} >>> 0; Math.random = () => { a = (a + 0x6D2B79F5) >>> 0; let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; })()`, G.__ctx);
+function seeded(seed) {   // mulberry32 as Math.random (the generators use it); record() puts the real one back
+  let a = seed >>> 0;
+  Math.random = () => { a = (a + 0x6D2B79F5) >>> 0; let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
 }
 
 function trace(G, S) {
@@ -39,10 +39,12 @@ function record() {
   for (const [chapter, list] of Object.entries(CHAPTERS))
     for (const [src, , goal] of list) out[`${chapter}: ${src}`] = trace(G, G.parseProblem(src, goal || 'simplify').S);
   GENERIC.forEach(src => { out[`generic: ${src}`] = trace(G, G.parseProblem(src, 'solve').S); });
+  const random = Math.random;
   TOPICS.forEach((topic, ti) => [1, 2, 3].forEach(d => {
-    seeded(G, 1000 * ti + d);
+    seeded(1000 * ti + d);
     for (let r = 0; r < 4; r++) { const S = G.makeProblem([topic], d); out[`practice ${topic} d${d} #${r}`] = S ? trace(G, S) : ['no problem']; }
   }));
+  Math.random = random;
   return out;
 }
 

@@ -1,13 +1,20 @@
 /* ===== PRACTICE: random problem generator ===== */
-const R = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
-const pick = arr => arr[Math.floor(Math.random() * arr.length)];
-const VARS = ['a', 'b', 'x', 'y'];
-const otherVar = v => pick(VARS.filter(w => w !== v));
-const coprime = (lo, hi, not) => { let u; do u = R(lo, hi); while (not && gcd(u, not) !== 1); return u; };
-const coin = () => Math.random() < .5;
+import { opBalance, opDrag, opSwap } from './core/balance.js';
+import { hint } from './core/hints.js';
+import { F, G, N, Pr, T, V, coefAbs, gcd, isClean, normalize, primeFactors, varPart } from './core/model.js';
+import { opExplode, opOp, opPair, opSplitTwo } from './core/moves.js';
+import { stateHTML } from './core/notation.js';
+import { parseProblem } from './parse.js';
+
+export const R = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+export const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+export const VARS = ['a', 'b', 'x', 'y'];
+export const otherVar = v => pick(VARS.filter(w => w !== v));
+export const coprime = (lo, hi, not) => { let u; do u = R(lo, hi); while (not && gcd(u, not) !== 1); return u; };
+export const coin = () => Math.random() < .5;
 
 // a monomial term from {coef, vars:{a:2,...}}; untidy = spread it over several tiles
-function mono(c, vars, neg, untidy) {
+export function mono(c, vars, neg, untidy) {
   const fs = [];
   if (untidy && c > 3 && primeFactors(c).length > 1) {
     const pf = primeFactors(c); const k = R(1, pf.length - 1);
@@ -21,7 +28,7 @@ function mono(c, vars, neg, untidy) {
   return T(fs, neg);
 }
 
-const GEN = {
+export const GEN = {
   powers(d) {
     const v = pick(VARS);
     const kinds = d === 1 ? ['prod', 'pp'] : d === 2 ? ['prod', 'pp', 'prodc', 'ppc'] : ['prod', 'prodc', 'ppc', 'mix'];
@@ -231,7 +238,7 @@ const GEN = {
 };
 
 // follow one hint; returns the move's result, or null when the hint can't be followed
-function autoSolveStep(S) {
+export function autoSolveStep(S) {
   const h = hint(S); let r = null;
   if (h.k === 'hDone') return null;
   if (h.k === 'hDiv' || h.k === 'hBar' || h.k === 'hJoin') r = opOp(S);
@@ -247,13 +254,13 @@ function autoSolveStep(S) {
   normalize(S);
   return r;
 }
-function autoSolve(S) {
+export function autoSolve(S) {
   let k = 0;
   while (k < 80 && !isClean(S) && autoSolveStep(S)) k++;
   return isClean(S) ? k : null;
 }
 
-function makeProblem(topics, d) {
+export function makeProblem(topics, d) {
   for (let tries = 0; tries < 60; tries++) {
     const topic = pick(topics);
     const S = GEN[topic](d);
@@ -269,4 +276,3 @@ function makeProblem(topics, d) {
   }
   return null;
 }
-/* ===== END PRACTICE ===== */
