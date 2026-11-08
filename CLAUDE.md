@@ -42,7 +42,7 @@ Native ES modules, no framework, no build step needed to run (`index.html` loads
 | File | What it holds |
 |---|---|
 | `src/core/model.js` | The model: node constructors (`N V G Pr Rt T F`), keys, tidiness, `normalize`, `isClean`, `walk`/`locate`, branches (`branchCount`, `pairOf`, `eqView`), the unknown and parameters, `addCond`. No DOM. |
-| `src/core/notation.js` | HTML for states, terms and sums (`stateHTML`, `termHTML`, `sqHTML`, `mx`, `blockHTML`, `orWord`). |
+| `src/render/text.js` | The text renderer: HTML for states, terms, sums and conditions (`stateHTML`, `termHTML`, `sqHTML`, `mx`, `blockHTML`, `orWord`, `condHTML`). The model (`core/model.js`) holds no HTML and doesn't import it; moves and hints call it only for the math inside their message params. |
 | `src/core/moves.js` | The tile moves: `opExplode`, `pairCheck`/`opPair`, `opFactor`, `opSplitTwo`, sweeps, `termPair`, the fraction sign (`opOp`, `opBar`). |
 | `src/core/hints.js` | Simplify and factor hints (`factorHint`, `sumProductHint`) and the `hint` entry point. |
 | `src/core/balance.js` | Equations: `opBalance`, `opSwap`, `loneSquare`, `dragBalance`, `opDrag`, `isSolved`. |
@@ -52,7 +52,7 @@ Native ES modules, no framework, no build step needed to run (`index.html` loads
 | `src/content/levels.js` | `LEVELS` and `buildLevel`. |
 | `src/practice.js` | Random problem generator (`GEN`, `makeProblem`), `autoSolveStep` and `autoSolve`. |
 | `src/parse.js` | `parseProblem(text, goal, unknown)` turns typed textbook notation (`(x+3)(x-2)`, `12a^5/4a^2`, `12a⁵ : 4a²`, `(8x/3y):(3x/y)`, `−2(x+4)`, equations like `5x+3=2x+12`) into a state, or `{ err, at }` with an i18n key (`pParen`, `pFracSum`, …). `guessGoal` picks factor for a plain clean sum and solve for an equation. A sum next to `/` must be bracketed (`x/3 + 2` would read as `x/(3+2)`: `pFracSum`). An equation needs a letter (`pEqNoLetter`); with several, the unknown is the one asked for, else `x` (`S.unknown`), else `pEqWhich` (`pEqUnknown` when the asked letter isn't there). |
-| `src/i18n.js` | `I18N.en` / `I18N.nl`: all player-facing text; `lang`/`setLang` (unset in tests, so `orWord` gives `∨`). |
+| `src/i18n.js` | `I18N.en` / `I18N.nl`: all player-facing text; `lang`/`setLang` (unset in tests, so `orWord` gives `∨`); `t(key, params)` fills in a template. |
 | `src/ui.js` | The entry module: rendering, tap/swipe/drag input, animation, the menu and floating bars, level and practice screens. `window.alg` exposes its state and entry points (`alg.S`, `alg.loadLevel(i)`, `alg.hint`) for devtools and browser playthrough scripts. |
 | `src/styles.css` | All styling. Design tokens (light/dark) at the top. |
 | `src/pwa.js` | Registers the service worker. Left out of the Artifact build. |
@@ -69,7 +69,7 @@ Native ES modules, no framework, no build step needed to run (`index.html` loads
 | `tests/generic.test.js` | Letters for numbers: each generic form (`ax + b = cx + d` … `ax² + bx + c = 0`) is solved by the hints to its textbook answer with its conditions, and the answers equal the closed formulas at the judge's parameter values; ·/: by letters (and refusals); another unknown (`v = u + at` for t); the practice topic. |
 | `tests/quadratic.test.js` | Root of both sides, product = 0, dragging the ² and the 0 across, `rootOut`, `diffBranch`, `factorRest`; every quadratic level and practice problem solved by the hints with the same solutions (fuzzing from branched states); `4a` + completing the square lands on `(−b ± √D)/2a`. |
 | `tests/corpus.test.js` | Textbook exercises per chapter (machten … ontbinden, vergelijkingen, kwadratische vergelijkingen), typed as a student would; each must parse, be solved by the hints to the textbook answer, and keep its value. The exercises themselves are in `tests/corpus-data.js` (`CHAPTERS`); add new exercise types there first. |
-| `tests/golden.test.js` | Characterisation net for refactoring: the full hint path (hint key, `whyNotDone` key, move result, state) of every level, corpus exercise, generic form and a fixed-seed set of practice problems (`Math.random` seeded in the sandbox) must equal `tests/golden/traces.json`. After a deliberate behaviour change: `GOLDEN=update npm test`, then review the diff of that file. |
+| `tests/golden.test.js` | Characterisation net for refactoring: the full hint path (hint key, `whyNotDone` key, move result, state) of every level, corpus exercise, generic form and a fixed-seed set of practice problems (`Math.random` seeded) must equal `tests/golden/traces.json`, and the English text of every hint, Done? reason and move message on those paths, plus the final state's HTML and conditions, must equal `tests/golden/messages.json`. After a deliberate behaviour change: `GOLDEN=update npm test`, then review the diff of that file. |
 
 ### Data model (`core/model.js`)
 
@@ -147,7 +147,7 @@ Config is in `.env` (copy `.env.example`): `APP_DOMAIN`, `CADDY_NETWORK`, `HOST_
 
 ## Refactoring towards an algebra system
 
-`docs/refactor-plan.md` is the agreed plan (SOLID): node-type and rule registries, explicit problem types, goals built from tactics, rendering out of core, ES modules, in steps that each keep `npm test` and the golden traces green. Done: step 0 (golden traces), step 1 (ES modules). Next: step 2 (rendering out of core).
+`docs/refactor-plan.md` is the agreed plan (SOLID): node-type and rule registries, explicit problem types, goals built from tactics, rendering out of core, ES modules, in steps that each keep `npm test` and the golden traces green. Done: step 0 (golden traces), step 1 (ES modules), step 2 (rendering out of the model). Next: step 3 (node-type registry).
 
 ## Known limitations and ideas
 

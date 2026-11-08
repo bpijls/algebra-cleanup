@@ -1,6 +1,6 @@
 /* The moves: explode, pair, factor, split, sweep, the fraction sign. Each returns {ok,p,born} after mutating, or {no,p,ids} without mutating. */
 import { F, G, MAX_GROUP, MAX_VAR, N, Pr, T, V, canMerge, cleanTerm, cloneF, cloneT, coef, eachFactor, eachTerm, fkey, gcd, isOne, isUnit, locate, mergeF, negate, primeFactors, sig, sumKey, tidy, varPart } from './model.js';
-import { blockHTML, bx, factorsHTML, fx, mx, sumHTML, termHTML } from './notation.js';
+import { blockHTML, bx, factorsHTML, fx, mx, sumHTML, termHTML } from '../render/text.js';
 
 /* ---- moves ---- each returns {ok,p,born} after mutating, or {no,p,ids} without mutating ---- */
 export function opExplode(S, id) {

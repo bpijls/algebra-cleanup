@@ -325,3 +325,5 @@ export const I18N = {
 /* the language being shown; unset outside the browser (tests), where orWord falls back to ∨ */
 export let lang;
 export const setLang = l => { lang = l; };
+// a message in the language being shown: the template with its params filled in (params named extra are flattened in)
+export const t = (k, p = {}) => { const q = { ...p, ...(p.extra || {}) }; return (I18N[lang][k] || k).replace(/\{(\w+)\}/g, (_, n) => q[n] ?? ''); };

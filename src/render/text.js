@@ -1,5 +1,6 @@
-/* Notation: states, terms and sums as HTML. */
-import { branchCount, eqView, isOne, sumKey, tidy, unbare } from './model.js';
+/* The text renderer: states, terms, sums and conditions as HTML (the board's formula line, notes, win sheets).
+   The model and the moves hold no HTML; they call these for the math inside their messages. */
+import { branchCount, eqView, isOne, sumKey, tidy, unbare } from '../core/model.js';
 import { I18N, lang } from '../i18n.js';
 
 /* ---- notation (HTML) ---- */
@@ -53,3 +54,6 @@ export const bx = b => mx(`<i class="mv">${b}</i>`);
 /* a bracket that sits in several terms, written as one block: x(x + 2) + 3(x + 2) reads x·[x+2] + 3·[x+2],
    so putting it outside brackets looks like the familiar 2a + 2b = 2(a + b) */
 export const blockHTML = (terms, key) => sumHTML(terms.map(t => ({ ...t, f: t.f.map(f => f.k === 'p' && sumKey(f.terms) === key ? { k: 'bk', terms: f.terms, e: f.e } : f) })));
+
+// a condition a move took for granted (addCond): a − c ≠ 0, b² − 4ac ≥ 0
+export const condHTML = c => mx(sumHTML(c.terms) + (c.rel === 'ge' ? ' ≥ 0' : ' ≠ 0'));

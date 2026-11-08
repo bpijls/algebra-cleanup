@@ -1,8 +1,8 @@
 /* Hints for simplify and factor goals, and the hint() entry point. */
 import { SIDES, canMerge, coef, containers, eachFactor, eachTerm, gcd, isOne, isUnit, primeFactors, sig, squareFactor, tidy, varPart } from './model.js';
 import { cancelCheck, joinable, restOf, usedUp } from './moves.js';
-import { bx, fx, mx, sumHTML, termHTML } from './notation.js';
 import { eqHint } from './quadratic.js';
+import { bx, fx, mx, sumHTML, termHTML } from '../render/text.js';
 
 /* ---- factor goal hints ---- */
 // which terms to take something out of next: the terms without a bracket when some term already has one

@@ -1,8 +1,8 @@
 /* Equations: the balance method (do the same to both sides), dragging across the =, isSolved. */
 import { numProd } from './hints.js';
 import { N, Pr, SIDES, T, V, addCond, branchCount, cloneF, cloneT, eachFactor, eqView, fHasU, hasU, isClean, isOne, pairOf, params, tHasU, unknownOf, walkTerms } from './model.js';
-import { factorsHTML, fracHTML, mx } from './notation.js';
 import { hasLetter, opRoot, opZero } from './quadratic.js';
+import { condHTML, factorsHTML, fracHTML, mx } from '../render/text.js';
 
 /* ---- equations: the balance method ----
    S = { parts: [left, right], op: '=', goal: 'solve' }. Each side keeps every simplifying move.
@@ -62,7 +62,7 @@ export function opBalance(S, op, v, bi = 0) {
       else P[side] = [T([...fs, Pr(ts)], v.neg)];   // a sum gets multiplied as a whole: 2(x + 1)
     }
     // each letter or bracket must not be 0
-    if (sym.length) cond = sym.map(f => addCond(S, f.k === 'p' ? f.terms : [T([V(f.b, 1)])], 'ne')).join(', ');
+    if (sym.length) cond = sym.map(f => condHTML(addCond(S, f.k === 'p' ? f.terms : [T([V(f.b, 1)])], 'ne'))).join(', ');
   }
   const sides = parts.map(P => fracHTML(P));
   return { ok: cond ? 'balanceIf' : 'balance', p: { op: BOPS[op], v: shown, ex: mx(sides.join(' = ')), c: cond }, born };

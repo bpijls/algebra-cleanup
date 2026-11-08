@@ -5,10 +5,10 @@ import { whyNotDone } from './core/done.js';
 import { hint } from './core/hints.js';
 import { N, T, V, branchCount, canMerge, cloneF, coef, isClean, isOne, locate, normalize, pairOf, params, sumKey, tidy, unknownOf, varPart, walkTerms } from './core/model.js';
 import { opBar, opExplode, opGather, opOp, opPair, opSplitTwo, opSweep, partnersOf, termPair } from './core/moves.js';
-import { blockHTML, bx, fx, mx, sqHTML, stateHTML, sumHTML } from './core/notation.js';
-import { I18N, lang, setLang } from './i18n.js';
+import { lang, setLang, t } from './i18n.js';
 import { guessGoal, parseProblem } from './parse.js';
 import { autoSolve, autoSolveStep, makeProblem } from './practice.js';
+import { blockHTML, bx, condHTML, fx, mx, sqHTML, stateHTML, sumHTML } from './render/text.js';
 
 const VARCOL = { a: '--va', b: '--vb', x: '--vx', y: '--vy' };
 const store = { get(k, d) { try { const v = localStorage.getItem('alg-cleanup:' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
@@ -21,7 +21,6 @@ let S, history, moves, sel, born, hintIds, lastNote, busy = false, won = false, 
 
 const $ = id => document.getElementById(id);
 const board = $('board'), note = $('note');
-const t = (k, p = {}) => { const q = { ...p, ...(p.extra || {}) }; return (I18N[lang][k] || k).replace(/\{(\w+)\}/g, (_, n) => q[n] ?? ''); };
 const snap = () => JSON.stringify({ S, moves });
 
 function say(key, p, type = 'info', raw) {
@@ -959,7 +958,7 @@ function win(refresh) {
 }
 
 // a − c ≠ 0, b² − 4ac ≥ 0: what dividing by letters and taking roots of them took for granted
-const condsHTML = () => S.conds && S.conds.length ? `<p class="conds">${t('condsLine', { c: S.conds.map(c => c.html).join(lang === 'nl' ? ' en ' : ' and ') })}</p>` : '';
+const condsHTML = () => S.conds && S.conds.length ? `<p class="conds">${t('condsLine', { c: S.conds.map(condHTML).join(lang === 'nl' ? ' en ' : ' and ') })}</p>` : '';
 // the last quadratic level: what the player did, written for every a, b, c, is the abc-formula
 function abcHTML(abc) {
   if (abc === 'generic') {

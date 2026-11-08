@@ -3,7 +3,7 @@ import { isSolved, isZeroSide, letters, loneSquare } from './balance.js';
 import { genHint, pairHint } from './generic.js';
 import { hint, quadSplit, sumProductHint } from './hints.js';
 import { F, G, N, Pr, Rt, T, V, addCond, branchCount, canMerge, cleanTerm, cloneF, cloneT, eqView, fHasU, fkey, hasU, isOne, pairOf, params, unknownOf, walkTerms } from './model.js';
-import { bx, fracHTML, fx, mx, orWord, sumHTML, termHTML } from './notation.js';
+import { bx, condHTML, fracHTML, fx, mx, orWord, sumHTML, termHTML } from '../render/text.js';
 
 /* ---- quadratic equations: two moves that split an equation into branches ("or") ----
    Branch b is S.parts[2b] = S.parts[2b + 1]. Every other move works inside one branch. */
@@ -60,7 +60,7 @@ export function opRoot(S, bi = 0) {
   const branch = neg => { const pair = [F([T([base()])]), side(neg)]; return qi ? pair.reverse() : pair; };
   const add = v != null && Math.abs(v) < 1e-12 ? [...branch(false)] : [...branch(false), ...branch(true)];
   const before = mx(fracHTML(parts[0]) + ' = ' + fracHTML(parts[1]));
-  const cond = v == null ? addCond(S, O.num, 'ge') : null;
+  const cond = v == null ? condHTML(addCond(S, O.num, 'ge')) : null;
   S.parts.splice(2 * bi, 2, ...add);
   const ex = Array.from({ length: add.length / 2 }, (_, k) => fracHTML(add[2 * k]) + ' = ' + fracHTML(add[2 * k + 1])).join(` ${orWord()} `);
   return { ok: cond ? 'rootBothIf' : add.length > 2 ? 'rootBoth' : 'rootZero', p: { x: before, ex: mx(ex), s: mx(fx(sq)), c: cond }, born: add.flatMap(P => P.num.flatMap(t => t.f.map(f => f.id))) };

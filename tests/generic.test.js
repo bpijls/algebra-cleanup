@@ -7,7 +7,7 @@ const { G, fuzz, solutions, sameSolutions, hasText } = require('./judge');
 
 const eq = src => { const r = G.parseProblem(src, 'solve'); assert.ok(!r.err, `${src}: ${r.err}`); return r.S; };
 const show = S => strip(G.stateHTML(S));
-const conds = S => (S.conds || []).map(c => strip(c.html)).join(', ');
+const conds = S => (S.conds || []).map(c => strip(G.condHTML(c))).join(', ');
 
 // [typed, the answer the hints leave, the conditions it needs]
 const FORMS = [

@@ -2,8 +2,8 @@
 import { isZeroSide, letters, loneSquare } from './balance.js';
 import { hint } from './hints.js';
 import { N, T, V, canMerge, cloneF, fHasU, hasU, isOne, locate, tHasU, walkTerms } from './model.js';
-import { bx, fx, mx, sumHTML, termHTML } from './notation.js';
 import { opRoot, opZero, sideView } from './quadratic.js';
+import { bx, fx, mx, sumHTML, termHTML } from '../render/text.js';
 
 /* ---- generic equations: letters for numbers (ax + b = cx + d, ax² + bx + c = 0) ----
    Solved for the unknown with the same moves; the other letters are treated like numbers that could be anything. */

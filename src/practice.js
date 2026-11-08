@@ -3,8 +3,8 @@ import { opBalance, opDrag, opSwap } from './core/balance.js';
 import { hint } from './core/hints.js';
 import { F, G, N, Pr, T, V, coefAbs, gcd, isClean, normalize, primeFactors, varPart } from './core/model.js';
 import { opExplode, opOp, opPair, opSplitTwo } from './core/moves.js';
-import { stateHTML } from './core/notation.js';
 import { parseProblem } from './parse.js';
+import { stateHTML } from './render/text.js';
 
 export const R = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
 export const pick = arr => arr[Math.floor(Math.random() * arr.length)];

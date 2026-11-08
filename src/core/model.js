@@ -1,7 +1,6 @@
 /* The algebra model: nodes (N, V, G, Pr, Rt), terms and fractions, keys, tidiness, normalize, isClean, walking. No DOM. */
 import { isSolved, letters } from './balance.js';
 import { quadSplit } from './hints.js';
-import { mx, sumHTML } from './notation.js';
 
 export let uid = 1;
 
@@ -259,7 +258,7 @@ export const params = S => { const u = unknownOf(S); return letters(S).filter(b 
 export function addCond(S, terms, rel) {
   const key = sumKey(terms) + rel;
   S.conds = S.conds || [];
-  const html = mx(sumHTML(terms) + (rel === 'ge' ? ' ≥ 0' : ' ≠ 0'));
-  if (!S.conds.some(c => c.key === key)) S.conds.push({ key, html });
-  return html;
+  const c = { key, terms: JSON.parse(JSON.stringify(terms)), rel };   // a copy: the state's own terms change on
+  if (!S.conds.some(d => d.key === key)) S.conds.push(c);
+  return c;
 }
