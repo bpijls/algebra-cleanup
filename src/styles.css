@@ -235,12 +235,12 @@ button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
   padding-block: 22px calc(22px + env(safe-area-inset-bottom, 0px));
   padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px));
 }
+.sheet { max-height: 100dvh; overflow-y: auto; box-sizing: border-box; }
 @keyframes rise { from { transform: translateY(40px); opacity: 0; } }
 .sheet h2 { font-family: var(--f-display); font-weight: 800; margin: 0 0 6px; font-size: 2.2rem; letter-spacing: -.02em; }
 .sheet .result { font-size: 2rem; margin: 6px 0 4px; }
 .sheet p { color: var(--muted); margin: 6px 0 16px; }
 .sheet .row { display: flex; gap: 10px; flex-wrap: wrap; }
-.lvlgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 10px; margin-top: 12px; }
 .chipbtn.on { border-color: var(--accent); color: var(--accent); }
 .plabel { text-transform: uppercase; letter-spacing: .08em; font-weight: 700; font-size: .72rem; color: var(--muted); margin: 14px 0 8px; }
 .pchips { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -296,15 +296,6 @@ button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 .slider::-webkit-slider-thumb { width: 32px; height: 32px; }
 .sliderends { display: flex; justify-content: space-between; color: var(--muted); font-size: .8rem; font-variant-numeric: tabular-nums; }
 .splitprev { font-size: 1.7rem; color: var(--ink); text-align: center; min-height: 2.6rem; }
-.lvlbtn {
-  min-height: 60px; border-radius: 14px; border: 2px solid var(--line); background: var(--paper); cursor: pointer;
-  font-weight: 700; font-size: 1.1rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-  font-variant-numeric: tabular-nums;
-}
-.lvlbtn small { font-size: .65rem; color: var(--muted); font-weight: 400; }
-.lvlbtn.done { border-color: var(--good); }
-.lvlbtn.cur { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
-.lvlbtn.book small { color: var(--accent); }
 .board.won .tile { animation: shine .6s ease both; }
 @keyframes shine { 50% { transform: translateY(-8px) rotate(-3deg); } }
 
@@ -384,3 +375,60 @@ button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
   #btnSwap { padding: 0; width: 44px; justify-content: center; }
   #btnSwap > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 }
+
+/* the skill map: a full-screen view over the board, rows of skills, lines from each skill to the ones it opens */
+.map { position: fixed; inset: 0; z-index: 18; display: flex; flex-direction: column; background: var(--paper);
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size: 22px 22px; background-position: -1px -1px; }
+.maphead { display: flex; align-items: flex-start; gap: 12px; box-sizing: border-box;
+  padding: max(14px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) 10px max(16px, env(safe-area-inset-left, 0px));
+  background: linear-gradient(var(--paper) 70%, transparent); }
+.maphead > div { flex: 1; min-width: 0; }
+.maphead h2 { font-family: var(--f-display); font-weight: 800; font-size: 1.7rem; letter-spacing: -.02em; margin: 0; }
+.maphead p { margin: 2px 0 0; color: var(--muted); font-size: .95rem; }
+.mapclose { flex: none; width: 48px; height: 48px; border-radius: 14px; border: 2px solid var(--line); background: var(--card); color: var(--ink); font-size: 1.8rem; line-height: 1; cursor: pointer; }
+.mapscroll { flex: 1; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
+.mapinner { position: relative; padding: 8px 16px 40px; }
+.picking .mapinner { padding-bottom: 120px; }
+.mapedges { position: absolute; left: 0; top: 0; pointer-events: none; overflow: visible; }
+.mapedges path { fill: none; stroke: var(--line); stroke-width: 2.5; stroke-dasharray: 6 6; }
+.mapedges path.met { stroke: var(--accent); stroke-dasharray: none; opacity: .55; }
+.maprows, .maprow { list-style: none; margin: 0; padding: 0; }
+.maprows > li + li { margin-top: 30px; }
+.maprow { display: flex; flex-wrap: wrap; justify-content: center; gap: 22px 14px; }
+.node { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; width: 104px; padding: 0; border: 0; background: none; color: var(--ink); cursor: pointer; font: inherit; }
+.nface { position: relative; display: grid; place-items: center; width: 68px; height: 68px; border-radius: 50%; background: var(--card); box-shadow: 0 4px 0 var(--line); transition: transform .15s; }
+.node:hover .nface { transform: translateY(-2px); }
+.nring { position: absolute; inset: 0; transform: rotate(-90deg); }
+.nring circle { fill: none; stroke: var(--line); stroke-width: 4; }
+.nring .nfill { stroke: var(--accent); stroke-linecap: round; }
+.node.done .nring .nfill { stroke: var(--good); }
+.nglyph { font-family: var(--f-math); font-size: 1.15rem; white-space: nowrap; max-width: 60px; overflow: hidden; text-align: center; }
+.nglyph.long { font-size: .9rem; }
+.nglyph.big.long { font-size: 1rem; }
+.nglyph.big { font-size: 1.5rem; max-width: none; display: grid; place-items: center; width: 72px; height: 72px; overflow: hidden; border-radius: 50%; background: var(--paper); border: 2px solid var(--line); flex: none; }
+.ntitle { font-weight: 700; font-size: .85rem; line-height: 1.15; text-align: center; }
+.node.locked .nface { background: var(--paper); box-shadow: 0 4px 0 var(--grid); }
+.node.locked .nglyph, .node.locked .ntitle { opacity: .55; }
+.nlock { position: absolute; right: -2px; bottom: -2px; width: 22px; height: 22px; padding: 3px; border-radius: 50%; background: var(--card); stroke: var(--muted); fill: none; stroke-width: 2.2; box-shadow: 0 0 0 2px var(--line); }
+.node.next .nface { box-shadow: 0 4px 0 var(--line), 0 0 0 4px var(--paper), 0 0 0 7px var(--accent); animation: nextglow 1.6s ease-in-out infinite; }
+@keyframes nextglow { 50% { box-shadow: 0 4px 0 var(--line), 0 0 0 4px var(--paper), 0 0 0 11px color-mix(in srgb, var(--accent) 35%, transparent); } }
+.ncheck { position: absolute; left: -4px; top: -4px; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: .9rem;
+  background: var(--accent); color: var(--paper); opacity: 0; transform: scale(.6); transition: opacity .15s, transform .15s; }
+.node.picked .ncheck { opacity: 1; transform: none; }
+.node.picked .nface { box-shadow: 0 4px 0 var(--line), 0 0 0 3px var(--accent); }
+.mapbar { position: absolute; left: 50%; transform: translateX(-50%); bottom: max(12px, env(safe-area-inset-bottom, 0px)); width: min(680px, calc(100% - 24px)); box-sizing: border-box;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 10px; padding: 10px 12px; border-radius: 18px; background: var(--card); box-shadow: 0 6px 24px rgba(10, 14, 22, .18); }
+.mapcount { font-weight: 700; color: var(--muted); }
+.mapbar .seg { display: flex; gap: 4px; }
+.mapbar .pchip { min-height: 40px; padding: 0 12px; display: inline-flex; align-items: center; }
+@media (prefers-reduced-motion: reduce) { .node.next .nface { animation: none; } }
+/* the skill card */
+.skillhead { display: flex; gap: 14px; align-items: center; }
+.skillhead h2 { font-size: 1.8rem !important; }
+.skillhead p { margin: 2px 0 0 !important; }
+.needs { color: var(--warn) !important; }
+.lvlchips { display: flex; flex-wrap: wrap; gap: 8px; }
+.lvlchip { min-width: 44px; height: 44px; border-radius: 12px; border: 2px solid var(--line); background: var(--paper); color: var(--ink); font-weight: 700; cursor: pointer; }
+.lvlchip.done { border-color: var(--good); color: var(--good); }
+.lvlchip.cur { border-color: var(--accent); }
+.skilldone { color: var(--ink) !important; }

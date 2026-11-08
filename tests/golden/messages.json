@@ -1,5 +1,5 @@
 {
- "level 1": [
+ "level powers.1": [
   "hint: Tap <span class=\"mx\"><i class=\"mv\">a</i></span>, then tap <span class=\"mx\"><i class=\"mv\">a</i></span> to combine them.",
   "done?: Not done yet: <span class=\"mx\"><i class=\"mv\">a</i><i class=\"mv\">a</i><i class=\"mv\">a</i></span> can still be written shorter.",
   "move: <span class=\"mx\"><i class=\"mv\">a</i></span> · <span class=\"mx\"><i class=\"mv\">a</i></span> = <span class=\"mx\"><i class=\"mv\">a</i><sup>2</sup></span>. Count the <span class=\"mx\"><i class=\"mv\">a</i></span>’s: 1 + 1 = 2.",
@@ -9,14 +9,14 @@
   "state: <i class=\"mv\">a</i><sup>3</sup>",
   "conds: "
  ],
- "level 2": [
+ "level powers.2": [
   "hint: Tap <span class=\"mx\"><i class=\"mv\">a</i><sup>2</sup></span>, then tap <span class=\"mx\"><i class=\"mv\">a</i><sup>3</sup></span> to combine them.",
   "done?: Not done yet: <span class=\"mx\"><i class=\"mv\">a</i><sup>2</sup><i class=\"mv\">a</i><sup>3</sup></span> can still be written shorter.",
   "move: <span class=\"mx\"><i class=\"mv\">a</i><sup>2</sup></span> · <span class=\"mx\"><i class=\"mv\">a</i><sup>3</sup></span> = <span class=\"mx\"><i class=\"mv\">a</i><sup>5</sup></span>. Count the <span class=\"mx\"><i class=\"mv\">a</i></span>’s: 2 + 3 = 5.",
   "state: <i class=\"mv\">a</i><sup>5</sup>",
   "conds: "
  ],
- "level 3": [
+ "level powers.3": [
   "hint: Tap <span class=\"mx\">(<i class=\"mv\">a</i><sup>2</sup>)<sup>3</sup></span> twice to explode it.",
   "done?: Not done yet: <span class=\"mx\">(<i class=\"mv\">a</i><sup>2</sup>)<sup>3</sup></span> still has brackets that can be opened.",
   "move: The exponent 3 means the bracket 3 times, multiplied: <span class=\"mx\">(<i class=\"mv\">a</i><sup>2</sup>)<sup>3</sup></span> = <span class=\"mx\">(<i class=\"mv\">a</i><sup>2</sup>) · (<i class=\"mv\">a</i><sup>2</sup>) · (<i class=\"mv\">a</i><sup>2</sup>)</span>.",
@@ -38,7 +38,7 @@
   "state: <i class=\"mv\">a</i><sup>6</sup>",
   "conds: "
  ],
- "level 4": [
+ "level powers.4": [
   "hint: Tap <span class=\"mx\"><span class=\"mn\">2</span></span>, then tap <span class=\"mx\"><span class=\"mn\">3</span></span> to combine them.",
   "done?: Not done yet: <span class=\"mx\"><span class=\"mn\">2</span><i class=\"mv\">a</i>·<span class=\"mn\">3</span><i class=\"mv\">a</i><sup>2</sup></span> can still be written shorter.",
   "move: 2 · 3 = 6.",
@@ -48,7 +48,7 @@
   "state: <span class=\"mn\">6</span><i class=\"mv\">a</i><sup>3</sup>",
   "conds: "
  ],
- "level 5": [
+ "level like.1": [
   "hint: <span class=\"mx\"><i class=\"mv\">a</i></span> and <span class=\"mx\"><i class=\"mv\">a</i></span> are like terms. Tap one, then the other, to add them.",
   "done?: Not done yet: <span class=\"mx\"><i class=\"mv\">a</i></span> and <span class=\"mx\"><i class=\"mv\">a</i></span> are like terms, so they can still be added.",
   "move: <span class=\"mx\"><i class=\"mv\">a</i> + <i class=\"mv\">a</i></span> = <span class=\"mx\"><span class=\"mn\">2</span><i class=\"mv\">a</i></span>. Adding is not multiplying: <span class=\"mx\"><i class=\"mv\">a</i></span> + <span class=\"mx\"><i class=\"mv\">a</i></span> = <span class=\"mx\">2<i class=\"mv\">a</i></span>, but <span class=\"mx\"><i class=\"mv\">a</i></span> · <span class=\"mx\"><i class=\"mv\">a</i></span> = <span class=\"mx\"><i class=\"mv\">a</i><sup>2</sup></span>.",
@@ -58,14 +58,14 @@
   "state: <span class=\"mn\">5</span><i class=\"mv\">a</i>",
   "conds: "
  ],
- "level 6": [
+ "level like.2": [
   "hint: <span class=\"mx\"><span class=\"mn\">4</span><i class=\"mv\">a</i><sup>2</sup></span> and <span class=\"mx\"><i class=\"mv\">a</i><sup>2</sup></span> are like terms. Tap one, then the other, to add them.",
   "done?: Not done yet: <span class=\"mx\"><span class=\"mn\">4</span><i class=\"mv\">a</i><sup>2</sup></span> and <span class=\"mx\"><i class=\"mv\">a</i><sup>2</sup></span> are like terms, so they can still be added.",
   "move: <span class=\"mx\"><span class=\"mn\">4</span><i class=\"mv\">a</i><sup>2</sup> + <i class=\"mv\">a</i><sup>2</sup></span> = <span class=\"mx\"><span class=\"mn\">5</span><i class=\"mv\">a</i><sup>2</sup></span>. Adding is not multiplying: <span class=\"mx\"><i class=\"mv\">a</i><sup>2</sup></span> + <span class=\"mx\"><i class=\"mv\">a</i><sup>2</sup></span> = <span class=\"mx\">2<i class=\"mv\">a</i><sup>2</sup></span>, but <span class=\"mx\"><i class=\"mv\">a</i><sup>2</sup></span> · <span class=\"mx\"><i class=\"mv\">a</i><sup>2</sup></span> = <span class=\"mx\"><i class=\"mv\">a</i><sup>4</sup></span>.",
   "state: <span class=\"mn\">5</span><i class=\"mv\">a</i><sup>2</sup> + <span class=\"mn\">2</span><i class=\"mv\">a</i><sup>3</sup>",
   "conds: "
  ],
- "level 7": [
+ "level powers.5": [
   "hint: Tap <span class=\"mx\">(<span class=\"mn\">3</span><i class=\"mv\">a</i>)<sup>2</sup></span> twice to explode it.",
   "done?: Not done yet: <span class=\"mx\">(<span class=\"mn\">3</span><i class=\"mv\">a</i>)<sup>2</sup></span> still has brackets that can be opened.",
   "move: The exponent 2 means the bracket 2 times, multiplied: <span class=\"mx\">(<span class=\"mn\">3</span><i class=\"mv\">a</i>)<sup>2</sup></span> = <span class=\"mx\">(<span class=\"mn\">3</span><i class=\"mv\">a</i>) · (<span class=\"mn\">3</span><i class=\"mv\">a</i>)</span>.",
@@ -84,7 +84,7 @@
   "state: <span class=\"mn\">9</span><i class=\"mv\">a</i><sup>2</sup>",
   "conds: "
  ],
- "level 8": [
+ "level fracpow.1": [
   "hint: <span class=\"mx\"><i class=\"mv\">a</i><sup>7</sup></span> and <span class=\"mx\"><i class=\"mv\">a</i><sup>3</sup></span> can only cancel when they’re exactly the same. Explode the highlighted piece (tap it twice) to see what they share.",
   "done?: Not done yet: <span class=\"mx\"><i class=\"mv\">a</i></span> is still on the top and on the bottom.",
   "move: <span class=\"mx\"><i class=\"mv\">a</i><sup>7</sup></span> means 7 <span class=\"mx\"><i class=\"mv\">a</i></span>’s multiplied: <span class=\"mx\"><i class=\"mv\">a</i> · <i class=\"mv\">a</i> · <i class=\"mv\">a</i> · <i class=\"mv\">a</i> · <i class=\"mv\">a</i> · <i class=\"mv\">a</i> · <i class=\"mv\">a</i></span>.",
@@ -112,7 +112,7 @@
   "state: <i class=\"mv\">a</i><sup>4</sup>",
   "conds: "
  ],
- "level 9": [
+ "level fracpow.2": [
   "hint: <span class=\"mx\"><span class=\"mn\">12</span></span> and <span class=\"mx\"><span class=\"mn\">4</span></span> can only cancel when they’re exactly the same. Explode the highlighted piece (tap it twice) to see what they share.",
   "done?: Not done yet: the top and the bottom can still both be divided by the same number.",
   "move: 4 = <span class=\"mx\">2 · 2</span>. Every whole number is built from prime factors.",
@@ -143,7 +143,7 @@
   "state: <span class=\"mn\">3</span><i class=\"mv\">a</i><sup>3</sup>",
   "conds: "
  ],
- "level 10": [
+ "level powers.6": [
   "hint: Tap <span class=\"mx\"><span class=\"mn\">6</span></span>, then tap <span class=\"mx\"><span class=\"mn\">2</span></span> to combine them.",
   "done?: Not done yet: <span class=\"mx\"><span class=\"mn\">6</span><i class=\"mv\">a</i><sup>2</sup><i class=\"mv\">b</i>·<span class=\"mn\">2</span><i class=\"mv\">a</i><i class=\"mv\">b</i><sup>3</sup></span> can still be written shorter.",
   "move: 6 · 2 = 12.",
@@ -156,7 +156,7 @@
   "state: <span class=\"mn\">12</span><i class=\"mv\">a</i><sup>3</sup><i class=\"mv\">b</i><sup>4</sup>",
   "conds: "
  ],
- "level 11": [
+ "level fracpow.3": [
   "hint: Tap <span class=\"mx\">(<span class=\"mn\">2</span><i class=\"mv\">a</i><i class=\"mv\">b</i><sup>2</sup>)<sup>3</sup></span> twice to explode it.",
   "done?: Not done yet: <span class=\"mx\">(<span class=\"mn\">2</span><i class=\"mv\">a</i><i class=\"mv\">b</i><sup>2</sup>)<sup>3</sup></span> still has brackets that can be opened.",
   "move: The exponent 3 means the bracket 3 times, multiplied: <span class=\"mx\">(<span class=\"mn\">2</span><i class=\"mv\">a</i><i class=\"mv\">b</i><sup>2</sup>)<sup>3</sup></span> = <span class=\"mx\">(<span class=\"mn\">2</span><i class=\"mv\">a</i><i class=\"mv\">b</i><sup>2</sup>) · (<span class=\"mn\">2</span><i class=\"mv\">a</i><i class=\"mv\">b</i><sup>2</sup>) · (<span class=\"mn\">2</span><i class=\"mv\">a</i><i class=\"mv\">b</i><sup>2</sup>)</span>.",
@@ -202,7 +202,7 @@
   "state: <span class=\"mn\">2</span><i class=\"mv\">a</i><i class=\"mv\">b</i><sup>5</sup>",
   "conds: "
  ],
- "level 12": [
+ "level book.1": [
   "hint: Tap <span class=\"mx\">(<i class=\"mv\">a</i><sup>4</sup>)<sup>3</sup></span> twice to explode it.",
   "done?: Not done yet: <span class=\"mx\"><span class=\"mn\">3</span>(<i class=\"mv\">a</i><sup>4</sup>)<sup>3</sup></span> still has brackets that can be opened.",
   "move: The exponent 3 means the bracket 3 times, multiplied: <span class=\"mx\">(<i class=\"mv\">a</i><sup>4</sup>)<sup>3</sup></span> = <span class=\"mx\">(<i class=\"mv\">a</i><sup>4</sup>) · (<i class=\"mv\">a</i><sup>4</sup>) · (<i class=\"mv\">a</i><sup>4</sup>)</span>.",
@@ -263,7 +263,7 @@
   "state: −<span class=\"mn\">2</span><i class=\"mv\">a</i><sup>12</sup>",
   "conds: "
  ],
- "level 13": [
+ "level book.2": [
   "hint: Tap <span class=\"mx\">(<i class=\"mv\">a</i><sup>3</sup>)<sup>3</sup></span> twice to explode it.",
   "done?: Not done yet: <span class=\"mx\"><span class=\"mn\">2</span><i class=\"mv\">a</i>·<span class=\"mn\">5</span>(<i class=\"mv\">a</i><sup>3</sup>)<sup>3</sup></span> still has brackets that can be opened.",
   "move: The exponent 3 means the bracket 3 times, multiplied: <span class=\"mx\">(<i class=\"mv\">a</i><sup>3</sup>)<sup>3</sup></span> = <span class=\"mx\">(<i class=\"mv\">a</i><sup>3</sup>) · (<i class=\"mv\">a</i><sup>3</sup>) · (<i class=\"mv\">a</i><sup>3</sup>)</span>.",
@@ -291,7 +291,7 @@
   "state: −<span class=\"mn\">10</span><i class=\"mv\">a</i><sup>10</sup>",
   "conds: "
  ],
- "level 14": [
+ "level fracpow.4": [
   "hint: Tap the : sign to turn it into ·.",
   "done?: Not done yet: there are still two fractions. Make them one.",
   "move: Dividing by a fraction is the same as multiplying by it upside down. Now multiply by hand: tap a piece in one fraction, then a piece in the same row of the other.",
@@ -313,7 +313,7 @@
   "state: <span class=\"nfrac\"><span class=\"nn\"><span class=\"mn\">8</span></span><span class=\"nd\"><span class=\"mn\">9</span></span></span>",
   "conds: "
  ],
- "level 15": [
+ "level book.3": [
   "hint: Tap <span class=\"mx\">(<i class=\"mv\">a</i><sup>3</sup>)<sup>4</sup></span> twice to explode it.",
   "done?: Not done yet: <span class=\"mx\"><span class=\"mn\">16</span>(<i class=\"mv\">a</i><sup>3</sup>)<sup>4</sup></span> still has brackets that can be opened.",
   "move: The exponent 4 means the bracket 4 times, multiplied: <span class=\"mx\">(<i class=\"mv\">a</i><sup>3</sup>)<sup>4</sup></span> = <span class=\"mx\">(<i class=\"mv\">a</i><sup>3</sup>) · (<i class=\"mv\">a</i><sup>3</sup>) · (<i class=\"mv\">a</i><sup>3</sup>) · (<i class=\"mv\">a</i><sup>3</sup>)</span>.",
@@ -404,7 +404,7 @@
   "state: <span class=\"mn\">5</span><i class=\"mv\">a</i><sup>9</sup>",
   "conds: "
  ],
- "level 16": [
+ "level brackets.1": [
   "hint: Tap the brackets in <span class=\"mx\"><span class=\"mn\">5</span>(<i class=\"mv\">a</i> + <span class=\"mn\">2</span>)</span> twice to open them.",
   "done?: Not done yet: <span class=\"mx\"><span class=\"mn\">5</span>(<i class=\"mv\">a</i> + <span class=\"mn\">2</span>)</span> still has brackets that can be opened.",
   "move: <span class=\"mx\"><span class=\"mn\">5</span>(<i class=\"mv\">a</i> + <span class=\"mn\">2</span>)</span> = <span class=\"mx\"><span class=\"mn\">5</span><i class=\"mv\">a</i> + <span class=\"mn\">5</span>·<span class=\"mn\">2</span></span>. What’s in front of the brackets multiplies every term inside.",
@@ -417,7 +417,7 @@
   "state: <span class=\"mn\">8</span><i class=\"mv\">a</i> + <span class=\"mn\">10</span>",
   "conds: "
  ],
- "level 17": [
+ "level brackets.2": [
   "hint: Tap the brackets in <span class=\"mx\">(<i class=\"mv\">x</i> − <span class=\"mn\">3</span>)</span> twice to open them.",
   "done?: Not done yet: <span class=\"mx\">(<i class=\"mv\">x</i> − <span class=\"mn\">3</span>)</span> still has brackets that can be opened.",
   "move: <span class=\"mx\">(<i class=\"mv\">x</i> − <span class=\"mn\">3</span>)</span> = <span class=\"mx\">−<i class=\"mv\">x</i> + <span class=\"mn\">3</span></span>. A minus in front of brackets means −1 times everything inside, so every sign inside flips.",
@@ -427,7 +427,7 @@
   "state: <i class=\"mv\">x</i> + <span class=\"mn\">3</span>",
   "conds: "
  ],
- "level 18": [
+ "level double.1": [
   "hint: Tap the brackets in <span class=\"mx\">(<i class=\"mv\">x</i> + <span class=\"mn\">3</span>)(<i class=\"mv\">x</i> + <span class=\"mn\">2</span>)</span> twice to open them.",
   "done?: Not done yet: <span class=\"mx\">(<i class=\"mv\">x</i> + <span class=\"mn\">3</span>)(<i class=\"mv\">x</i> + <span class=\"mn\">2</span>)</span> still has brackets that can be opened.",
   "move: <span class=\"mx\">(<i class=\"mv\">x</i> + <span class=\"mn\">3</span>)(<i class=\"mv\">x</i> + <span class=\"mn\">2</span>)</span> = <span class=\"mx\"><i class=\"mv\">x</i>(<i class=\"mv\">x</i> + <span class=\"mn\">2</span>) + <span class=\"mn\">3</span>(<i class=\"mv\">x</i> + <span class=\"mn\">2</span>)</span>. What’s in front of the brackets multiplies every term inside.",
@@ -449,7 +449,7 @@
   "state: <i class=\"mv\">x</i><sup>2</sup> + <span class=\"mn\">5</span><i class=\"mv\">x</i> + <span class=\"mn\">6</span>",
   "conds: "
  ],
- "level 19": [
+ "level double.2": [
   "hint: Tap <span class=\"mx\">(<i class=\"mv\">a</i> + <i class=\"mv\">b</i>)<sup>2</sup></span> twice to explode it.",
   "done?: Not done yet: <span class=\"mx\">(<i class=\"mv\">a</i> + <i class=\"mv\">b</i>)<sup>2</sup></span> still has brackets that can be opened.",
   "move: The exponent 2 means the bracket 2 times, multiplied: <span class=\"mx\">(<i class=\"mv\">a</i> + <i class=\"mv\">b</i>)<sup>2</sup></span> = <span class=\"mx\">(<i class=\"mv\">a</i> + <i class=\"mv\">b</i>) · (<i class=\"mv\">a</i> + <i class=\"mv\">b</i>)</span>.",
@@ -474,14 +474,14 @@
   "state: <i class=\"mv\">a</i><sup>2</sup> + <span class=\"mn\">2</span><i class=\"mv\">a</i><i class=\"mv\">b</i> + <i class=\"mv\">b</i><sup>2</sup>",
   "conds: "
  ],
- "level 20": [
+ "level factor.1": [
   "hint: Tap <span class=\"mx\"><span class=\"mn\">2</span></span>, then <span class=\"mx\"><span class=\"mn\">2</span></span>: they share a factor you can put outside the brackets.",
   "done?: Not done yet: it’s still a sum of 2 terms. Factorised means one product.",
   "move: <span class=\"mx\"><span class=\"mn\">2</span><i class=\"mv\">x</i> + <span class=\"mn\">2</span><i class=\"mv\">y</i></span> = <span class=\"mx\"><span class=\"mn\">2</span>(<i class=\"mv\">x</i> + <i class=\"mv\">y</i>)</span>. The <span class=\"mx\"><span class=\"mn\">2</span></span> was in each of these terms, so it goes in front of the brackets.",
   "state: <span class=\"mn\">2</span>(<i class=\"mv\">x</i> + <i class=\"mv\">y</i>)",
   "conds: "
  ],
- "level 21": [
+ "level factor.2": [
   "hint: Explode 6 (tap it twice): there’s a 3 hidden in it, and the other terms have one too.",
   "done?: Not done yet: it’s still a sum of 2 terms. Factorised means one product.",
   "move: 6 = <span class=\"mx\">2 · 3</span>. Every whole number is built from prime factors.",
@@ -494,7 +494,7 @@
   "state: <span class=\"mn\">3</span>(<span class=\"mn\">2</span><i class=\"mv\">a</i> + <span class=\"mn\">3</span><i class=\"mv\">b</i>)",
   "conds: "
  ],
- "level 22": [
+ "level factor.3": [
   "hint: Explode <span class=\"mx\"><i class=\"mv\">x</i><sup>2</sup></span> (tap it twice) to find the <span class=\"mx\"><i class=\"mv\">x</i></span> it shares with <span class=\"mx\"><i class=\"mv\">x</i></span>.",
   "done?: Not done yet: it’s still a sum of 2 terms. Factorised means one product.",
   "move: <span class=\"mx\"><i class=\"mv\">x</i><sup>2</sup></span> means 2 <span class=\"mx\"><i class=\"mv\">x</i></span>’s multiplied: <span class=\"mx\"><i class=\"mv\">x</i> · <i class=\"mv\">x</i></span>.",
@@ -504,7 +504,7 @@
   "state: <i class=\"mv\">x</i>(<span class=\"mn\">3</span><i class=\"mv\">x</i> + <span class=\"mn\">1</span>)",
   "conds: "
  ],
- "level 23": [
+ "level factor.4": [
   "hint: Explode 4 (tap it twice): there’s a 2 hidden in it, and the other terms have one too.",
   "done?: Not done yet: it’s still a sum of 2 terms. Factorised means one product.",
   "move: 4 = <span class=\"mx\">2 · 2</span>. Every whole number is built from prime factors.",
@@ -529,14 +529,14 @@
   "state: <span class=\"mn\">2</span><i class=\"mv\">a</i><i class=\"mv\">b</i>(<span class=\"mn\">2</span><i class=\"mv\">a</i> + <span class=\"mn\">3</span><i class=\"mv\">b</i>)",
   "conds: "
  ],
- "level 24": [
+ "level factor.5": [
   "hint: Tap <span class=\"mx\">(<i class=\"mv\">x</i> + <span class=\"mn\">2</span>)</span>, then <span class=\"mx\">(<i class=\"mv\">x</i> + <span class=\"mn\">2</span>)</span>: they share a factor you can put outside the brackets.",
   "done?: Not done yet: it’s still a sum of 2 terms. Factorised means one product.",
   "move: Look at <span class=\"mx\">(<i class=\"mv\">x</i> + <span class=\"mn\">2</span>)</span> as one block: <span class=\"mx\"><i class=\"mv\">a</i><span class=\"bk\"><i class=\"mv\">x</i> + <span class=\"mn\">2</span></span> + <span class=\"mn\">3</span><span class=\"bk\"><i class=\"mv\">x</i> + <span class=\"mn\">2</span></span></span> = <span class=\"mx\"><span class=\"bk\"><i class=\"mv\">x</i> + <span class=\"mn\">2</span></span>(<i class=\"mv\">a</i> + <span class=\"mn\">3</span>)</span>. That’s the same move as 2a + 2b = 2(a + b). Written out: <span class=\"mx\"><i class=\"mv\">a</i>(<i class=\"mv\">x</i> + <span class=\"mn\">2</span>) + <span class=\"mn\">3</span>(<i class=\"mv\">x</i> + <span class=\"mn\">2</span>)</span> = <span class=\"mx\">(<i class=\"mv\">x</i> + <span class=\"mn\">2</span>)(<i class=\"mv\">a</i> + <span class=\"mn\">3</span>)</span>.",
   "state: (<i class=\"mv\">x</i> + <span class=\"mn\">2</span>)(<i class=\"mv\">a</i> + <span class=\"mn\">3</span>)",
   "conds: "
  ],
- "level 25": [
+ "level sumproduct.1": [
   "hint: Nothing is in every term. Look for two numbers that multiply to 6 and add up to 5. Tap <span class=\"mx\"><span class=\"mn\">5</span><i class=\"mv\">x</i></span>, press the button <span class=\"mx\"><span class=\"mn\">5</span><i class=\"mv\">x</i></span> = … + … and choose two terms. Then put things outside brackets in pairs.",
   "done?: Not done yet: it’s still a sum of 3 terms. Factorised means one product.",
   "move: <span class=\"mx\"><span class=\"mn\">5</span><i class=\"mv\">x</i></span> = <span class=\"mx\"><span class=\"mn\">2</span><i class=\"mv\">x</i> + <span class=\"mn\">3</span><i class=\"mv\">x</i></span>: 2 + 3 = 5, so it’s still the same amount.",
@@ -558,7 +558,7 @@
   "state: (<i class=\"mv\">x</i> + <span class=\"mn\">2</span>)(<i class=\"mv\">x</i> + <span class=\"mn\">3</span>)",
   "conds: "
  ],
- "level 26": [
+ "level sumproduct.2": [
   "hint: Nothing is in every term. Look for two numbers that multiply to -12 and add up to -1. Tap <span class=\"mx\"><i class=\"mv\">x</i></span>, press the button <span class=\"mx\"><i class=\"mv\">x</i></span> = … + … and choose two terms. Then put things outside brackets in pairs.",
   "done?: Not done yet: it’s still a sum of 3 terms. Factorised means one product.",
   "move: <span class=\"mx\">−<i class=\"mv\">x</i></span> = <span class=\"mx\">−<span class=\"mn\">4</span><i class=\"mv\">x</i> + <span class=\"mn\">3</span><i class=\"mv\">x</i></span>: −4 + 3 = −1, so it’s still the same amount.",
@@ -583,7 +583,7 @@
   "state: (<i class=\"mv\">x</i> − <span class=\"mn\">4</span>)(<i class=\"mv\">x</i> + <span class=\"mn\">3</span>)",
   "conds: "
  ],
- "level 27": [
+ "level linear.1": [
   "hint: Get rid of <span class=\"mx\"><span class=\"mn\">3</span></span> on the left: tap the = sign and drag it to the other side. That does − <span class=\"mx\"><span class=\"mn\">3</span></span> on both sides.",
   "done?: Not done yet: the letter isn’t on its own on its side.",
   "move: − <span class=\"mx\"><span class=\"mn\">3</span></span> on both sides: <span class=\"mx\"><i class=\"mv\">x</i> + <span class=\"mn\">3</span> − <span class=\"mn\">3</span> = <span class=\"mn\">7</span> − <span class=\"mn\">3</span></span>. What you do to one side you do to the other, so the balance stays level.",
@@ -596,7 +596,7 @@
   "state: <i class=\"mv\">x</i> <span class=\"nop\">=</span> <span class=\"mn\">4</span>",
   "conds: "
  ],
- "level 28": [
+ "level linear.2": [
   "hint: <span class=\"mx\"><span class=\"mn\">3</span><i class=\"mv\">x</i></span> means <span class=\"mx\">3</span> times the letter. Tap the = sign and drag the <span class=\"mx\">3</span> to the other side: both sides are divided by <span class=\"mx\">3</span>.",
   "done?: Not done yet: the letter isn’t on its own on its side.",
   "move: : <span class=\"mx\"><span class=\"mn\">3</span></span> on both sides: <span class=\"mx\"><span class=\"nfrac\"><span class=\"nn\"><span class=\"mn\">3</span><i class=\"mv\">x</i></span><span class=\"nd\"><span class=\"mn\">3</span></span></span> = <span class=\"nfrac\"><span class=\"nn\"><span class=\"mn\">12</span></span><span class=\"nd\"><span class=\"mn\">3</span></span></span></span>. What you do to one side you do to the other, so the balance stays level.",
@@ -615,7 +615,7 @@
   "state: <i class=\"mv\">x</i> <span class=\"nop\">=</span> <span class=\"mn\">4</span>",
   "conds: "
  ],
- "level 29": [
+ "level linear.3": [
   "hint: Get rid of <span class=\"mx\"><span class=\"mn\">5</span></span> on the left: tap the = sign and drag it to the other side. That does − <span class=\"mx\"><span class=\"mn\">5</span></span> on both sides.",
   "done?: Not done yet: the letter isn’t on its own on its side.",
   "move: − <span class=\"mx\"><span class=\"mn\">5</span></span> on both sides: <span class=\"mx\"><span class=\"mn\">3</span><i class=\"mv\">x</i> + <span class=\"mn\">5</span> − <span class=\"mn\">5</span> = <span class=\"mn\">20</span> − <span class=\"mn\">5</span></span>. What you do to one side you do to the other, so the balance stays level.",
@@ -640,7 +640,7 @@
   "state: <i class=\"mv\">x</i> <span class=\"nop\">=</span> <span class=\"mn\">5</span>",
   "conds: "
  ],
- "level 30": [
+ "level linear.4": [
   "hint: Get rid of <span class=\"mx\"><span class=\"mn\">2</span><i class=\"mv\">x</i></span> on the right: tap the = sign and drag it to the other side. That does − <span class=\"mx\"><span class=\"mn\">2</span><i class=\"mv\">x</i></span> on both sides.",
   "done?: Not done yet: the letter is still on both sides of the =.",
   "move: − <span class=\"mx\"><span class=\"mn\">2</span><i class=\"mv\">x</i></span> on both sides: <span class=\"mx\"><span class=\"mn\">5</span><i class=\"mv\">x</i> + <span class=\"mn\">3</span> − <span class=\"mn\">2</span><i class=\"mv\">x</i> = <span class=\"mn\">2</span><i class=\"mv\">x</i> + <span class=\"mn\">12</span> − <span class=\"mn\">2</span><i class=\"mv\">x</i></span>. What you do to one side you do to the other, so the balance stays level.",
@@ -674,7 +674,7 @@
   "state: <i class=\"mv\">x</i> <span class=\"nop\">=</span> <span class=\"mn\">3</span>",
   "conds: "
  ],
- "level 31": [
+ "level linear.5": [
   "hint: There’s a <span class=\"mx\"><span class=\"mn\">3</span></span> below the bar. Tap the = sign and drag the <span class=\"mx\"><span class=\"mn\">3</span></span> to the other side: both sides are multiplied by <span class=\"mx\"><span class=\"mn\">3</span></span>.",
   "done?: Not done yet: the letter isn’t on its own on its side.",
   "move: · <span class=\"mx\"><span class=\"mn\">3</span></span> on both sides: <span class=\"mx\"><span class=\"nfrac\"><span class=\"nn\"><span class=\"mn\">3</span><i class=\"mv\">x</i></span><span class=\"nd\"><span class=\"mn\">3</span></span></span> = <span class=\"mn\">3</span>·<span class=\"mn\">4</span></span>. What you do to one side you do to the other, so the balance stays level.",
@@ -687,7 +687,7 @@
   "state: <i class=\"mv\">x</i> <span class=\"nop\">=</span> <span class=\"mn\">12</span>",
   "conds: "
  ],
- "level 32": [
+ "level linear.6": [
   "hint: Tap the brackets in <span class=\"mx\"><span class=\"mn\">2</span>(<i class=\"mv\">x</i> + <span class=\"mn\">3</span>)</span> twice to open them.",
   "done?: Not done yet: the letter is still on both sides of the =.",
   "move: <span class=\"mx\"><span class=\"mn\">2</span>(<i class=\"mv\">x</i> + <span class=\"mn\">3</span>)</span> = <span class=\"mx\"><span class=\"mn\">2</span><i class=\"mv\">x</i> + <span class=\"mn\">2</span>·<span class=\"mn\">3</span></span>. What’s in front of the brackets multiplies every term inside.",
@@ -730,7 +730,7 @@
   "state: <i class=\"mv\">x</i> <span class=\"nop\">=</span> <span class=\"mn\">4</span>",
   "conds: "
  ],
- "level 33": [
+ "level linear.7": [
   "hint: Get rid of <span class=\"mx\"><span class=\"mn\">2</span><i class=\"mv\">x</i></span> on the right: tap the = sign and drag it to the other side. That does − <span class=\"mx\"><span class=\"mn\">2</span><i class=\"mv\">x</i></span> on both sides.",
   "done?: Not done yet: the letter is still on both sides of the =.",
   "move: − <span class=\"mx\"><span class=\"mn\">2</span><i class=\"mv\">x</i></span> on both sides: <span class=\"mx\"><span class=\"mn\">4</span><i class=\"mv\">x</i> − <span class=\"mn\">3</span> − <span class=\"mn\">2</span><i class=\"mv\">x</i> = <span class=\"mn\">2</span><i class=\"mv\">x</i> + <span class=\"mn\">6</span> − <span class=\"mn\">2</span><i class=\"mv\">x</i></span>. What you do to one side you do to the other, so the balance stays level.",
@@ -758,7 +758,7 @@
   "state: <i class=\"mv\">x</i> <span class=\"nop\">=</span> <span class=\"nfrac\"><span class=\"nn\"><span class=\"mn\">9</span></span><span class=\"nd\"><span class=\"mn\">2</span></span></span>",
   "conds: "
  ],
- "level 34": [
+ "level quadratic.1": [
   "hint: <span class=\"mx\"><i class=\"mv\">x</i><sup>2</sup></span> is a square. Take the root of both sides: tap =, then drag the little ² to the other side.",
   "done?: Not done yet: the letter isn’t on its own on its side.",
   "move: <span class=\"mx\"><i class=\"mv\">x</i><sup>2</sup> = <span class=\"mn\">9</span></span> becomes <span class=\"mx\"><i class=\"mv\">x</i> = <span class=\"sq\"><svg class=\"rs-svg\" viewBox=\"0 0 10 100\" preserveAspectRatio=\"none\" aria-hidden=\"true\"><path d=\"M0.5 64 L2.8 58 L5.4 100 L10 0\"/></svg><span class=\"rs\">√</span><span class=\"rad\"><span class=\"mn\">9</span></span></span> ∨ <i class=\"mv\">x</i> = −<span class=\"sq\"><svg class=\"rs-svg\" viewBox=\"0 0 10 100\" preserveAspectRatio=\"none\" aria-hidden=\"true\"><path d=\"M0.5 64 L2.8 58 L5.4 100 L10 0\"/></svg><span class=\"rs\">√</span><span class=\"rad\"><span class=\"mn\">9</span></span></span></span>. A number and its opposite have the same square (3² = (−3)² = 9), so there are two answers: the + root and the − root.",
@@ -777,7 +777,7 @@
   "state: <span class=\"branch\"><i class=\"mv\">x</i> <span class=\"nop\">=</span> <span class=\"mn\">3</span></span> <span class=\"nop or\">∨</span> <span class=\"branch\"><i class=\"mv\">x</i> <span class=\"nop\">=</span> −<span class=\"mn\">3</span></span>",
   "conds: "
  ],
- "level 35": [
+ "level quadratic.2": [
   "hint: <span class=\"mx\"><span class=\"mn\">2</span><i class=\"mv\">x</i><sup>2</sup></span> means <span class=\"mx\">2</span> times the letter. Tap the = sign and drag the <span class=\"mx\">2</span> to the other side: both sides are divided by <span class=\"mx\">2</span>.",
   "done?: Not done yet: the letter isn’t on its own on its side.",
   "move: : <span class=\"mx\"><span class=\"mn\">2</span></span> on both sides: <span class=\"mx\"><span class=\"nfrac\"><span class=\"nn\"><span class=\"mn\">2</span><i class=\"mv\">x</i><sup>2</sup></span><span class=\"nd\"><span class=\"mn\">2</span></span></span> = <span class=\"nfrac\"><span class=\"nn\"><span class=\"mn\">24</span></span><span class=\"nd\"><span class=\"mn\">2</span></span></span></span>. What you do to one side you do to the other, so the balance stays level.",
@@ -814,7 +814,7 @@
   "state: <span class=\"branch\"><i class=\"mv\">x</i> <span class=\"nop\">=</span> <span class=\"mn\">2</span><span class=\"sq\"><svg class=\"rs-svg\" viewBox=\"0 0 10 100\" preserveAspectRatio=\"none\" aria-hidden=\"true\"><path d=\"M0.5 64 L2.8 58 L5.4 100 L10 0\"/></svg><span class=\"rs\">√</span><span class=\"rad\"><span class=\"mn\">3</span></span></span></span> <span class=\"nop or\">∨</span> <span class=\"branch\"><i class=\"mv\">x</i> <span class=\"nop\">=</span> −<span class=\"mn\">2</span><span class=\"sq\"><svg class=\"rs-svg\" viewBox=\"0 0 10 100\" preserveAspectRatio=\"none\" aria-hidden=\"true\"><path d=\"M0.5 64 L2.8 58 L5.4 100 L10 0\"/></svg><span class=\"rs\">√</span><span class=\"rad\"><span class=\"mn\">3</span></span></span></span>",
   "conds: "
  ],
- "level 36": [
+ "level quadratic.3": [
   "hint: <span class=\"mx\">(<i class=\"mv\">x</i> + <span class=\"mn\">3</span>)<sup>2</sup></span> is a square. Take the root of both sides: tap =, then drag the little ² to the other side.",
   "done?: Not done yet: the letter isn’t on its own on its side.",
   "move: <span class=\"mx\">(<i class=\"mv\">x</i> + <span class=\"mn\">3</span>)<sup>2</sup> = <span class=\"mn\">5</span></span> becomes <span class=\"mx\">(<i class=\"mv\">x</i> + <span class=\"mn\">3</span>) = <span class=\"sq\"><svg class=\"rs-svg\" viewBox=\"0 0 10 100\" preserveAspectRatio=\"none\" aria-hidden=\"true\"><path d=\"M0.5 64 L2.8 58 L5.4 100 L10 0\"/></svg><span class=\"rs\">√</span><span class=\"rad\"><span class=\"mn\">5</span></span></span> ∨ (<i class=\"mv\">x</i> + <span class=\"mn\">3</span>) = −<span class=\"sq\"><svg class=\"rs-svg\" viewBox=\"0 0 10 100\" preserveAspectRatio=\"none\" aria-hidden=\"true\"><path d=\"M0.5 64 L2.8 58 L5.4 100 L10 0\"/></svg><span class=\"rs\">√</span><span class=\"rad\"><span class=\"mn\">5</span></span></span></span>. A number and its opposite have the same square (3² = (−3)² = 9), so there are two answers: the + root and the − root.",
@@ -833,7 +833,7 @@
   "state: <span class=\"branch\"><i class=\"mv\">x</i> <span class=\"nop\">=</span> <span class=\"sq\"><svg class=\"rs-svg\" viewBox=\"0 0 10 100\" preserveAspectRatio=\"none\" aria-hidden=\"true\"><path d=\"M0.5 64 L2.8 58 L5.4 100 L10 0\"/></svg><span class=\"rs\">√</span><span class=\"rad\"><span class=\"mn\">5</span></span></span> − <span class=\"mn\">3</span></span> <span class=\"nop or\">∨</span> <span class=\"branch\"><i class=\"mv\">x</i> <span class=\"nop\">=</span> −<span class=\"sq\"><svg class=\"rs-svg\" viewBox=\"0 0 10 100\" preserveAspectRatio=\"none\" aria-hidden=\"true\"><path d=\"M0.5 64 L2.8 58 L5.4 100 L10 0\"/></svg><span class=\"rs\">√</span><span class=\"rad\"><span class=\"mn\">5</span></span></span> − <span class=\"mn\">3</span></span>",
   "conds: "
  ],
- "level 37": [
+ "level quadratic.4": [
   "hint: <span class=\"mx\">(<i class=\"mv\">x</i> − <span class=\"mn\">2</span>)(<i class=\"mv\">x</i> + <span class=\"mn\">5</span>) = 0</span> is a product that is 0, so one of its factors is 0. Tap =, then drag the 0 onto the product.",
   "done?: Not done yet: the letter isn’t on its own on its side.",
   "move: <span class=\"mx\">(<i class=\"mv\">x</i> − <span class=\"mn\">2</span>)(<i class=\"mv\">x</i> + <span class=\"mn\">5</span>) = 0</span>: a product is only 0 when one of its factors is 0. So <span class=\"mx\"><i class=\"mv\">x</i> − <span class=\"mn\">2</span> = 0 ∨ <i class=\"mv\">x</i> + <span class=\"mn\">5</span> = 0</span>. Solve each one on its own.",
@@ -852,7 +852,7 @@
   "state: <span class=\"branch\"><i class=\"mv\">x</i> <span class=\"nop\">=</span> <span class=\"mn\">2</span></span> <span class=\"nop or\">∨</span> <span class=\"branch\"><i class=\"mv\">x</i> <span class=\"nop\">=</span> −<span class=\"mn\">5</span></span>",
   "conds: "
  ],
- "level 38": [
+ "level quadratic.5": [
   "hint: Nothing is in every term. Look for two numbers that multiply to 6 and add up to 5. Tap <span class=\"mx\"><span class=\"mn\">5</span><i class=\"mv\">x</i></span>, press the button <span class=\"mx\"><span class=\"mn\">5</span><i class=\"mv\">x</i></span> = … + … and choose two terms. Then put things outside brackets in pairs.",
   "done?: Not done yet: the letter isn’t on its own on its side.",
   "move: <span class=\"mx\"><span class=\"mn\">5</span><i class=\"mv\">x</i></span> = <span class=\"mx\"><span class=\"mn\">2</span><i class=\"mv\">x</i> + <span class=\"mn\">3</span><i class=\"mv\">x</i></span>: 2 + 3 = 5, so it’s still the same amount.",
@@ -889,7 +889,7 @@
   "state: <span class=\"branch\"><i class=\"mv\">x</i> <span class=\"nop\">=</span> −<span class=\"mn\">2</span></span> <span class=\"nop or\">∨</span> <span class=\"branch\"><i class=\"mv\">x</i> <span class=\"nop\">=</span> −<span class=\"mn\">3</span></span>",
   "conds: "
  ],
- "level 39": [
+ "level quadratic.6": [
   "hint: Get rid of <span class=\"mx\"><span class=\"mn\">4</span></span> on the left: tap the = sign and drag it to the other side. That does − <span class=\"mx\"><span class=\"mn\">4</span></span> on both sides.",
   "done?: Not done yet: the letter isn’t on its own on its side.",
   "move: − <span class=\"mx\"><span class=\"mn\">4</span></span> on both sides: <span class=\"mx\"><i class=\"mv\">x</i><sup>2</sup> + <span class=\"mn\">6</span><i class=\"mv\">x</i> + <span class=\"mn\">4</span> − <span class=\"mn\">4</span> = −<span class=\"mn\">4</span></span>. What you do to one side you do to the other, so the balance stays level.",
@@ -941,7 +941,7 @@
   "state: <span class=\"branch\"><i class=\"mv\">x</i> <span class=\"nop\">=</span> <span class=\"sq\"><svg class=\"rs-svg\" viewBox=\"0 0 10 100\" preserveAspectRatio=\"none\" aria-hidden=\"true\"><path d=\"M0.5 64 L2.8 58 L5.4 100 L10 0\"/></svg><span class=\"rs\">√</span><span class=\"rad\"><span class=\"mn\">5</span></span></span> − <span class=\"mn\">3</span></span> <span class=\"nop or\">∨</span> <span class=\"branch\"><i class=\"mv\">x</i> <span class=\"nop\">=</span> −<span class=\"sq\"><svg class=\"rs-svg\" viewBox=\"0 0 10 100\" preserveAspectRatio=\"none\" aria-hidden=\"true\"><path d=\"M0.5 64 L2.8 58 L5.4 100 L10 0\"/></svg><span class=\"rs\">√</span><span class=\"rad\"><span class=\"mn\">5</span></span></span> − <span class=\"mn\">3</span></span>",
   "conds: "
  ],
- "level 40": [
+ "level quadratic.7": [
   "hint: Get rid of <span class=\"mx\"><span class=\"mn\">1</span></span> on the left: tap the = sign and drag it to the other side. That does − <span class=\"mx\"><span class=\"mn\">1</span></span> on both sides.",
   "done?: Not done yet: the letter isn’t on its own on its side.",
   "move: − <span class=\"mx\"><span class=\"mn\">1</span></span> on both sides: <span class=\"mx\"><i class=\"mv\">x</i><sup>2</sup> + <span class=\"mn\">3</span><i class=\"mv\">x</i> + <span class=\"mn\">1</span> − <span class=\"mn\">1</span> = −<span class=\"mn\">1</span></span>. What you do to one side you do to the other, so the balance stays level.",
@@ -1026,7 +1026,7 @@
   "state: <span class=\"branch\"><i class=\"mv\">x</i> <span class=\"nop\">=</span> <span class=\"nfrac\"><span class=\"nn\"><span class=\"sq\"><svg class=\"rs-svg\" viewBox=\"0 0 10 100\" preserveAspectRatio=\"none\" aria-hidden=\"true\"><path d=\"M0.5 64 L2.8 58 L5.4 100 L10 0\"/></svg><span class=\"rs\">√</span><span class=\"rad\"><span class=\"mn\">5</span></span></span> − <span class=\"mn\">3</span></span><span class=\"nd\"><span class=\"mn\">2</span></span></span></span> <span class=\"nop or\">∨</span> <span class=\"branch\"><i class=\"mv\">x</i> <span class=\"nop\">=</span> <span class=\"nfrac\"><span class=\"nn\">−<span class=\"sq\"><svg class=\"rs-svg\" viewBox=\"0 0 10 100\" preserveAspectRatio=\"none\" aria-hidden=\"true\"><path d=\"M0.5 64 L2.8 58 L5.4 100 L10 0\"/></svg><span class=\"rs\">√</span><span class=\"rad\"><span class=\"mn\">5</span></span></span> − <span class=\"mn\">3</span></span><span class=\"nd\"><span class=\"mn\">2</span></span></span></span>",
   "conds: "
  ],
- "level 41": [
+ "level quadratic.8": [
   "hint: Get rid of <span class=\"mx\">−<span class=\"mn\">1</span></span> on the left: tap the = sign and drag it to the other side. That does + <span class=\"mx\"><span class=\"mn\">1</span></span> on both sides.",
   "done?: Not done yet: the letter isn’t on its own on its side.",
   "move: + <span class=\"mx\"><span class=\"mn\">1</span></span> on both sides: <span class=\"mx\"><span class=\"mn\">2</span><i class=\"mv\">x</i><sup>2</sup> + <span class=\"mn\">3</span><i class=\"mv\">x</i> − <span class=\"mn\">1</span> + <span class=\"mn\">1</span> = <span class=\"mn\">1</span></span>. What you do to one side you do to the other, so the balance stays level.",
@@ -1123,7 +1123,7 @@
   "state: <span class=\"branch\"><i class=\"mv\">x</i> <span class=\"nop\">=</span> <span class=\"nfrac\"><span class=\"nn\"><span class=\"sq\"><svg class=\"rs-svg\" viewBox=\"0 0 10 100\" preserveAspectRatio=\"none\" aria-hidden=\"true\"><path d=\"M0.5 64 L2.8 58 L5.4 100 L10 0\"/></svg><span class=\"rs\">√</span><span class=\"rad\"><span class=\"mn\">17</span></span></span> − <span class=\"mn\">3</span></span><span class=\"nd\"><span class=\"mn\">4</span></span></span></span> <span class=\"nop or\">∨</span> <span class=\"branch\"><i class=\"mv\">x</i> <span class=\"nop\">=</span> <span class=\"nfrac\"><span class=\"nn\">−<span class=\"sq\"><svg class=\"rs-svg\" viewBox=\"0 0 10 100\" preserveAspectRatio=\"none\" aria-hidden=\"true\"><path d=\"M0.5 64 L2.8 58 L5.4 100 L10 0\"/></svg><span class=\"rs\">√</span><span class=\"rad\"><span class=\"mn\">17</span></span></span> − <span class=\"mn\">3</span></span><span class=\"nd\"><span class=\"mn\">4</span></span></span></span>",
   "conds: "
  ],
- "level 42": [
+ "level formulas.1": [
   "hint: <span class=\"mx\"><i class=\"mv\">a</i><i class=\"mv\">x</i></span> is <span class=\"mx\"><i class=\"mv\">a</i></span> times the rest. Tap the = sign and drag <span class=\"mx\"><i class=\"mv\">a</i></span> to the other side: both sides are divided by <span class=\"mx\"><i class=\"mv\">a</i></span>.",
   "done?: Not done yet: the letter isn’t on its own on its side.",
   "move: : <span class=\"mx\"><i class=\"mv\">a</i></span> on both sides: <span class=\"mx\"><span class=\"nfrac\"><span class=\"nn\"><i class=\"mv\">a</i><i class=\"mv\">x</i></span><span class=\"nd\"><i class=\"mv\">a</i></span></span> = <span class=\"nfrac\"><span class=\"nn\"><i class=\"mv\">b</i></span><span class=\"nd\"><i class=\"mv\">a</i></span></span></span>. That only works if <span class=\"mx\"><i class=\"mv\">a</i> ≠ 0</span>: multiplying or dividing by 0 isn’t allowed, so the answer holds on that condition.",
@@ -1133,7 +1133,7 @@
   "state: <i class=\"mv\">x</i> <span class=\"nop\">=</span> <span class=\"nfrac\"><span class=\"nn\"><i class=\"mv\">b</i></span><span class=\"nd\"><i class=\"mv\">a</i></span></span>",
   "conds: <span class=\"mx\"><i class=\"mv\">a</i> ≠ 0</span>"
  ],
- "level 43": [
+ "level formulas.2": [
   "hint: Get rid of <span class=\"mx\"><i class=\"mv\">b</i></span> on the left: tap the = sign and drag it to the other side. That does − <span class=\"mx\"><i class=\"mv\">b</i></span> on both sides.",
   "done?: Not done yet: the letter isn’t on its own on its side.",
   "move: − <span class=\"mx\"><i class=\"mv\">b</i></span> on both sides: <span class=\"mx\"><i class=\"mv\">a</i><i class=\"mv\">x</i> + <i class=\"mv\">b</i> − <i class=\"mv\">b</i> = <i class=\"mv\">c</i> − <i class=\"mv\">b</i></span>. What you do to one side you do to the other, so the balance stays level.",
@@ -1149,7 +1149,7 @@
   "state: <i class=\"mv\">x</i> <span class=\"nop\">=</span> <span class=\"nfrac\"><span class=\"nn\"><i class=\"mv\">c</i> − <i class=\"mv\">b</i></span><span class=\"nd\"><i class=\"mv\">a</i></span></span>",
   "conds: <span class=\"mx\"><i class=\"mv\">a</i> ≠ 0</span>"
  ],
- "level 44": [
+ "level formulas.3": [
   "hint: Get rid of <span class=\"mx\"><i class=\"mv\">c</i><i class=\"mv\">x</i></span> on the right: tap the = sign and drag it to the other side. That does − <span class=\"mx\"><i class=\"mv\">c</i><i class=\"mv\">x</i></span> on both sides.",
   "done?: Not done yet: the letter is still on both sides of the =.",
   "move: − <span class=\"mx\"><i class=\"mv\">c</i><i class=\"mv\">x</i></span> on both sides: <span class=\"mx\"><i class=\"mv\">a</i><i class=\"mv\">x</i> + <i class=\"mv\">b</i> − <i class=\"mv\">c</i><i class=\"mv\">x</i> = <i class=\"mv\">c</i><i class=\"mv\">x</i> + <i class=\"mv\">d</i> − <i class=\"mv\">c</i><i class=\"mv\">x</i></span>. What you do to one side you do to the other, so the balance stays level.",
@@ -1174,14 +1174,14 @@
   "state: <i class=\"mv\">x</i> <span class=\"nop\">=</span> <span class=\"nfrac\"><span class=\"nn\"><i class=\"mv\">d</i> − <i class=\"mv\">b</i></span><span class=\"nd\"><i class=\"mv\">a</i> − <i class=\"mv\">c</i></span></span>",
   "conds: <span class=\"mx\"><i class=\"mv\">a</i> − <i class=\"mv\">c</i> ≠ 0</span>"
  ],
- "level 45": [
+ "level genquad.1": [
   "hint: <span class=\"mx\"><i class=\"mv\">x</i><sup>2</sup></span> is a square. Take the root of both sides: tap =, then drag the little ² to the other side.",
   "done?: Not done yet: the letter isn’t on its own on its side.",
   "move: <span class=\"mx\"><i class=\"mv\">x</i><sup>2</sup> = <i class=\"mv\">a</i></span> becomes <span class=\"mx\"><i class=\"mv\">x</i> = <span class=\"sq\"><svg class=\"rs-svg\" viewBox=\"0 0 10 100\" preserveAspectRatio=\"none\" aria-hidden=\"true\"><path d=\"M0.5 64 L2.8 58 L5.4 100 L10 0\"/></svg><span class=\"rs\">√</span><span class=\"rad\"><i class=\"mv\">a</i></span></span> ∨ <i class=\"mv\">x</i> = −<span class=\"sq\"><svg class=\"rs-svg\" viewBox=\"0 0 10 100\" preserveAspectRatio=\"none\" aria-hidden=\"true\"><path d=\"M0.5 64 L2.8 58 L5.4 100 L10 0\"/></svg><span class=\"rs\">√</span><span class=\"rad\"><i class=\"mv\">a</i></span></span></span>. Only a number that isn’t negative has a root, so this needs <span class=\"mx\"><i class=\"mv\">a</i> ≥ 0</span>.",
   "state: <span class=\"branch\"><i class=\"mv\">x</i> <span class=\"nop\">=</span> <span class=\"sq\"><svg class=\"rs-svg\" viewBox=\"0 0 10 100\" preserveAspectRatio=\"none\" aria-hidden=\"true\"><path d=\"M0.5 64 L2.8 58 L5.4 100 L10 0\"/></svg><span class=\"rs\">√</span><span class=\"rad\"><i class=\"mv\">a</i></span></span></span> <span class=\"nop or\">∨</span> <span class=\"branch\"><i class=\"mv\">x</i> <span class=\"nop\">=</span> −<span class=\"sq\"><svg class=\"rs-svg\" viewBox=\"0 0 10 100\" preserveAspectRatio=\"none\" aria-hidden=\"true\"><path d=\"M0.5 64 L2.8 58 L5.4 100 L10 0\"/></svg><span class=\"rs\">√</span><span class=\"rad\"><i class=\"mv\">a</i></span></span></span>",
   "conds: <span class=\"mx\"><i class=\"mv\">a</i> ≥ 0</span>"
  ],
- "level 46": [
+ "level genquad.2": [
   "hint: <span class=\"mx\">(<i class=\"mv\">x</i> + <i class=\"mv\">p</i>)<sup>2</sup></span> is a square. Take the root of both sides: tap =, then drag the little ² to the other side.",
   "done?: Not done yet: the letter isn’t on its own on its side.",
   "move: <span class=\"mx\">(<i class=\"mv\">x</i> + <i class=\"mv\">p</i>)<sup>2</sup> = <i class=\"mv\">q</i></span> becomes <span class=\"mx\">(<i class=\"mv\">x</i> + <i class=\"mv\">p</i>) = <span class=\"sq\"><svg class=\"rs-svg\" viewBox=\"0 0 10 100\" preserveAspectRatio=\"none\" aria-hidden=\"true\"><path d=\"M0.5 64 L2.8 58 L5.4 100 L10 0\"/></svg><span class=\"rs\">√</span><span class=\"rad\"><i class=\"mv\">q</i></span></span> ∨ (<i class=\"mv\">x</i> + <i class=\"mv\">p</i>) = −<span class=\"sq\"><svg class=\"rs-svg\" viewBox=\"0 0 10 100\" preserveAspectRatio=\"none\" aria-hidden=\"true\"><path d=\"M0.5 64 L2.8 58 L5.4 100 L10 0\"/></svg><span class=\"rs\">√</span><span class=\"rad\"><i class=\"mv\">q</i></span></span></span>. Only a number that isn’t negative has a root, so this needs <span class=\"mx\"><i class=\"mv\">q</i> ≥ 0</span>.",
@@ -1200,7 +1200,7 @@
   "state: <span class=\"branch\"><i class=\"mv\">x</i> <span class=\"nop\">=</span> <span class=\"sq\"><svg class=\"rs-svg\" viewBox=\"0 0 10 100\" preserveAspectRatio=\"none\" aria-hidden=\"true\"><path d=\"M0.5 64 L2.8 58 L5.4 100 L10 0\"/></svg><span class=\"rs\">√</span><span class=\"rad\"><i class=\"mv\">q</i></span></span> − <i class=\"mv\">p</i></span> <span class=\"nop or\">∨</span> <span class=\"branch\"><i class=\"mv\">x</i> <span class=\"nop\">=</span> −<span class=\"sq\"><svg class=\"rs-svg\" viewBox=\"0 0 10 100\" preserveAspectRatio=\"none\" aria-hidden=\"true\"><path d=\"M0.5 64 L2.8 58 L5.4 100 L10 0\"/></svg><span class=\"rs\">√</span><span class=\"rad\"><i class=\"mv\">q</i></span></span> − <i class=\"mv\">p</i></span>",
   "conds: <span class=\"mx\"><i class=\"mv\">q</i> ≥ 0</span>"
  ],
- "level 47": [
+ "level genquad.3": [
   "hint: Get rid of <span class=\"mx\"><i class=\"mv\">q</i></span> on the left: tap the = sign and drag it to the other side. That does − <span class=\"mx\"><i class=\"mv\">q</i></span> on both sides.",
   "done?: Not done yet: the letter isn’t on its own on its side.",
   "move: − <span class=\"mx\"><i class=\"mv\">q</i></span> on both sides: <span class=\"mx\"><i class=\"mv\">x</i><sup>2</sup> + <span class=\"mn\">2</span><i class=\"mv\">p</i><i class=\"mv\">x</i> + <i class=\"mv\">q</i> − <i class=\"mv\">q</i> = −<i class=\"mv\">q</i></span>. What you do to one side you do to the other, so the balance stays level.",
@@ -1249,7 +1249,7 @@
   "state: <span class=\"branch\"><i class=\"mv\">x</i> <span class=\"nop\">=</span> <span class=\"sq\"><svg class=\"rs-svg\" viewBox=\"0 0 10 100\" preserveAspectRatio=\"none\" aria-hidden=\"true\"><path d=\"M0.5 64 L2.8 58 L5.4 100 L10 0\"/></svg><span class=\"rs\">√</span><span class=\"rad\"><i class=\"mv\">p</i><sup>2</sup> − <i class=\"mv\">q</i></span></span> − <i class=\"mv\">p</i></span> <span class=\"nop or\">∨</span> <span class=\"branch\"><i class=\"mv\">x</i> <span class=\"nop\">=</span> −<span class=\"sq\"><svg class=\"rs-svg\" viewBox=\"0 0 10 100\" preserveAspectRatio=\"none\" aria-hidden=\"true\"><path d=\"M0.5 64 L2.8 58 L5.4 100 L10 0\"/></svg><span class=\"rs\">√</span><span class=\"rad\"><i class=\"mv\">p</i><sup>2</sup> − <i class=\"mv\">q</i></span></span> − <i class=\"mv\">p</i></span>",
   "conds: <span class=\"mx\"><i class=\"mv\">p</i><sup>2</sup> − <i class=\"mv\">q</i> ≥ 0</span>"
  ],
- "level 48": [
+ "level genquad.4": [
   "hint: Get rid of <span class=\"mx\"><i class=\"mv\">c</i></span> on the left: tap the = sign and drag it to the other side. That does − <span class=\"mx\"><i class=\"mv\">c</i></span> on both sides.",
   "done?: Not done yet: the letter isn’t on its own on its side.",
   "move: − <span class=\"mx\"><i class=\"mv\">c</i></span> on both sides: <span class=\"mx\"><i class=\"mv\">a</i><i class=\"mv\">x</i><sup>2</sup> + <i class=\"mv\">b</i><i class=\"mv\">x</i> + <i class=\"mv\">c</i> − <i class=\"mv\">c</i> = −<i class=\"mv\">c</i></span>. What you do to one side you do to the other, so the balance stays level.",
@@ -1343,14 +1343,14 @@
   "state: <span class=\"branch\"><i class=\"mv\">x</i> <span class=\"nop\">=</span> <span class=\"nfrac\"><span class=\"nn\"><span class=\"sq\"><svg class=\"rs-svg\" viewBox=\"0 0 10 100\" preserveAspectRatio=\"none\" aria-hidden=\"true\"><path d=\"M0.5 64 L2.8 58 L5.4 100 L10 0\"/></svg><span class=\"rs\">√</span><span class=\"rad\"><i class=\"mv\">b</i><sup>2</sup> − <span class=\"mn\">4</span><i class=\"mv\">a</i><i class=\"mv\">c</i></span></span> − <i class=\"mv\">b</i></span><span class=\"nd\"><span class=\"mn\">2</span><i class=\"mv\">a</i></span></span></span> <span class=\"nop or\">∨</span> <span class=\"branch\"><i class=\"mv\">x</i> <span class=\"nop\">=</span> <span class=\"nfrac\"><span class=\"nn\">−<span class=\"sq\"><svg class=\"rs-svg\" viewBox=\"0 0 10 100\" preserveAspectRatio=\"none\" aria-hidden=\"true\"><path d=\"M0.5 64 L2.8 58 L5.4 100 L10 0\"/></svg><span class=\"rs\">√</span><span class=\"rad\"><i class=\"mv\">b</i><sup>2</sup> − <span class=\"mn\">4</span><i class=\"mv\">a</i><i class=\"mv\">c</i></span></span> − <i class=\"mv\">b</i></span><span class=\"nd\"><span class=\"mn\">2</span><i class=\"mv\">a</i></span></span></span>",
   "conds: <span class=\"mx\"><i class=\"mv\">a</i> ≠ 0</span> ; <span class=\"mx\"><i class=\"mv\">b</i><sup>2</sup> − <span class=\"mn\">4</span><i class=\"mv\">a</i><i class=\"mv\">c</i> ≥ 0</span>"
  ],
- "level 49": [
+ "level logs.1": [
   "hint: <span class=\"mx\"><span class=\"mfn\">log</span>(<i class=\"mv\">a</i><i class=\"mv\">b</i>)</span> is the log of a product. Tap it twice to explode it.",
   "done?: Not done yet: <span class=\"mx\"><span class=\"mfn\">log</span>(<i class=\"mv\">a</i><i class=\"mv\">b</i>)</span> can still be written shorter.",
   "move: The log of a product is the sum of the logs: <span class=\"mx\"><span class=\"mfn\">log</span>(<i class=\"mv\">a</i><i class=\"mv\">b</i>)</span> = <span class=\"mx\"><span class=\"mfn\">log</span>(<i class=\"mv\">a</i>) + <span class=\"mfn\">log</span>(<i class=\"mv\">b</i>)</span> (for <span class=\"mx\"><i class=\"mv\">a</i> > 0</span>, <span class=\"mx\"><i class=\"mv\">b</i> > 0</span>).",
   "state: <span class=\"mfn\">log</span>(<i class=\"mv\">a</i>) + <span class=\"mfn\">log</span>(<i class=\"mv\">b</i>)",
   "conds: <span class=\"mx\"><i class=\"mv\">a</i> > 0</span> ; <span class=\"mx\"><i class=\"mv\">b</i> > 0</span>"
  ],
- "level 50": [
+ "level logs.2": [
   "hint: Explode <span class=\"mx\"><i class=\"mv\">a</i><sup>3</sup></span> inside <span class=\"mx\"><span class=\"mfn\">log</span>(<i class=\"mv\">a</i><sup>3</sup>)</span> first (tap it twice): then it is a product.",
   "done?: Not done yet: <span class=\"mx\"><span class=\"mfn\">log</span>(<i class=\"mv\">a</i><sup>3</sup>)</span> can still be written shorter.",
   "move: <span class=\"mx\"><i class=\"mv\">a</i><sup>3</sup></span> means 3 <span class=\"mx\"><i class=\"mv\">a</i></span>’s multiplied: <span class=\"mx\"><i class=\"mv\">a</i> · <i class=\"mv\">a</i> · <i class=\"mv\">a</i></span>.",
@@ -1366,7 +1366,7 @@
   "state: <span class=\"mn\">3</span><span class=\"mfn\">log</span>(<i class=\"mv\">a</i>)",
   "conds: <span class=\"mx\"><i class=\"mv\">a</i> > 0</span>"
  ],
- "level 51": [
+ "level logs.3": [
   "hint: <span class=\"mx\"><span class=\"mfn\">log</span>(<i class=\"mv\">a</i><sup>2</sup><i class=\"mv\">b</i>)</span> is the log of a product. Tap it twice to explode it.",
   "done?: Not done yet: <span class=\"mx\"><span class=\"mfn\">log</span>(<i class=\"mv\">a</i><sup>2</sup><i class=\"mv\">b</i>)</span> can still be written shorter.",
   "move: The log of a product is the sum of the logs: <span class=\"mx\"><span class=\"mfn\">log</span>(<i class=\"mv\">a</i><sup>2</sup><i class=\"mv\">b</i>)</span> = <span class=\"mx\"><span class=\"mfn\">log</span>(<i class=\"mv\">a</i><sup>2</sup>) + <span class=\"mfn\">log</span>(<i class=\"mv\">b</i>)</span> (for <span class=\"mx\"><i class=\"mv\">a</i> > 0</span>, <span class=\"mx\"><i class=\"mv\">b</i> > 0</span>).",

@@ -1,5 +1,5 @@
 /* The controller: loads levels and problems, plays moves (run: on a copy, then history, note, animation), and handles taps on tiles. */
-import { buildLevel } from '../content/levels.js';
+import { LEVELS, SKILLS, buildLevel } from '../content/registry.js';
 import { normalize } from '../core/model.js';
 import { partnersOf, termPair } from '../core/moves.js';
 import { isEquation } from '../core/problem.js';
@@ -15,7 +15,8 @@ import { render } from './tiles.js';
 export function nextProblem() {
   if (ui.mode === 'custom') return showOwn();
   ui.mode = 'practice';
-  ui.S = makeProblem(ui.prac.topics, ui.prac.d);
+  const K = SKILLS[ui.prac.skills[Math.floor(Math.random() * ui.prac.skills.length)]] || SKILLS.powers;
+  ui.S = makeProblem(K.gen, ui.prac.d); ui.S.skill = K.id;
   startBoard();
 }
 export function startBoard() {
@@ -26,7 +27,7 @@ export function startBoard() {
 }
 export function loadLevel(i) {
   ui.mode = 'levels';
-  ui.lvl = i; store.set('level', i);
+  ui.lvl = i; store.set('levelId', LEVELS[i].id);
   ui.S = buildLevel(i); ui.history = []; ui.moves = 0; ui.sel = null; ui.born = new Set(); ui.hintIds = new Set(); ui.won = false; ui.balancing = false;
   board.classList.remove('won');
   render(); sayIntro();

@@ -44,7 +44,7 @@ function trace(G, S, msgs) {
 function record() {
   const G = load(), out = {}, msgs = {};
   const run = (key, S) => { msgs[key] = []; out[key] = trace(G, S, msgs[key]); };
-  G.LEVELS.forEach((_, i) => run(`level ${i + 1}`, G.buildLevel(i)));
+  G.LEVELS.forEach((L, i) => run(`level ${L.id}`, G.buildLevel(i)));
   for (const [chapter, list] of Object.entries(CHAPTERS))
     for (const [src, , goal] of list) run(`${chapter}: ${src}`, G.parseProblem(src, goal || 'simplify').S);
   GENERIC.forEach(src => run(`generic: ${src}`, G.parseProblem(src, 'solve').S));

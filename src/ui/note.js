@@ -1,5 +1,5 @@
 /* The note under the board: say() a message, sayIntro() for a level. */
-import { LEVELS } from '../content/levels.js';
+import { LEVELS } from '../content/registry.js';
 import { lang, t } from '../i18n.js';
 import { note, ui } from './state.js';
 

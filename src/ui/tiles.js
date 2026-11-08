@@ -1,5 +1,5 @@
 /* Rendering the board: a tile per piece, sides, branches, the tool bar. */
-import { LEVELS } from '../content/levels.js';
+import { LEVELS, SKILLS, skillOfLevel } from '../content/registry.js';
 import { loneSquare } from '../core/balance.js';
 import { sumKey } from '../core/kinds/sums.js';
 import { canMerge, isOne, locate } from '../core/model.js';
@@ -168,7 +168,8 @@ export function render() {
   $('written').innerHTML = stateHTML(ui.S);
 
   // chrome
-  $('btnLevels').textContent = t('levels');
+  $('btnLevels').textContent = t('mapTitle');
+  $('btnOwn').textContent = t('ownTitle');
   $('btnLang').textContent = lang === 'nl' ? 'English' : 'Nederlands';
   $('btnRestart').textContent = t('restart');
   $('brand').innerHTML = lang === 'nl' ? 'Algebra <span>Opruimen</span>' : 'Algebra <span>Cleanup</span>';
@@ -182,12 +183,14 @@ export function render() {
     $('moves').innerHTML = t('moves', { n: ui.moves });
   } else if (ui.mode === 'practice') {
     $('lvlTitle').textContent = t('practiceTitle');
-    $('lvlBadge').hidden = false; $('lvlBadge').textContent = t('tp_' + ui.S.topic) + ' · ' + t('d' + ui.prac.d);
+    $('lvlBadge').hidden = false; $('lvlBadge').textContent = (SKILLS[ui.S.skill] ? SKILLS[ui.S.skill].title[lang] : t('tp_' + ui.S.topic)) + ' · ' + t('d' + ui.prac.d);
     $('moves').innerHTML = t('solved', { n: ui.session.solved }) + t('streak', { n: ui.session.streak });
   } else {
-    $('lvlTitle').textContent = t('level', { n: ui.lvl + 1 });
+    // the skill and where in it: "Powers · 3/6"
+    const id = LEVELS[ui.lvl].id, K = skillOfLevel(id);
+    $('lvlTitle').textContent = K ? `${K.title[lang]} · ${K.levels.indexOf(id) + 1}/${K.levels.length}` : t('level', { n: ui.lvl + 1 });
     $('lvlBadge').hidden = !LEVELS[ui.lvl].book && !LEVELS[ui.lvl].goal; $('lvlBadge').textContent = LEVELS[ui.lvl].book ? t('book') : t(LEVELS[ui.lvl].goal === 'solve' ? 'solveBadge' : 'factorBadge');
-    $('moves').innerHTML = t('moves', { n: ui.moves }) + (ui.best[ui.lvl] != null ? t('best', { n: ui.best[ui.lvl] }) : '');
+    $('moves').innerHTML = t('moves', { n: ui.moves }) + (ui.done[id] != null ? t('best', { n: ui.done[id] }) : '');
   }
   $('writtenLabel').textContent = t('written');
   $('btnUndo').querySelector('span').textContent = t('undo');
