@@ -70,6 +70,7 @@ function candidates(S) {
       t.f.filter(f => f.k === 'n').forEach(f => out.push(s => G.opBalance(s, ':', G.T([G.N(f.v)])), s => G.opBalance(s, '·', G.T([G.N(f.v)], true))));
     }));
     fs.concat(ts).forEach(id => out.push(s => G.opDrag(s, id)));   // drag any piece across the =
+    fs.forEach(id => out.push(s => G.opDrag(s, -id)));   // the ² of a lone square (and ids that have none)
     for (let b = 0; b < S.parts.length / 2; b++)   // per branch: swap, root of both sides, product = 0, typed + and ·
       out.push(s => G.opSwap(s, b), s => G.opRoot(s, b), s => G.opZero(s, b), s => G.opBalance(s, '+', G.T([G.N(9)]), b), s => G.opBalance(s, '·', G.T([G.N(4)]), b));
     out.push(s => G.opBalance(s, '·', G.T([G.V('x')])), s => G.opBalance(s, ':', G.T([G.N(0)])), s => G.opBalance(s, '·', G.T([G.N(1)])));

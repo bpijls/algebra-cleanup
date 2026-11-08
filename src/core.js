@@ -183,11 +183,13 @@ const eachTerm = (S, fn) => walk(S, L => L.kind === 't' && fn(L));
 function containers(S) { const out = []; walk(S, L => { if (L.kind === 't' && !out.includes(L.terms)) out.push(L.terms); }); return out; }
 
 /* ---- notation (HTML) ---- */
+// √ over some HTML: the hook is drawn so it meets the bar at any height; the glyph stays as hidden text
+const sqHTML = inner => `<span class="sq"><svg class="rs-svg" viewBox="0 0 10 100" preserveAspectRatio="none" aria-hidden="true"><path d="M0.5 64 L2.8 58 L5.4 100 L10 0"/></svg><span class="rs">√</span><span class="rad">${inner}</span></span>`;
 function fx(f) {
   if (f.k === 'n') return `<span class="mn">${f.v}</span>`;
   if (f.k === 'v') return `<i class="mv">${f.b}</i>${f.e > 1 ? `<sup>${f.e}</sup>` : ''}`;
   if (f.k === 'p') return `(${sumHTML(f.terms)})${f.e > 1 ? `<sup>${f.e}</sup>` : ''}`;
-  if (f.k === 'r') return `<span class="sq">√<span class="rad">${sumHTML(f.terms)}</span></span>`;
+  if (f.k === 'r') return sqHTML(sumHTML(f.terms));
   if (f.k === 'bk') return `<span class="bk">${sumHTML(f.terms)}</span>${f.e > 1 ? `<sup>${f.e}</sup>` : ''}`;
   return `(${factorsHTML(f.f)})${f.e > 1 ? `<sup>${f.e}</sup>` : ''}`;
 }
@@ -817,13 +819,27 @@ function opSwap(S, bi = 0) {
 // dragging a piece across the = undoes what it does on its side, on both sides:
 //   a term in a sum → take it away (3x + 5: drag 5 → − 5), the number in 3x → divide by 3,
 //   what is below the bar → multiply by it, a lone −x → divide by −1
+// a square on its own side (x², (x + 3)², not 2x² or −x²): its ² is a tile of its own that can be dragged across
+function loneSquare(P) {
+  const t = P.num[0];
+  if (P.num.length !== 1 || !isOne(P.den) || t.neg || t.f.length !== 1) return null;
+  const f = t.f[0];
+  return f.e === 2 && f.k !== 'n' && f.k !== 'r' ? f : null;
+}
+// the ² of a lone square has the id −(the square's id); dragging it takes the root of both sides,
+// and dragging the 0 of '… = 0' onto a product splits it (a product is 0 when one of its factors is)
 function dragBalance(S, id) {
   if (S.op !== '=') return null;
+  if (id < 0) {
+    const pi = S.parts.findIndex(P => loneSquare(P)?.id === -id);
+    return pi < 0 ? null : { root: true, bi: pi >> 1 };
+  }
   for (const [pi, P] of S.parts.entries()) for (const side of SIDES) for (const top of P[side]) {
     let L = null;
     walkTerms([top], { depth: 0 }, M => { if (!L && (M.kind === 't' ? M.term.id : M.f.id) === id) L = M; });
     if (!L) continue;
     const ts = P[side], bi = pi >> 1;
+    if (side === 'num' && L.kind === 'f' && L.f.k === 'n' && L.f.v === 0 && isZeroSide(ts) && isOne(P.den)) return { zero: true, bi };
     if (side === 'den') return ts.length === 1 ? { op: '·', value: T(top.f.map(cloneF), top.neg), bi } : { no: 'dragDenSum' };
     const whole = { op: top.neg ? '+' : '-', value: T(top.f.map(cloneF)), bi };
     if (ts.length > 1 || L.kind === 't') return whole;
@@ -838,6 +854,11 @@ function opDrag(S, id) {
   const d = dragBalance(S, id);
   if (!d) return null;
   if (d.no) return { no: d.no, ids: [id] };
+  if (d.root || d.zero) {
+    const r = d.root ? opRoot(S, d.bi) : opZero(S, d.bi);
+    if (r && r.no) r.ids = [id];
+    return r;
+  }
   if ((d.op === '+' || d.op === '-') && d.value.f.some(f => f.k === 'p' || f.k === 'g')) return { no: 'dragBracket', ids: [id] };
   const r = opBalance(S, d.op, d.value, d.bi);
   if (r && r.no) r.ids = [id, ...(r.ids || [])];
@@ -952,10 +973,7 @@ function opRoot(S, bi = 0) {
   const before = mx(fracHTML(parts[0]) + ' = ' + fracHTML(parts[1]));
   S.parts.splice(2 * bi, 2, ...add);
   const ex = Array.from({ length: add.length / 2 }, (_, k) => fracHTML(add[2 * k]) + ' = ' + fracHTML(add[2 * k + 1])).join(` ${orWord()} `);
-  // the button's label: the short school form x + 3 = ±√5 (the two branches don't fit on a phone)
-  const bh = sq.k === 'p' ? sumHTML(sq.terms) : fx(base());
-  const btn = mx(bh + ' = ' + (add.length > 2 ? '±' : '') + fx(Rt(O.num.map(cloneT))));
-  return { ok: add.length > 2 ? 'rootBoth' : 'rootZero', p: { x: before, ex: mx(ex), s: mx(fx(sq)), btn }, born: add.flatMap(P => P.num.flatMap(t => t.f.map(f => f.id))) };
+  return { ok: add.length > 2 ? 'rootBoth' : 'rootZero', p: { x: before, ex: mx(ex), s: mx(fx(sq)) }, born: add.flatMap(P => P.num.flatMap(t => t.f.map(f => f.id))) };
 }
 // a product that is 0: one of its factors is 0 → a branch for each factor with a letter in it
 function opZero(S, bi = 0) {
@@ -1000,7 +1018,10 @@ function quadHint(S, q) {
   if (!hasLetter(L.num) && !hasLetter(L.den)) return { k: 'hSwap', p: { b: bx(q.x) }, ids: ['op'] };
   const dry = fn => { const c = JSON.parse(JSON.stringify(S)); return fn(c); };
   const z = dry(c => opZero(c));
-  if (z && z.ok) return { k: 'hZero', p: { x: z.p.x }, ids: ['op'], zero: true };
+  if (z && z.ok) {
+    const zid = S.parts.find(P => isZeroSide(P.num)).num[0].f[0].id;
+    return { k: 'hZero', p: { x: z.p.x }, ids: [zid, 'op'], drag: zid };
+  }
   if (!hasLetter(R.num)) {
     const t = L.num[0];
     // a square that is still written as a product of two equal brackets
@@ -1012,7 +1033,8 @@ function quadHint(S, q) {
     if (r && (r.ok || r.no === 'rootNeg')) {
       const h = hint(sideView(R)); if (h.k !== 'hDone') return h;
       if (r.no) return { k: 'hNoReal', p: r.p, ids: [] };
-      return { k: 'hRoot', p: { s: r.p.s }, ids: ['op'], root: true };
+      const pid = -loneSquare(S.parts.find(P => loneSquare(P) && (hasLetter(P.num)))).id;
+      return { k: 'hRoot', p: { s: r.p.s }, ids: [pid, 'op'], drag: pid };
     }
     if (r && r.no === 'rootCoef') {   // 2x² = 18: the square on its own first
       const n = t.f.filter(f => f.k === 'n'), a = n.reduce((p, f) => p * f.v, 1);
@@ -1201,8 +1223,8 @@ const LEVELS = [
     nl: 'Niet elk antwoord is een heel getal.' },
   // quadratic equations: from x² = 9 to finding the abc-formula yourself
   { goal: 'solve', s: () => parseProblem('x^2=9').S,
-    en: 'A square! Which number times itself makes 9? Press the √ button to take the root of both sides. Careful: (−3) · (−3) is 9 too.',
-    nl: 'Een kwadraat! Welk getal keer zichzelf is 9? Druk op de knop met √ om aan beide kanten de wortel te trekken. Let op: (−3) · (−3) is ook 9.' },
+    en: 'A square! Which number times itself makes 9? Tap the =, then drag the little ² to the other side: the root of both sides. Careful: (−3) · (−3) is 9 too.',
+    nl: 'Een kwadraat! Welk getal keer zichzelf is 9? Tik op het =-teken en sleep het kleine ² naar de andere kant: aan beide kanten de wortel. Let op: (−3) · (−3) is ook 9.' },
   { goal: 'solve', s: () => parseProblem('2x^2=24').S,
     en: 'Get <i>x</i><sup>2</sup> on its own first. After the root: is there a pair hiding in the number under the √?',
     nl: 'Zorg eerst dat <i>x</i><sup>2</sup> alleen staat. Na de wortel: zit er een paar verstopt in het getal onder de √?' },
@@ -1210,8 +1232,8 @@ const LEVELS = [
     en: 'The whole bracket is squared. Take the root of both sides, then solve each branch the way you already know.',
     nl: 'Het hele haakje staat in het kwadraat. Trek aan beide kanten de wortel en los daarna elke tak op zoals je al kunt.' },
   { goal: 'solve', s: () => parseProblem('(x-2)(x+5)=0').S,
-    en: 'A product that is 0. When is a product 0? Only when one of its factors is 0.',
-    nl: 'Een product dat 0 is. Wanneer is een product 0? Alleen als een van de factoren 0 is.' },
+    en: 'A product that is 0. When is a product 0? Only when one of its factors is 0. Tap the =, then drag the 0 onto the product.',
+    nl: 'Een product dat 0 is. Wanneer is een product 0? Alleen als een van de factoren 0 is. Tik op het =-teken en sleep de 0 naar het product.' },
   { goal: 'solve', book: true, s: () => parseProblem('x^2+5x+6=0').S,
     en: 'Factorise the left side with the sum-product method, then use what you just found out.',
     nl: 'Ontbind de linkerkant met de som-productmethode en gebruik dan wat je net hebt ontdekt.' },

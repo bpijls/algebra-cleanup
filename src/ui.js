@@ -124,66 +124,51 @@ function termText(t) {
   const n = t.f.filter(f => f.k === 'n').reduce((a, f) => a * f.v, 1), vs = t.f.filter(f => f.k === 'v');
   return (n !== 1 || !vs.length ? String(n) : '') + vs.map(f => f.b + (f.e > 1 ? '^' + f.e : '')).join('');
 }
-// what tapping = with something selected suggests: take a term away, divide by its number, or multiply by what is below the bar
-function balancePrefill() {
-  const L = sel && locate(S, sel.id);
-  if (!L || L.depth) return { op: '-', text: '' };
-  const side = S.parts[L.p][L.side];
-  if (L.side === 'den' && side.length === 1 && side[0].f.every(f => f.k === 'n')) return { op: '·', text: (side[0].neg ? '-' : '') + termText(side[0]) };
-  if (L.kind === 'f' && L.f.k === 'n' && side.length === 1 && varPart(L.term).length) return { op: ':', text: (L.term.neg ? '-' : '') + L.f.v };
-  if (L.kind === 'f' && side.length === 1 && L.term.neg && L.term.f.length === 1) return { op: ':', text: '-1' };   // −x: divide by −1
-  if (L.side === 'num') return { op: L.term.neg ? '+' : '-', text: termText(L.term) };
-  return { op: '-', text: '' };
+/* ---- the balance panel: + − · : and a number on a slider, done to both sides (no typing) ---- */
+// + and − take a positive number (the sign is the operation); · and : can be negative (· −1 flips both sides)
+const bal = { op: '+', v: 1 };
+let lastHint = null;
+function balBounds() {
+  let big = 1;
+  pairOf(S, Math.min(balBranch, branchCount(S) - 1)).forEach(P => walkTerms([...P.num, ...P.den], { depth: 0 }, M => { if (M.kind === 'f' && M.f.k === 'n') big = Math.max(big, M.f.v); }));
+  const R = Math.min(200, Math.max(20, 2 * big, Math.abs(bal.v)));
+  return bal.op === '+' || bal.op === '-' ? [1, R] : [-R, R];
 }
-// the typed value as one monomial term, or null
-function balanceValue(text) {
-  const r = parseProblem(text, 'simplify');
-  if (r.err || r.S.parts.length !== 1 || !isOne(r.S.parts[0].den) || r.S.parts[0].num.length !== 1) return null;
-  const v = r.S.parts[0].num[0];
-  return v.f.some(f => f.k === 'p' || f.k === 'g') ? null : v;
+const balShown = () => bal.v < 0 ? '−' + -bal.v : String(bal.v);
+// what the panel would do, from a dry run on a copy
+function balTry() {
+  return { r: opBalance(JSON.parse(JSON.stringify(S)), bal.op, T([N(Math.abs(bal.v))], bal.v < 0), balBranch) };
 }
-function showBalance() {
-  sheetFn = null;
-  let { op, text } = balancePrefill();
-  const host = openSheet(`<h2 style="font-size:1.6rem">${t('balTitle')}</h2><p>${t('balIntro')}</p>
-    <div class="pchips balops">${['+', '-', '·', ':'].map(o => `<button type="button" class="pchip seg" data-bop="${o}" aria-label="${o}">${BOPS[o]}</button>`).join('')}</div>
-    <form id="balForm" autocomplete="off" style="margin-top:12px">
-      <label class="plabel" for="balIn">${t('balValue')}</label>
-      <input id="balIn" class="ownin" type="text" inputmode="text" autocapitalize="off" spellcheck="false" value="${text}">
-      <div class="ownprev expr-n" id="balPrev" aria-live="polite"></div>
-      <p class="pwarn" id="balErr" hidden></p>
-      <div class="row" style="margin-top:14px">
-        <button class="tool main" type="submit">${t('balDo')}</button>
-        <button class="tool" type="button" id="balSwap">⇄ ${t('balSwap')}</button>
-      </div>
-    </form>`);
-  const input = host.querySelector('#balIn'), prev = host.querySelector('#balPrev'), errEl = host.querySelector('#balErr');
-  const tryIt = () => {   // dry run on a copy: the preview is exactly what will happen
-    const v = balanceValue(input.value);
-    if (!input.value.trim()) return { no: 'balEmpty' };
-    if (!v) return { no: 'balBad' };
-    const copy = JSON.parse(JSON.stringify(S));
-    const r = opBalance(copy, op, v, balBranch);
-    if (r && !r.no) normalize(copy);
-    return r && !r.no ? { ok: true, html: stateHTML(copy) } : r || { no: 'balBad' };
-  };
-  const update = () => {
-    host.querySelectorAll('[data-bop]').forEach(b => { const on = b.dataset.bop === op; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
-    const r = tryIt();
-    prev.innerHTML = r.ok ? r.html : '';
-    errEl.hidden = !!r.ok || !input.value.trim(); if (!r.ok) errEl.innerHTML = t(r.no, r.p || {});
-  };
-  host.querySelectorAll('[data-bop]').forEach(b => b.addEventListener('click', () => { op = b.dataset.bop; update(); }));
-  input.addEventListener('input', update);
-  host.querySelector('#balForm').addEventListener('submit', e => {
-    e.preventDefault();
-    const v = balanceValue(input.value);
-    if (!v) { errEl.innerHTML = t(input.value.trim() ? 'balBad' : 'balEmpty'); errEl.hidden = false; input.focus(); return; }
-    closeSheet(); balancing = false; run(s => opBalance(s, op, v, balBranch));
-  });
-  host.querySelector('#balSwap').addEventListener('click', () => { closeSheet(); balancing = false; run(s => opSwap(s, balBranch)); });
-  update();
-  setTimeout(() => { input.focus(); input.select(); }, 50);
+function balSync(preview) {
+  const [lo, hi] = balBounds(), range = $('balRange');
+  if (bal.v < lo || bal.v > hi || !bal.v) bal.v = Math.min(hi, Math.max(lo, Math.abs(bal.v) || 1));
+  range.min = lo; range.max = hi; range.value = bal.v;
+  range.setAttribute('aria-valuetext', BOPS[bal.op] + ' ' + balShown());
+  document.querySelectorAll('#balOps [data-bop]').forEach(b => { const on = b.dataset.bop === bal.op; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
+  $('balGo').querySelector('span').textContent = `${BOPS[bal.op]} ${bal.v < 0 ? '(' + balShown() + ')' : balShown()}`;
+  $('balGo').setAttribute('aria-label', t('balGoAria', { op: BOPS[bal.op], v: balShown() }));
+  if (!preview) return;
+  const { r } = balTry();
+  if (r && r.no) say(r.no, r.p || {}, 'warn');
+  else if (r) say('balPreview', { ex: r.p.ex }, 'info');
+}
+function balSet(op, v) {
+  if (op) {
+    if ((op === '+' || op === '-') !== (bal.op === '+' || bal.op === '-')) bal.v = Math.abs(bal.v);
+    bal.op = op;
+  }
+  if (v != null) { if (v === 0) v = v < bal.v ? -1 : 1; bal.v = v; }
+  balSync(true);
+}
+// a hint that says "do + 9 on both sides" sets the panel to it
+function balFromHint() {
+  const h = lastHint;
+  if (!h || !h.balance || h.drag != null) return;
+  const v = h.balance.value, n = v.f.filter(f => f.k === 'n').reduce((a, f) => a * f.v, 1);
+  if (v.f.some(f => f.k !== 'n')) return;
+  bal.op = h.balance.op; bal.v = v.neg && (bal.op === '·' || bal.op === ':') ? -n : n;
+  if (bal.op === '+' && v.neg) bal.op = '-';
+  balBranch = h.bi || 0;
 }
 
 /* ---- split a term in two: 5x = 2x + 3x ---- */
@@ -256,13 +241,24 @@ function blockOf(S, sel) {
   L.terms.forEach(t => t.f.forEach(f => { if (f.k === 'p' && f.e === L.f.e && partners.has(f.id) && sumKey(f.terms) === key) ids.add(f.id); }));
   return ids.size > 1 ? { key, ids, L } : null;
 }
-let block = null;
+let block = null, detached = new Set();
+// the ² of a lone square, as a tile of its own: drag it across the = to take the root of both sides
+function powEl(f) {
+  const b = document.createElement('button');
+  b.type = 'button'; b.className = 'tile pw'; b.dataset.id = -f.id; b.textContent = '2';
+  b.setAttribute('aria-label', 'squared');
+  if (hintIds.has(-f.id)) b.classList.add('hint');
+  if (born.has(f.id)) b.classList.add('born');
+  return b;
+}
 function tileEl(f, partners) {
   if (f.k === 'r') {   // √ with a bar over what is inside; the pieces inside are tiles of their own
     const b = document.createElement('div');
     b.className = 'tile r'; b.dataset.id = f.id; b.tabIndex = 0; b.setAttribute('role', 'button'); b.setAttribute('aria-label', 'root');
     const body = document.createElement('div'); body.className = 'rbody'; body.append(sideEl(f.terms, partners));
-    b.append(Object.assign(document.createElement('span'), { className: 'rsign', textContent: '√' }), body);
+    const hook = document.createElementNS(SVGNS, 'svg'); hook.setAttribute('class', 'rsvg'); hook.setAttribute('viewBox', '0 0 23 100'); hook.setAttribute('preserveAspectRatio', 'none'); hook.setAttribute('aria-hidden', 'true');
+    hook.innerHTML = '<path d="M1 62 L6 55 L12.5 100 L23 0"/>';
+    b.append(hook, Object.assign(document.createElement('span'), { className: 'rs', textContent: '√' }), body);
     if (sel && sel.t === 'f' && sel.id === f.id) b.classList.add('sel');
     if (hintIds.has(f.id)) b.classList.add('hint');
     if (born.has(f.id)) b.classList.add('born');
@@ -284,7 +280,7 @@ function tileEl(f, partners) {
     const l = document.createElement('span'); l.className = 'paren'; l.textContent = '(';
     const r = document.createElement('span'); r.className = 'paren'; r.textContent = ')';
     b.append(l, sideEl(f.terms, partners), r);
-    if (f.e > 1) { const sp = document.createElement('sup'); sp.textContent = f.e; b.append(sp); b.setAttribute('aria-label', `brackets to the power ${f.e}`); }
+    if (f.e > 1 && !detached.has(f.id)) { const sp = document.createElement('sup'); sp.textContent = f.e; b.append(sp); b.setAttribute('aria-label', `brackets to the power ${f.e}`); }
     if (sel && sel.t === 'f' && sel.id === f.id) b.classList.add('sel');
     if (partners.has(f.id)) b.classList.add('partner');
     if (hintIds.has(f.id)) b.classList.add('hint');
@@ -296,14 +292,14 @@ function tileEl(f, partners) {
   if (f.k === 'n') { b.textContent = f.v; b.setAttribute('aria-label', String(f.v)); }
   else if (f.k === 'v') {
     b.style.setProperty('--c', `var(${VARCOL[f.b] || '--vz'})`);
-    b.innerHTML = `${f.b}${f.e > 1 ? `<sup>${f.e}</sup>` : ''}`;
+    b.innerHTML = `${f.b}${f.e > 1 && !detached.has(f.id) ? `<sup>${f.e}</sup>` : ''}`;
     b.setAttribute('aria-label', f.e > 1 ? `${f.b} to the power ${f.e}` : f.b);
   } else {
     const inner = f.f.map(m => {
       const c = m.k === 'v' ? ` style="--c:var(${VARCOL[m.b] || '--vz'})"` : '';
       return `<span class="mini ${m.k}"${c}>${m.k === 'n' ? m.v : m.b}${m.k === 'v' && m.e > 1 ? `<sup>${m.e}</sup>` : ''}</span>`;
     }).join('');
-    b.innerHTML = `<span class="paren">(</span>${inner}<span class="paren">)</span>${f.e > 1 ? `<sup>${f.e}</sup>` : ''}`;
+    b.innerHTML = `<span class="paren">(</span>${inner}<span class="paren">)</span>${f.e > 1 && !detached.has(f.id) ? `<sup>${f.e}</sup>` : ''}`;
     b.setAttribute('aria-label', 'bracket' + (f.e > 1 ? ` to the power ${f.e}` : ''));
   }
   if (sel && sel.t === 'f' && sel.id === f.id) b.classList.add('sel');
@@ -326,6 +322,7 @@ function sideEl(terms, partners) {
     term.f.forEach((f, j) => {
       if (j > 0) { const dot = document.createElement('span'); dot.className = 'dot'; te.append(dot); }
       te.append(tileEl(f, partners));
+      if (detached.has(f.id)) { te.classList.add('haspw'); te.append(powEl(f)); }
     });
     d.append(te);
   });
@@ -335,6 +332,7 @@ function sideEl(terms, partners) {
 function render() {
   const partners = partnersOf(S, sel);
   block = blockOf(S, sel);
+  detached = new Set(S.op === '=' ? S.parts.map(loneSquare).filter(Boolean).map(f => f.id) : []);
   born.idx = 0;
   const wrap = document.createElement('div'); wrap.className = 'expr';
   const stacked = S.parts.length > 1 && S.op === '/';
@@ -355,7 +353,7 @@ function render() {
       op.className = stacked ? 'opchip bigbar' : 'opchip';
       op.textContent = stacked ? '' : S.op;
       op.setAttribute('aria-label', stacked ? 'fraction bar' : S.op === '=' ? 'equals: do the same to both sides' : S.op === ':' ? 'divide' : 'times');
-      if (S.op === '=') { op.classList.add('eq'); op.dataset.b = pi >> 1; op.classList.toggle('on', balancing); op.setAttribute('aria-pressed', String(balancing)); }
+      if (S.op === '=') { op.classList.add('eq'); op.dataset.b = pi >> 1; const on = balancing && balBranch === pi >> 1; op.classList.toggle('on', on); op.setAttribute('aria-pressed', String(on)); }
       if (hintIds.has('op') && (hintIds.bi == null || hintIds.bi === pi >> 1)) op.classList.add('hint');
       host.append(op);
     }
@@ -405,10 +403,14 @@ function render() {
   $('btnHint').querySelector('span').textContent = t('hint');
   $('btnDone').querySelector('span').textContent = t('doneBtn'); $('btnDone').setAttribute('aria-label', t('doneLabel'));
   $('btnDone').classList.toggle('hint', hintIds.has('done'));
-  $('btnZero').classList.toggle('hint', hintIds.has('zero')); $('btnRoot').classList.toggle('hint', hintIds.has('root'));
-  $('btnSwap').hidden = $('btnBalType').hidden = !balancing;
-  $('btnSwap').querySelector('span').textContent = t('balSwapBtn'); $('btnSwap').setAttribute('aria-label', t('balSwap'));
-  $('btnBalType').querySelector('span').textContent = t('balOtherBtn');
+  $('balPanel').hidden = !balancing;
+  if (balancing) {
+    $('btnSwap').querySelector('span').textContent = t('balSwapBtn'); $('btnSwap').setAttribute('aria-label', t('balSwap'));
+    $('balOps').setAttribute('aria-label', t('balOps')); $('balRange').setAttribute('aria-label', t('balNum'));
+    $('balLess').setAttribute('aria-label', t('balLess')); $('balMore').setAttribute('aria-label', t('balMore'));
+    $('balGo').classList.toggle('hint', !!(lastHint && lastHint.balance && lastHint.drag == null && hintIds.has('op')));
+    balSync(false);
+  }
   const fSel = !balancing && sel && sel.t === 'f', tSel = !balancing && sel && sel.t === 't';
   // the move buttons show what they will do, worked out on a copy of the board
   const exLabel = fSel && previewOf(s => opExplode(s, sel.id));
@@ -418,20 +420,6 @@ function render() {
   $('btnGather').hidden = !gatherable;
   if (gatherable) $('btnGather').querySelector('span').innerHTML = previewOf(s => opGather(s, sel.id));
   // from a piece only when factoring (a lone −x is hard to hit as a term); elsewhere it would just be noise
-  // an equation that splits into branches: the button shows the branches it makes
-  for (const [btn, fn, aria] of [['btnZero', opZero, 'zeroAria'], ['btnRoot', opRoot, 'rootAria']]) {
-    let label = null, bi = null;
-    if (S.op === '=' && !balancing) {
-      const want = sel ? locate(S, sel.id)?.p >> 1 : null;
-      for (let b = 0; b < branchCount(S) && label == null; b++) {
-        if (want != null && b !== want) continue;
-        const c = JSON.parse(JSON.stringify(S)), r = fn(c, b);
-        if (r && r.ok) { label = r.p.btn || r.p.ex; bi = b; }
-      }
-    }
-    $(btn).hidden = label == null; $(btn).dataset.b = bi ?? '';
-    if (label != null) { $(btn).querySelector('span').innerHTML = label; $(btn).setAttribute('aria-label', t(aria)); }
-  }
   const twoId = tSel || (fSel && S.goal === 'factor') ? splitTermOf(sel.id) : null;
   $('btnSplitTwo').hidden = !twoId;
   if (twoId) $('btnSplitTwo').querySelector('span').innerHTML = mx(sumHTML([locate(S, twoId).term]) + ' = … + …');
@@ -440,7 +428,8 @@ function render() {
 
 // a line that is wider than the board (a long equation side) is shrunk to fit instead of overflowing
 function fitBoard(wrap) {
-  wrap.style.zoom = ''; wrap.classList.remove('oneline', 'across');
+  wrap.style.zoom = ''; wrap.classList.remove('oneline', 'across', 'tight');
+  wrap.querySelectorAll('.term > .lb').forEach(el => el.remove());
   // several branches (x = 3 ∨ x = −3): below each other, or next to each other when that needs less shrinking
   // (a phone on its side has width to spare and little height)
   if (S.op === '=' && branchCount(S) > 1) {
@@ -464,9 +453,34 @@ function fitBoard(wrap) {
     if (k >= 0.72) { wrap.style.zoom = String(k); return; }
     wrap.classList.remove('oneline');                 // too long: break before the =, then fit each line
   }
-  const avail = wrap.clientWidth, need = Math.max(0, ...[...wrap.children].map(c => c.scrollWidth));
+  // a product reads best whole: shrink it rather than break it between two factors
+  wrap.classList.add('tight');
+  const bs = getComputedStyle(board), avail = (board.clientWidth - parseFloat(bs.paddingLeft) - parseFloat(bs.paddingRight)) * 0.97, widest = () => Math.max(0, ...[...wrap.children].map(c => c.scrollWidth), ...[...wrap.querySelectorAll('.term')].map(spanOf));
+  let need = widest();
+  if (avail && avail / need < 0.55) { wrap.classList.remove('tight'); need = widest(); }
   if (avail && need > avail) wrap.style.zoom = String(Math.max(0.55, avail / need));
+  dotsDown(wrap);
   fitHeight(wrap);
+}
+// how wide a term's pieces really are: a term that can't wrap overflows its own box on both sides,
+// which neither its width nor its scrollWidth shows
+function spanOf(te) {
+  const a = te.firstElementChild, b = te.lastElementChild;
+  if (!a) return 0;
+  const cs = getComputedStyle(te);
+  return b.getBoundingClientRect().right - a.getBoundingClientRect().left + parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+}
+// a product that still wraps: a · at the end of a line moves to the start of the next one
+function dotsDown(wrap) {
+  wrap.querySelectorAll('.term > .lb').forEach(el => el.remove());
+  for (let pass = 0; pass < 6; pass++) {
+    const d = [...wrap.querySelectorAll('.term > .dot')].find(dot => {
+      const n = dot.nextElementSibling;
+      return n && n.getBoundingClientRect().top >= dot.getBoundingClientRect().bottom;
+    });
+    if (!d) return;
+    d.before(Object.assign(document.createElement('span'), { className: 'lb' }));
+  }
 }
 // a phone on its side has little height: shrink the tiles until they fit between the bars instead of scrolling
 function fitHeight(wrap) {
@@ -572,7 +586,7 @@ function run(fn, animIds) {
     history.push(before); moves++; normalize(S);
     // only bracket moves (putting outside brackets, opening brackets) travel along arcs; everything else just pops
     const origins = r.arcs ? r.origins || {} : {};
-    sel = null; hintIds = new Set(); born = new Set((r.born || []).filter(id => !(id in origins)));
+    lastHint = null; sel = null; hintIds = new Set(); born = new Set((r.born || []).filter(id => !(id in origins)));
     render(); say(r.ok, r.p, 'ok');
     const ms = r.arcs ? animateMoves(rects, origins, true) : 0;
     busy = ms > 0;
@@ -619,7 +633,9 @@ function select(s) {
 /* ---- balance mode: tap =, then drag a piece across it; it is undone on both sides ---- */
 function setBalancing(on) {
   balancing = on && S.op === '=';
-  sel = null; hintIds = new Set(); born = new Set();
+  if (balancing) balFromHint();
+  sel = null; born = new Set();
+  if (!balancing || !(lastHint && lastHint.balance && lastHint.drag == null)) hintIds = new Set();
   render(); say(balancing ? 'balanceMode' : 'balanceOff', {}, 'info');
 }
 function dropAcross(id) {
@@ -704,7 +720,7 @@ const SVGNS = 'http://www.w3.org/2000/svg';
 function tileAt(x, y) {
   const el = document.elementFromPoint(x, y);
   const t = el && el.closest('#board .tile');
-  return t && !t.classList.contains('p') ? t : null;
+  return t && !t.classList.contains('p') && !t.classList.contains('pw') ? t : null;
 }
 function clearSweep() {
   if (drag && drag.svg) drag.svg.remove();
@@ -764,6 +780,7 @@ board.addEventListener('click', e => {
     if (e.detail === 0) return dropAcross(hit.classList.contains('tile') ? +hit.dataset.id : +hit.dataset.tid);   // keyboard: Enter moves it across
     shake([+(hit.dataset.id || hit.dataset.tid)]); return say('balanceTap', {}, 'info');
   }
+  if (hit && hit.classList.contains('pw')) { shake([+hit.dataset.id]); return say('powTap', {}, 'info'); }
   if (hit && hit.classList.contains('tile')) return onFactor(+hit.dataset.id);
   if (hit) return onTerm(+hit.dataset.tid);
   if (sel) { sel = null; render(); }
@@ -772,9 +789,15 @@ board.addEventListener('click', e => {
 $('btnExplode').onclick = () => sel && run(s => opExplode(s, sel.id));
 $('btnGather').onclick = () => sel && run(s => opGather(s, sel.id));
 $('btnSwap').onclick = () => { if (busy || won) return; balancing = false; run(s => opSwap(s, balBranch)); };
-$('btnZero').onclick = () => { const b = +$('btnZero').dataset.b || 0; run(s => opZero(s, b)); };
-$('btnRoot').onclick = () => { const b = +$('btnRoot').dataset.b || 0; run(s => opRoot(s, b)); };
-$('btnBalType').onclick = () => !busy && !won && showBalance();
+document.querySelectorAll('#balOps [data-bop]').forEach(b => { b.onclick = () => balSet(b.dataset.bop, null); });
+$('balRange').addEventListener('input', e => balSet(null, +e.target.value));
+$('balLess').onclick = () => { const [lo] = balBounds(); balSet(null, Math.max(lo, bal.v - 1)); };
+$('balMore').onclick = () => { const [, hi] = balBounds(); balSet(null, Math.min(hi, bal.v + 1)); };
+$('balGo').onclick = () => {
+  if (busy || won || !balancing) return;
+  const v = T([N(Math.abs(bal.v))], bal.v < 0);
+  run(s => { const r = opBalance(s, bal.op, v, balBranch); if (r && !r.no) balancing = false; return r; });
+};
 $('btnSplitTwo').onclick = () => sel && !busy && !won && showSplit(splitTermOf(sel.id));
 $('btnUndo').onclick = () => {
   if (!history.length || busy) return;
@@ -784,8 +807,8 @@ $('btnUndo').onclick = () => {
 };
 $('btnHint').onclick = () => {
   if (won) return;
-  const h = hint(S); sel = null; born = new Set(); hintIds = new Set(h.k === 'hDone' ? ['done'] : h.ids); hintIds.bi = h.bi;
-  if (h.zero) hintIds.add('zero'); if (h.root) hintIds.add('root');
+  const h = hint(S); lastHint = h; sel = null; born = new Set(); hintIds = new Set(h.k === 'hDone' ? ['done'] : h.ids); hintIds.bi = h.bi;
+  if (balancing && h.balance && h.drag == null) balFromHint();
   render(); say(h.k, h.p, 'info');
 };
 // winning is the player's call: they press Done? when they think nothing is left
@@ -900,8 +923,8 @@ function win(refresh) {
 function abcHTML({ a, b, c }) {
   const v = n => n < 0 ? '−' + -n : String(n), d = b * b - 4 * a * c;
   const fr = (top, bot) => `<span class="nfrac"><span class="nn">${top}</span><span class="nd">${bot}</span></span>`;
-  const f = mx(`<i class="mv">x</i> = ${fr(`−<i class="mv">b</i> ± <span class="sq">√<span class="rad"><i class="mv">b</i><sup>2</sup> − 4<i class="mv">a</i><i class="mv">c</i></span></span>`, `2<i class="mv">a</i>`)}`);
-  const ex = mx(`<i class="mv">x</i> = ${fr(`${v(-b)} ± <span class="sq">√<span class="rad">${b * b} ${-4 * a * c < 0 ? '−' : '+'} ${Math.abs(4 * a * c)}</span></span>`, 2 * a)} = ${fr(`${v(-b)} ± <span class="sq">√<span class="rad">${d}</span></span>`, 2 * a)}`);
+  const f = mx(`<i class="mv">x</i> = ${fr(`−<i class="mv">b</i> ± ${sqHTML('<i class="mv">b</i><sup>2</sup> − 4<i class="mv">a</i><i class="mv">c</i>')}`, `2<i class="mv">a</i>`)}`);
+  const ex = mx(`<i class="mv">x</i> = ${fr(`${v(-b)} ± ${sqHTML(`${b * b} ${-4 * a * c < 0 ? '−' : '+'} ${Math.abs(4 * a * c)}`)}`, 2 * a)} = ${fr(`${v(-b)} ± ${sqHTML(d)}`, 2 * a)}`);
   return t('abcReveal', { f, a: v(a), b: v(b), c: v(c), ex });
 }
 function showLevels() {

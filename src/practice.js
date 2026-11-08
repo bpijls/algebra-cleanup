@@ -230,8 +230,6 @@ function autoSolveStep(S) {
   else if (h.k === 'hSumProduct') r = opSplitTwo(S, h.ids[0], h.split);
   else if (h.drag != null) r = opDrag(S, h.drag);   // the hinted piece, dragged across the =
   else if (h.k === 'hSwap') r = opSwap(S, h.bi || 0);
-  else if (h.zero) r = opZero(S, h.bi || 0);
-  else if (h.root) r = opRoot(S, h.bi || 0);
   else if (h.balance) r = opBalance(S, h.balance.op, h.balance.value, h.bi || 0);   // typed: + 9, · 8
   else if (h.k === 'hNoReal' || h.k === 'hNoRealD') return null;
   else r = opPair(S, h.ids[0], h.ids[1]);

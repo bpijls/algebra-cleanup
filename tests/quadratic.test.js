@@ -20,6 +20,22 @@ test('taking the root of both sides gives two branches, and refuses what has no 
   assert.equal(show(Z), 'x = 0');   // only one branch: 0 has one root
 });
 
+test('dragging the ² of a lone square across the = takes the root; dragging the 0 onto a product splits it', () => {
+  const S = eq('(x+3)^2=5'), sq = G.loneSquare(S.parts[0]);
+  assert.equal(sq.k, 'p');
+  assert.equal(G.opDrag(S, -sq.id).ok, 'rootBoth'); G.normalize(S);
+  assert.equal(show(S), 'x + 3 = √5 ∨ x + 3 = −√5');
+  assert.equal(G.loneSquare(eq('2x^2=8').parts[0]), null);      // a number in front: no ² to drag yet
+  assert.equal(G.loneSquare(eq('-x^2=-4').parts[0]), null);
+  const N = eq('x^2=-4'), snap = JSON.stringify(N);
+  assert.equal(G.opDrag(N, -G.loneSquare(N.parts[0]).id).no, 'rootNeg'); assert.equal(JSON.stringify(N), snap);
+  const Z = eq('(x-2)(x+5)=0'), zero = Z.parts[1].num[0].f[0];
+  assert.equal(G.opDrag(Z, zero.id).ok, 'zeroProduct'); G.normalize(Z);
+  assert.equal(show(Z), 'x − 2 = 0 ∨ x + 5 = 0');
+  const W = eq('x^2+5x+6=0');
+  assert.equal(G.opDrag(W, W.parts[1].num[0].f[0].id).no, 'zeroSum');
+});
+
 test('a product that is 0 splits into a branch per factor with the letter', () => {
   const S = eq('3x(x-2)(x+5)=0');
   assert.equal(G.opZero(S).ok, 'zeroProduct'); G.normalize(S);
