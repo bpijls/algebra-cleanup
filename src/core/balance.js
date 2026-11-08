@@ -19,6 +19,7 @@ export const BOPS = { '+': '+', '-': '−', '·': '·', ':': ':' };
 
 export const letters = S => { const bs = new Set(); eachFactor(S, L => { if (L.f.k === 'v') bs.add(L.f.b); }); return [...bs]; };
 
+const hasLetterF = f => { let h = false; walkTerms(f.terms || [], { depth: 0 }, M => { if (M.kind === 'f' && M.f.k === 'v') h = true; }); return h; };
 export const isZeroSide = side => side.length === 1 && side[0].f.length === 1 && side[0].f[0].k === 'n' && side[0].f[0].v === 0;
 
 // v: a monomial Term (its sign counts). op: '+', '-', '·', ':'
@@ -74,7 +75,9 @@ export function opBalance(S, op, v, bi = 0) {
       else P[side] = [T([...fs, Pr(ts)], v.neg)];   // a sum gets multiplied as a whole: 2(x + 1)
     }
     // each letter or bracket must not be 0
-    if (sym.length) cond = sym.map(f => condHTML(addCond(S, f.k === 'p' ? f.terms : [T([V(f.b, 1)])], 'ne'))).join(', ');
+    // (a log of a number is a number that is not 0: log 2; it needs nothing written down)
+    const conds = sym.filter(f => f.k === 'v' || f.k === 'p');
+    if (conds.length) cond = conds.map(f => condHTML(addCond(S, f.k === 'p' ? f.terms : [T([V(f.b, 1)])], 'ne'))).join(', ');
   }
   // times or divided by a negative number: −2 < 3 but 2 > −3, so the sign of an inequality turns round
   const flip = S.rel && mul && v.neg;
@@ -109,6 +112,9 @@ export function loneSquare(P) {
 
 // the ² of a lone square has the id −(the square's id); dragging it takes the root of both sides,
 // and dragging the 0 of '… = 0' onto a product splits it (a product is 0 when one of its factors is)
+// a topic's own drag: (S, L, { top, ts, side, P, bi }) → { run: S => move } or null (2ˣ = 8: drag the power across)
+const DRAG_HOOKS = [];
+export const defineDragHook = fn => { DRAG_HOOKS.push(fn); };
 export function dragBalance(S, id) {
   if (!isEquation(S)) return null;
   if (id < 0) {
@@ -120,6 +126,7 @@ export function dragBalance(S, id) {
     walkTerms([top], { depth: 0 }, M => { if (!L && (M.kind === 't' ? M.term.id : M.f.id) === id) L = M; });
     if (!L) continue;
     const ts = P[side], bi = branchOf(pi);
+    for (const h of DRAG_HOOKS) { const r = h(S, L, { top, ts, side, P, bi }); if (r) return r; }
     // a piece below the bar of a fraction in the sum: multiply by that bottom (x/3 + 2: drag 3 → · 3)
     if (L.kind === 'f' && L.qs === 'den' && top.f.includes(L.in))
       return L.in.den.length === 1 ? { op: '·', value: T(L.in.den[0].f.map(cloneF), L.in.den[0].neg), bi } : { no: 'dragDenSum' };
@@ -132,7 +139,8 @@ export function dragBalance(S, id) {
     // unknown (ax: drag a → : a). A lone minus divides by −1; anything else takes the term away
     const u = unknownOf(S);
     if (L.depth === 0 && L.f.k === 'n' && top.f.length > 1) return { op: ':', value: T([N(L.f.v)], top.neg), bi };
-    if (L.depth === 0 && top.f.length > 1 && tHasU(top, u) && !fHasU(L.f, u) && (L.f.k === 'v' || (L.f.k === 'p' && L.f.e === 1)))
+    // (and a log of a number: x · log 2 → : log 2)
+    if (L.depth === 0 && top.f.length > 1 && tHasU(top, u) && !fHasU(L.f, u) && (L.f.k === 'v' || (L.f.k === 'p' && L.f.e === 1) || (L.f.k === 'log' && !hasLetterF(L.f))))
       return { op: ':', value: T([cloneF(L.f)], top.neg), bi };
     if (top.neg && !top.f.some(f => f.k === 'n')) return { op: ':', value: T([N(1)], true), bi };
     return whole;
@@ -145,6 +153,7 @@ export function opDrag(S, id) {
   const d = dragBalance(S, id);
   if (!d) return null;
   if (d.no) return { no: d.no, ids: [id] };
+  if (d.run) { const r = d.run(S); if (r && r.no) r.ids = [id]; return r; }
   if (d.root || d.zero) {
     if (S.rel) return { no: 'ineqBranch', ids: [id] };   // x² < 9 is not x < 3 or x < −3: not yet
     const r = d.root ? opRoot(S, d.bi) : opZero(S, d.bi);

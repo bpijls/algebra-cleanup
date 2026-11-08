@@ -20,6 +20,10 @@ export function defineSkill(id, spec) {
   return K;
 }
 
+// a shortcut is a move that is only there once the skill that teaches it by hand is done (log(aˣ) = x·log a):
+// defineShortcut(id, { skill }); a state lists the ones it may use in S.earned (progress.js: earnedFor)
+export const SHORTCUTS = [];
+export const defineShortcut = (id, { skill }) => { SHORTCUTS.push({ id, skill }); };
 export const levelIndex = id => LEVELS.findIndex(L => L.id === id);
 export const skillOfLevel = id => SKILL_LIST.find(K => K.levels.includes(id));
 export function buildLevel(i) { const S = LEVELS[i].s(); S.op = S.op || null; S.goal = LEVELS[i].goal || 'simplify'; return S; }

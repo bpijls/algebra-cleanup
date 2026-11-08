@@ -5,8 +5,13 @@
 const assert = require('node:assert/strict');
 const { load } = require('./load');
 const G = load();
-const VALS = [{ a: 1.7, b: -2.3, x: 0.61, y: 3.1 }, { a: -0.9, b: 1.3, x: 2.2, y: -1.4 }, { a: 2.9, b: 0.47, x: -1.6, y: 0.8 },
+// any other letter (p, q, t …) is 1.37 there, inside every kind; the second set has every letter negative, for
+// when the conditions a move wrote down (−18p > 0 under a log) exclude every point of the first
+const withDefault = (o, d) => new Proxy(o, { get: (t, k) => k in t ? t[k] : typeof k === 'string' && /^[a-z]$/.test(k) ? d : undefined });
+const BASE = [{ a: 1.7, b: -2.3, x: 0.61, y: 3.1 }, { a: -0.9, b: 1.3, x: 2.2, y: -1.4 }, { a: 2.9, b: 0.47, x: -1.6, y: 0.8 },
   { a: 0.8, b: 2.6, c: 1.9, x: 1.9, y: 0.35 }, { a: 3.3, b: 1.1, c: 0.6, x: 0.45, y: 2.4 }];
+const VALS = BASE.map(o => withDefault(o, 1.37));
+const NEG = BASE.map(o => withDefault(Object.fromEntries(Object.entries(o).map(([k, v]) => [k, -Math.abs(v) * 1.13])), -1.37));
 // the judge's own arithmetic for the kinds it knows; a kind added later is evaluated by its registry entry
 function evF(f, env) {
   if (!'nvgrp'.includes(f.k)) return G.evalF(f, env);
@@ -29,13 +34,25 @@ function value(S, env) {
 // the value at each sample point; null where a condition a move wrote down doesn't hold (a > 0 under a log):
 // a move may take its own written conditions for granted. Pass the conditions of the later state to compare.
 const holds = (conds, env) => (conds || []).every(c => { const v = evTerms(c.terms, env); return c.rel === 'gt' ? v > 0 : c.rel === 'ge' ? v >= 0 : v !== 0; });
-const values = (S, conds = S.conds) => VALS.map(env => holds(conds, env) ? value(S, env) : null);
+const values = (S, conds = S.conds) => (VALS.some(env => holds(conds, env)) ? VALS : NEG).map(env => holds(conds, env) ? value(S, env) : null);
 
 // an equation with parameters (ax + b = cx + d) is judged at fixed parameter values, the ones the game uses
 // too (a − c ≠ 0, b² − 4ac > 0 …); only the unknown varies
 const envOf = (S, x) => { const e = {}; G.letters(S).forEach(l => { e[l] = G.PVAL[l] ?? 1.1 + l.charCodeAt(0) % 5 * 0.37; }); e[G.unknownOf(S) || 'x'] = x; return e; };
 // the real solutions of an equation (degree ≤ 2 per branch in the unknown): 'all', or a sorted list.
 // A branch under the root of a negative number (√q with q < 0 here) has none.
+function numericRoots(f) {
+  const roots = [];
+  for (let k = -3000; k < 3000; k++) {
+    let lo = k / 100, hi = (k + 1) / 100, fl = f(lo), fh = f(hi);
+    if (!Number.isFinite(fl) || !Number.isFinite(fh)) continue;
+    if (fl === 0) { roots.push(lo); continue; }
+    if (fl * fh > 0) continue;
+    for (let i = 0; i < 60; i++) { const m = (lo + hi) / 2, fm = f(m); if (fl * fm <= 0) hi = m; else { lo = m; fl = fm; } }
+    roots.push((lo + hi) / 2);
+  }
+  return roots;
+}
 function solutions(S) {
   const out = [];
   for (let b = 0; b < S.parts.length / 2; b++) {
@@ -53,7 +70,8 @@ function solutions(S) {
     if ([f0, f1, f2, f3, f4].some(Number.isNaN)) continue;
     const a = (f2 - 2 * f1 + f0) / 2, bb = f1 - f0 - a, c = f0;
     const tol = 1e-7 * Math.max(1, Math.abs(f3), Math.abs(f4));
-    assert.ok(Math.abs(9 * a + 3 * bb + c - f3) < tol && Math.abs(16 * a + 4 * bb + c - f4) < tol, `branch is not of degree ≤ 2: ${G.stateHTML(S)}`);
+    // not a polynomial of degree ≤ 2 (2ˣ = 5, log of the unknown): its roots by sign changes on −30 … 30, refined by bisection
+    if (!(Math.abs(9 * a + 3 * bb + c - f3) < tol && Math.abs(16 * a + 4 * bb + c - f4) < tol)) { out.push(...numericRoots(f)); continue; }
     const small = v => Math.abs(v) < 1e-9 * Math.max(1, Math.abs(f0), Math.abs(f1), Math.abs(f2));
     if (small(a) && small(bb)) { if (small(c)) return 'all'; continue; }
     const roots = [];
@@ -75,11 +93,15 @@ const sameSolutions = (u, v) => u === 'all' || v === 'all' ? u === v
   : u.length === v.length && u.every((x, i) => Math.abs(x - v[i]) <= 1e-6 * Math.max(1, Math.abs(x)));
 // an equation keeps its solutions when L − R changes by the same nonzero constant for every value of the unknown
 const XS = [0.61, 2.2, -1.6, 3.3];
-const eqValues = (S, ref) => XS.map(x => { const [L, R] = S.parts; return evP(L, envOf(ref, x)) - evP(R, envOf(ref, x)); });
+// (each value carries the size of its sides, .mag: 2ˣ/4096² − 4096 = … − 4096 loses digits to rounding, not to the move)
+const eqValues = (S, ref) => { let mag = 0; const out = XS.map(x => { const [L, R] = S.parts, l = evP(L, envOf(ref, x)), r = evP(R, envOf(ref, x)); mag = Math.max(mag, Math.abs(l) + Math.abs(r)); return l - r; }); out.mag = mag; return out; };
 function equivalent(u, v) {
   if (u.every(Number.isNaN) && v.every(Number.isNaN)) return true;   // both under the root of a negative number
   const r = u.map((x, i) => v[i] / x);
-  return r.every(k => isFinite(k) && Math.abs(k) > 1e-9 && Math.abs(k - r[0]) <= 1e-7 * Math.max(1, Math.abs(r[0])));
+  if (!r.every(k => isFinite(k) && Math.abs(k) > 1e-9)) return false;
+  const j = u.reduce((m, x, i) => Math.abs(x) > Math.abs(u[m]) ? i : m, 0), k = r[j];
+  const noise = 1e-12 * ((v.mag || 0) + Math.abs(k) * (u.mag || 0));
+  return u.every((x, i) => Math.abs(v[i] - k * x) <= 1e-7 * Math.max(Math.abs(v[i]), Math.abs(k * x), 1e-300) + noise);
 }
 // times the unknown (4/x = 2 · x, allowed because x is below a bar and so not 0): L − R is multiplied by exactly that
 const scaled = (u, t, ref) => u.map((v, i) => v * evT(t, envOf(ref, XS[i])));
@@ -150,7 +172,7 @@ function fuzz(start, steps, label) {
       // an equation: a move inside a branch keeps that branch's L − R up to a constant; a move that makes
       // branches (root of both sides, product = 0) keeps the solutions of all branches together
       const old = JSON.parse(snap);
-      const branching = S.op === '=' && (trial.parts.length !== old.parts.length || ['rootBoth', 'rootZero', 'zeroProduct'].includes(r.ok));
+      const branching = S.op === '=' && (trial.parts.length !== old.parts.length || ['rootBoth', 'rootZero', 'zeroProduct', 'expBaseEq', 'logBoth'].includes(r.ok));
       const pair = (X, b) => ({ parts: X.parts.slice(2 * b, 2 * b + 2), op: '=' });
       // an identity to show (goal prove): each side keeps its own value; L − R is 0 everywhere, so a ratio says nothing
       const sides = X => X.parts.map(P => VALS.map(env => holds(trial.conds, env) ? evP(P, env) : null));

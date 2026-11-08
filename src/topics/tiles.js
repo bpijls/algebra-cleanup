@@ -2,3 +2,4 @@
 import './log/tile.js';
 import './trig/tile.js';
 
+import './exp/tile.js';

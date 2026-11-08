@@ -8,3 +8,5 @@ import './trig/levels.js';
 import '../content/fractions.js';
 import '../content/exponents.js';
 import '../content/inequalities.js';
+import './exp/rules.js';
+import './exp/levels.js';

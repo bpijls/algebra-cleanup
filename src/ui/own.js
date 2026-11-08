@@ -5,7 +5,7 @@ import { t } from '../i18n.js';
 import { guessGoal, parseProblem } from '../parse.js';
 import { autoSolve } from '../practice.js';
 import { bx, stateHTML } from '../render/text.js';
-import { startBoard } from './controller.js';
+import { earn, startBoard } from './controller.js';
 import { closeSheet, openSheet } from './sheets.js';
 import { store, ui } from './state.js';
 
@@ -64,7 +64,7 @@ export function showOwn() {
     if (r.err) { fail(r.err, { ch: r.ch, ...(r.p || {}) }); if (r.at != null) input.setSelectionRange(r.at, r.at + 1); return; }
     if (isClean(r.S)) return fail('ownClean');
     ui.own = { src: input.value, goal: touched ? goal : null, unknown }; store.set('own', ui.own);
-    ui.S = r.S;
+    ui.S = r.S; earn(ui.S, null);
     ui.S.unsure = autoSolve(JSON.parse(JSON.stringify(ui.S))) == null;
     closeSheet(); ui.mode = 'custom'; ui.session = { solved: 0, streak: 0 }; startBoard();
   });

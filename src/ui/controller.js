@@ -1,5 +1,6 @@
 /* The controller: loads levels and problems, plays moves (run: on a copy, then history, note, animation), and handles taps on tiles. */
-import { LEVELS, SKILLS, buildLevel } from '../content/registry.js';
+import { LEVELS, SKILLS, buildLevel, skillOfLevel } from '../content/registry.js';
+import { earnedFor } from '../content/progress.js';
 import { normalize } from '../core/model.js';
 import { partnersOf, termPair } from '../core/moves.js';
 import { isEquation } from '../core/problem.js';
@@ -17,7 +18,13 @@ export function nextProblem() {
   ui.mode = 'practice';
   const K = SKILLS[ui.prac.skills[Math.floor(Math.random() * ui.prac.skills.length)]] || SKILLS.powers;
   ui.S = makeProblem(K.gen, ui.prac.d); ui.S.skill = K.id;
+  earn(ui.S, K.id);
   startBoard();
+}
+// the shortcuts this player has earned (on top of any the problem brings along)
+export function earn(S, skillId) {
+  const e = [...new Set([...(S.earned || []), ...earnedFor(skillId, ui.done)])];
+  if (e.length) S.earned = e;
 }
 export function startBoard() {
   ui.initial = JSON.stringify(ui.S);
@@ -28,7 +35,7 @@ export function startBoard() {
 export function loadLevel(i) {
   ui.mode = 'levels';
   ui.lvl = i; store.set('levelId', LEVELS[i].id);
-  ui.S = buildLevel(i); ui.history = []; ui.moves = 0; ui.sel = null; ui.born = new Set(); ui.hintIds = new Set(); ui.won = false; ui.balancing = false;
+  ui.S = buildLevel(i); earn(ui.S, skillOfLevel(LEVELS[i].id)?.id); ui.history = []; ui.moves = 0; ui.sel = null; ui.born = new Set(); ui.hintIds = new Set(); ui.won = false; ui.balancing = false;
   board.classList.remove('won');
   render(); sayIntro();
 }

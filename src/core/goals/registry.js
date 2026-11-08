@@ -20,7 +20,11 @@ export const DONE = { k: 'hDone', ids: [] };
 export const runTactics = (tactics, S) => { for (const t of tactics) { const h = t(S); if (h) return h; } return DONE; };
 
 export const BRANCH_STRATEGIES = [];
-export const defineBranchStrategy = (id, applies, hint) => { BRANCH_STRATEGIES.push({ id, applies, hint }); };
+// (with before: the id of a strategy it goes in front of; an exponential equation is not a linear one)
+export const defineBranchStrategy = (id, applies, hint, { before } = {}) => {
+  const at = before ? BRANCH_STRATEGIES.findIndex(s => s.id === before) : -1;
+  BRANCH_STRATEGIES.splice(at < 0 ? BRANCH_STRATEGIES.length : at, 0, { id, applies, hint });
+};
 
 // a fallback (matches everything) stays behind the moves registered later, so a topic's hint move is reached
 export const HINT_MOVES = [];

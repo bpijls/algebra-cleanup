@@ -450,3 +450,8 @@ button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 .numline .ray { stroke: var(--accent); stroke-width: 5; fill: var(--accent); stroke-linecap: butt; }
 .numline .dot { fill: var(--paper); stroke: var(--accent); stroke-width: 3; }
 .numline .dot.in { fill: var(--accent); }
+
+/* a power with letters in its exponent: 2ˣ (the exponent's tiles are tiles of their own, smaller and raised) */
+.tile.ex { align-items: flex-start; padding: 6px 8px 8px; }
+.tile.ex > .xbase { font-family: var(--f-body); font-weight: 800; font-size: 30px; line-height: 1; margin-top: 22px; color: var(--ink); }
+.tile.ex > .xpow { zoom: .62; margin-left: 2px; }

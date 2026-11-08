@@ -28,7 +28,7 @@ export const relHTML = r => r === '<' ? '&lt;' : r === '>' ? '&gt;' : r;
 
 export function factorsHTML(fs, sort) {
   let list = fs;
-  if (sort) list = [...fs].sort((a, b) => HTML[a.k].rank - HTML[b.k].rank || (a.b || '').localeCompare(b.b || ''));
+  if (sort) list = [...fs].sort((a, b) => HTML[a.k].rank - HTML[b.k].rank || String(a.b || '').localeCompare(String(b.b || '')));
   return list.map((f, i) => (i > 0 && f.k === 'n' ? '·' : '') + fx(f)).join('');
 }
 

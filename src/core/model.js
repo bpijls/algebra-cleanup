@@ -79,6 +79,8 @@ export function normTerms(terms, keepBare) {
   for (const t of terms) {
     const nf = [];
     for (const f of t.f) {
+      const nk = KINDS[f.k]?.norm && (normTerms(kindOf(f).terms(f) || []), KINDS[f.k].norm(f));   // a kind's own clean-up (2^3 → 2³)
+      if (nk) { nf.push(...nk); continue; }
       if (f.k === 'r') {
         normTerms(f.terms);
         const v = f.terms.length === 1 && !f.terms[0].neg && f.terms[0].f.length === 1 && f.terms[0].f[0].k === 'n' ? f.terms[0].f[0].v : -1;

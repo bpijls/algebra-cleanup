@@ -1109,6 +1109,113 @@
   "hMerge [nyEqTidy] → mergeNum | x ≤ 4",
   "clean"
  ],
+ "level logrules.1": [
+  "log([a/b)",
+  "hExplodeLog [nyTidy] → logQuotient | log(a) − log(b)",
+  "clean"
+ ],
+ "level logrules.2": [
+  "log([a^2/b)",
+  "hExplodeLog [nyTidy] → logQuotient | log(a^2) − log(b)",
+  "hExplodeLogInside [nyTidy] → explodeVar | log(aa) − log(b)",
+  "hExplodeLog [nyTidy] → logProduct | log(a) + log(a) − log(b)",
+  "hLike [nyLike] → likeAdd | 2log(a) − log(b)",
+  "clean"
+ ],
+ "level logrules.3": [
+  "log([a/b) + log(b)",
+  "hExplodeLog [nyTidy] → logQuotient | log(a) − log(b) + log(b)",
+  "hLike [nyLike] → likeZero | log(a)",
+  "clean"
+ ],
+ "level logrules.4": [
+  "log([a^3/a)",
+  "hExplodeCancel [nyTidy] → explodeVar | log([aaa/a)",
+  "hCancel [nyTidy] → cancelVar | log(aa)",
+  "hExplodeLog [nyTidy] → logProduct | log(a) + log(a)",
+  "hLike [nyLike] → likeAdd | 2log(a)",
+  "clean"
+ ],
+ "level expeq.1": [
+  "2x = 8",
+  "hAsPowerOf [nyEqAlone] → asPowerOf | 2x = 2^3",
+  "hExpBase [nyEqAlone] → expBaseEq | x = 3",
+  "clean"
+ ],
+ "level expeq.2": [
+  "3(x + 1) = 27",
+  "hAsPowerOf [nyEqAlone] → asPowerOf | 3(x + 1) = 3^3",
+  "hExpBase [nyEqAlone] → expBaseEq | x + 1 = 3",
+  "hBalanceTerm [nyEqAlone] → balance | x + 1 − 1 = 3 − 1",
+  "hLike [nyEqAlone] → likeZero | x = 3 − 1",
+  "hLike [nyEqTidy] → likeAdd | x = 2",
+  "clean"
+ ],
+ "level expeq.3": [
+  "52x = 40",
+  "hExpDiv [nyEqAlone] → balance | [52x/5 = [40/5",
+  "hCancel [nyEqAlone] → cancelVar | 2x = [40/5",
+  "hExplodeCancel [nyEqAlone] → explodeNum | 2x = [2·2·2·5/5",
+  "hCancel [nyEqAlone] → cancelVar | 2x = 2·2·2",
+  "hMerge [nyEqAlone] → mergeNum | 2x = 4·2",
+  "hMerge [nyEqAlone] → mergeNum | 2x = 8",
+  "hAsPowerOf [nyEqAlone] → asPowerOf | 2x = 2^3",
+  "hExpBase [nyEqAlone] → expBaseEq | x = 3",
+  "clean"
+ ],
+ "level expeq.4": [
+  "4x = 8",
+  "hExpSplit [nyEqAlone] → expBaseSplit | 2x2x = 8",
+  "hMerge [nyEqAlone] → mergeGroup | 2(x + x) = 8",
+  "hAsPowerOf [nyEqAlone] → asPowerOf | 2(x + x) = 2^3",
+  "hExpBase [nyEqAlone] → expBaseEq | x + x = 3",
+  "hLike [nyEqAlone] → likeAddTap | 2x = 3",
+  "hBalanceDiv [nyEqAlone] → balance | [2x/2 = [3/2",
+  "hCancel [nyEqAlone] → cancelVar | x = [3/2",
+  "clean"
+ ],
+ "level expeq.5": [
+  "2x = 5",
+  "hLogBoth [nyEqAlone] → logBoth | log(2x) = log(5)",
+  "hLogPower [nyEqAlone] → logPower | xlog(2) = log(5)",
+  "hExpDivLog [nyEqAlone] → balance | [xlog(2)/log(2) = [log(5)/log(2)",
+  "hCancel [nyEqAlone] → cancelVar | x = [log(5)/log(2)",
+  "clean"
+ ],
+ "level growth.1": [
+  "2t = 16",
+  "hAsPowerOf [nyEqAlone] → asPowerOf | 2t = 2^4",
+  "hExpBase [nyEqAlone] → expBaseEq | t = 4",
+  "clean"
+ ],
+ "level growth.2": [
+  "1002t = 800",
+  "hExpDiv [nyEqAlone] → balance | [1002t/100 = [800/100",
+  "hCancel [nyEqAlone] → cancelVar | 2t = [800/100",
+  "hExplodeCancel [nyEqAlone] → explodeNum | 2t = [2·2·2·2·2·5·5/2·2·5·5",
+  "hCancel [nyEqAlone] → cancelVar | 2t = [2·2·2·2·5·5/2·5·5",
+  "hCancel [nyEqAlone] → cancelVar | 2t = [2·2·2·5·5/5·5",
+  "hCancel [nyEqAlone] → cancelVar | 2t = [2·2·2·5/5",
+  "hCancel [nyEqAlone] → cancelVar | 2t = 2·2·2",
+  "hMerge [nyEqAlone] → mergeNum | 2t = 4·2",
+  "hMerge [nyEqAlone] → mergeNum | 2t = 8",
+  "hAsPowerOf [nyEqAlone] → asPowerOf | 2t = 2^3",
+  "hExpBase [nyEqAlone] → expBaseEq | t = 3",
+  "clean"
+ ],
+ "level growth.3": [
+  "53t = 405",
+  "hExpDiv [nyEqAlone] → balance | [53t/5 = [405/5",
+  "hCancel [nyEqAlone] → cancelVar | 3t = [405/5",
+  "hExplodeCancel [nyEqAlone] → explodeNum | 3t = [3·3·3·3·5/5",
+  "hCancel [nyEqAlone] → cancelVar | 3t = 3·3·3·3",
+  "hMerge [nyEqAlone] → mergeNum | 3t = 9·3·3",
+  "hMerge [nyEqAlone] → mergeNum | 3t = 27·3",
+  "hMerge [nyEqAlone] → mergeNum | 3t = 81",
+  "hAsPowerOf [nyEqAlone] → asPowerOf | 3t = 3^4",
+  "hExpBase [nyEqAlone] → expBaseEq | t = 4",
+  "clean"
+ ],
  "breuken optellen (adding fractions): 1/2+1/3": [
   "[1/2 + [1/3",
   "hExpandTo [nyCombine] → expandBy | [3/2·3 + [1/3",

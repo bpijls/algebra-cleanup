@@ -42,7 +42,23 @@ const balShown = balText;
 function balTry() {
   return { r: play(ui.S, s => opBalance(s, bal.op, balTerm(), ui.balBranch)).r };
 }
+// a topic's own button in the panel (log of both sides): definePanelMove({ id, label: i18n key, applies(S), run(S, bi) })
+const PANEL_MOVES = [];
+export const definePanelMove = m => { PANEL_MOVES.push(m); };
+function panelMoves() {
+  for (const m of PANEL_MOVES) {
+    let b = $('pm-' + m.id);
+    if (!b) {
+      b = Object.assign(document.createElement('button'), { type: 'button', className: 'balop pm', id: 'pm-' + m.id });
+      b.onclick = () => run(s => { const r = m.run(s, ui.balBranch); if (r && !r.no) ui.balancing = false; return r; });
+      $('balOps').append(b);
+    }
+    b.textContent = t(m.label);
+    b.hidden = !(isEquation(ui.S) && m.applies(ui.S));
+  }
+}
 export function balSync(preview) {
+  panelMoves();
   const [lo, hi] = balBounds(), range = $('balRange');
   if (bal.v < lo || bal.v > hi || !bal.v) bal.v = Math.min(hi, Math.max(lo, Math.abs(bal.v) || 1));
   range.min = lo; range.max = hi; range.value = bal.v;

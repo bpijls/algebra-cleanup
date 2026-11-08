@@ -1,7 +1,14 @@
 /* Progress through the skill tree, as pure functions of `won` (level id -> fewest moves). No DOM, no storage:
    ui/state.js keeps `won` in local storage, and the tests call these directly. */
-import { LEVELS, SKILLS, SKILL_LIST, skillOfLevel } from './registry.js';
+import { LEVELS, SHORTCUTS, SKILLS, SKILL_LIST, skillOfLevel } from './registry.js';
 
+// the shortcuts a player may use in a skill: earned by finishing the skill that teaches them, or counted on by a
+// skill that builds on it (played anyway, soft lock); never inside the skill that teaches them by hand
+export function earnedFor(skillId, won) {
+  const below = new Set(), add = id => { for (const r of SKILLS[id]?.requires || []) if (!below.has(r)) { below.add(r); add(r); } };
+  if (skillId) add(skillId);
+  return SHORTCUTS.filter(c => c.skill !== skillId && SKILLS[c.skill] && (skillDone(SKILLS[c.skill], won) || below.has(c.skill))).map(c => c.id);
+}
 export const skillDone = (K, won) => K.levels.every(id => won[id] != null);
 export const wonIn = (K, won) => K.levels.filter(id => won[id] != null).length;
 // what a skill still needs first (empty: it is open)

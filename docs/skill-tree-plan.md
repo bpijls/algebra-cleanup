@@ -164,8 +164,9 @@ Done:
 
 - **Inequalities** (`S.rel` on an equation): times a negative turns the sign round, visibly; the judge compares where it holds; a number line on the win sheet. The ring-aware evaluator moved to phase 5, where complex numbers first need it.
 
+- **Keystone D, a symbolic exponent** (`src/topics/exp`, `Ex(base, terms)`: `2ˣ`, `3^(x+1)`), the log quotient rule, equal bases (a drag of the power), the log of both sides (a panel button), and the first **earned shortcut** (`log(aˣ) = x log a`, `defineShortcut`). Skills logrules, expeq, growth. Decay with a fraction base (`(½)ᵗ`) waits: the base is a whole number.
+
 To come, in this order:
-3. **Keystone D, a symbolic exponent** (`Ex(base, terms)`: `2ˣ`, `3^(x+1)`), the log quotient rule, exponential equations, growth and decay, and the first **earned shortcut** (`log(aˣ) = x log a`, `defineShortcut`).
 4. **Complex numbers** (the `COMPLEX` ring, `i · i = −1`, `quadHint` past `D < 0`).
 5. **Boolean logic** (`S.algebra = 'bool'`, truth-table judge, `a·a = a`, De Morgan as an explode).
 6. **Sequences and sums** (`opSubstitute`; a design spike for a `Σ` kind, Gauss's pairing), plus **physics formulas**.

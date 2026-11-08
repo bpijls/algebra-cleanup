@@ -77,6 +77,9 @@ export function opZero(S, bi = 0) {
   const Q = parts[1 - zi], t = Q.num[0];
   if (Q.num.length !== 1 || !isOne(Q.den)) return { no: 'zeroSum', ids: ['op'] };
   const u = unknownOf(S), fs = t.f.filter(f => fHasU(f, u));
+  // only a letter or a bracket can be set to 0 on its own: 2ˣ is never 0, a fraction is 0 when its top is
+  const odd = fs.find(f => f.k !== 'v' && f.k !== 'g' && f.k !== 'p');
+  if (odd) return { no: 'zeroKind', p: { x: mx(fx(odd)) }, ids: [odd.id] };
   const seen = new Set(), bases = [];
   for (const f of fs) {
     const b = f.k === 'v' ? V(f.b, 1) : f.k === 'g' ? G(f.f.map(cloneF), 1) : Pr(f.terms.map(cloneT), 1);

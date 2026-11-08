@@ -23,5 +23,7 @@ defineKind({
   has: (f, b) => f.terms.some(t => tHasU(t, b)),
   eval: (f, env, evalTerms) => Math.log(evalTerms(f.terms, env)),
   symbolic: true,                              // 2 log a and 3 log a are like terms; log a and log b are not
+  base: f => 'log' + sumKey(f.terms),
+  norm: () => null,                            // nothing of its own: normalize only tidies what is inside (a⁰ after cancelling)          // log 2 over log 2 cancels (equal pieces)
   tidyIn: (f, n) => n === 1 && atomicLog(f),  // a tidy term holds one log, of one letter or prime
 });

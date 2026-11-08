@@ -71,10 +71,10 @@ definePairRule('sum', 'joinFrac', (S, A, B) => {
   if (sumKey(A.f.den) === sumKey(B.f.den)) return { type: 'join' };
   return { type: 'fizzle', msg: 'joinUnequal', p: { x: mx(fx(A.f)), y: mx(fx(B.f)) } };
 });
-// from here on: the same kind of piece in two terms
+// from here on: the same kind of piece in two terms (a root, a log, 3ˣ: only exactly the same piece goes outside)
 definePairRule('sum', 'different', (S, A, B) => {
   const x = A.f, y = B.f;
-  return x.k !== y.k || x.k === 'g' || x.k === 'p' || (x.k === 'v' && x.b !== y.b) || (x.k === 'r' && fkey(x) !== fkey(y)) ? NONE : undefined;
+  return x.k !== y.k || x.k === 'g' || x.k === 'p' || (x.k === 'v' && x.b !== y.b) || (x.k !== 'n' && x.k !== 'v' && fkey(x) !== fkey(y)) ? NONE : undefined;
 });
 // like terms add: a + a = 2a
 definePairRule('sum', 'likeTerms', (S, A, B) => tidy(A.term) && tidy(B.term) && sig(A.term) === sig(B.term) ? { type: 'addTerms' } : undefined);
