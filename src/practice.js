@@ -7,7 +7,8 @@ import { V } from './core/kinds/letter.js';
 import { N } from './core/kinds/number.js';
 import { F, T } from './core/kinds/sums.js';
 import { coefAbs, gcd, isClean, normalize, primeFactors, varPart } from './core/model.js';
-import { opExplode, opOp, opPair, opSplitTwo } from './core/moves.js';
+import { opOp, opSplitTwo } from './core/moves.js';
+import { opExplode, opPair } from './core/rules/engine.js';
 import { parseProblem } from './parse.js';
 import { stateHTML } from './render/text.js';
 

@@ -1,60 +1,14 @@
-/* The moves: explode, pair, factor, split, sweep, the fraction sign. Each returns {ok,p,born} after mutating, or {no,p,ids} without mutating. */
+/* The moves that aren't a tap on two pieces: putting outside brackets (opFactor, used by the factor action), splitting a
+   term in two, sweeps, adding terms, the fraction sign, moving a piece between fractions; and the helpers the pair
+   rules use (cancelCheck, restOf, related). Each move returns {ok,p,born} after mutating, or {no,p,ids} without mutating. */
 import { Pr } from './kinds/bracket.js';
-import { G } from './kinds/group.js';
-import { V } from './kinds/letter.js';
 import { N } from './kinds/number.js';
-import { F, T, cloneF, cloneT, fkey, sumKey } from './kinds/sums.js';
-import { MAX_GROUP, MAX_VAR, canMerge, cleanTerm, coef, eachFactor, eachTerm, gcd, isOne, isUnit, locate, mergeF, negate, primeFactors, sig, tidy, varPart } from './model.js';
-import { branchOf, isEquation, isFractionPair } from './problem.js';
-import { blockHTML, bx, factorsHTML, fx, mx, sumHTML, termHTML } from '../render/text.js';
-
-/* ---- moves ---- each returns {ok,p,born} after mutating, or {no,p,ids} without mutating ---- */
-export function opExplode(S, id) {
-  const L = locate(S, id), f = L.f, arr = L.term.f;
-  if (f.k === 'r') return { no: 'rootTap', ids: [id] };
-  if (f.k === 'v') {
-    if (f.e < 2) return { no: 'atom', p: { x: mx(fx(f)) }, ids: [id] };
-    if (f.e > MAX_VAR) return { no: 'tooBig', ids: [id] };
-    const copies = Array.from({ length: f.e }, () => V(f.b, 1));
-    arr.splice(L.i, 1, ...copies);
-    return { ok: 'explodeVar', p: { x: mx(fx(f)), n: f.e, b: bx(f.b), ex: mx(copies.map(fx).join(' · ')) }, born: copies.map(c => c.id), origins: Object.fromEntries(copies.map(c => [c.id, [f.id]])) };
-  }
-  if (f.k === 'n') {
-    if (f.v === 1) return { no: 'atom', p: { x: mx('1') }, ids: [id] };
-    const pf = primeFactors(f.v);
-    if (pf.length < 2) return { no: 'prime', p: { n: f.v }, ids: [id] };
-    const parts = pf.map(N);
-    arr.splice(L.i, 1, ...parts);
-    return { ok: 'explodeNum', p: { n: f.v, ex: mx(pf.join(' · ')) }, born: parts.map(c => c.id), origins: Object.fromEntries(parts.map(c => [c.id, [f.id]])) };
-  }
-  if (f.k === 'p' && f.e >= 2) {   // (a+b)² is (a+b)·(a+b)
-    if (f.e > MAX_GROUP) return { no: 'tooBig', ids: [id] };
-    const copies = Array.from({ length: f.e }, () => Pr(f.terms.map(cloneT)));
-    arr.splice(L.i, 1, ...copies);
-    return { ok: 'explodeGroup', p: { e: f.e, x: mx(fx(f)), ex: mx(copies.map(fx).join(' · ')) }, born: copies.map(c => c.id), origins: Object.fromEntries(copies.map(c => [c.id, [f.id]])) };
-  }
-  if (f.k === 'p') {   // open the brackets: multiply everything outside with every term inside
-    const before = mx(termHTML(L.term));
-    const others = L.term.f.filter(g => g !== f);
-    const origins = {};
-    const nts = f.terms.map(it => {
-      const copies = others.map(o => { const k = cloneF(o); origins[k.id] = [o.id]; return k; });
-      // inner pieces keep their identity and slide; another bracket goes behind: a(c + d), not (c + d)a
-      return T([...copies.filter(c => c.k !== 'p'), ...it.f, ...copies.filter(c => c.k === 'p')], L.term.neg !== it.neg);
-    });
-    L.terms.splice(L.t, 1, ...nts);
-    return { ok: others.length ? 'distribute' : L.term.neg ? 'unwrapNeg' : 'unwrapSum', p: { x: before, ex: mx(sumHTML(nts)) }, born: Object.keys(origins).map(Number), origins, arcs: true };
-  }
-  if (f.e >= 2) {
-    if (f.e > MAX_GROUP) return { no: 'tooBig', ids: [id] };
-    const copies = Array.from({ length: f.e }, () => G(f.f.map(cloneF), 1));
-    arr.splice(L.i, 1, ...copies);
-    return { ok: 'explodeGroup', p: { e: f.e, x: mx(fx(f)), ex: mx(copies.map(fx).join(' · ')) }, born: copies.map(c => c.id), origins: Object.fromEntries(copies.map(c => [c.id, [f.id]])) };
-  }
-  const items = f.f.map(cloneF);
-  arr.splice(L.i, 1, ...items);
-  return { ok: 'unwrap', p: { x: mx(fx(f)), ex: mx(items.map(fx).join(' · ')) }, born: items.map(c => c.id), origins: Object.fromEntries(items.map(c => [c.id, [f.id]])) };
-}
+import { F, T, cloneF, cloneT, sumKey } from './kinds/sums.js';
+import { canMerge, cleanTerm, coef, eachFactor, eachTerm, gcd, isOne, isUnit, locate, mergeF, negate, sig, tidy, varPart } from './model.js';
+import { isEquation, isFractionPair } from './problem.js';
+import { pairCheck } from './rules/engine.js';
+import { defineMove } from './rules/registry.js';
+import { blockHTML, factorsHTML, fx, mx, sumHTML, termHTML } from '../render/text.js';
 
 export function related(x, y) { return canMerge(x, y) || (x.k === 'v' && y.k === 'v' && x.b === y.b); }
 
@@ -103,66 +57,6 @@ export function restOf(A, B) {
   return null;
 }
 
-export function pairCheck(S, A, B) {
-  const x = A.f, y = B.f;
-  if (A.p !== B.p) {
-    if (isEquation(S)) return { type: 'fizzle', msg: branchOf(A.p) !== branchOf(B.p) ? 'diffBranch' : 'diffSides' };   // no "move it across and flip the sign"
-    if (S.op !== '·') return { type: 'fizzle', msg: 'diffFrac' };
-    if (A.side === B.side) return { type: 'move' };
-    const PA = S.parts[A.p], PB = S.parts[B.p];
-    const single = PA[A.side].length === 1 && PB[B.side].length === 1 && !A.depth && !B.depth;
-    if (single) { const cr = cancelCheck(x, y); if (cr && cr.type !== 'none') return cr; }
-    return { type: 'fizzle', msg: 'crossSide' };
-  }
-  if (A.terms === B.terms && A.term !== B.term && (restOf(A, B) || restOf(B, A))) return { type: 'factorRest' };
-  if (A.terms === B.terms) {
-    // √(3·3·2): two equal numbers under a root come out as one, √(3·3) = 3
-    if (A.term === B.term && A.in && A.in.k === 'r' && A.in.terms.length === 1 && x.k === 'n' && y.k === 'n') {
-      if (x.v === y.v && x.v > 1) return { type: 'rootOut' };
-      if (x.v !== y.v && x.v > 1 && y.v > 1) return { type: 'merge' };
-    }
-    if (A.term === B.term) return canMerge(x, y) ? { type: 'merge' } : { type: 'none' };
-    if (x.k === 'p' && y.k === 'p' && canMerge(x, y)) {   // a(x+2) + 3(x+2): the same bracket in both terms
-      if (x.e === y.e) return { type: 'factor', useless: false };
-      const big = x.e > y.e ? x : y, small = big === x ? y : x;
-      return { type: 'fizzle', msg: 'explodeFirstVar', p: { x: mx(fx(x)), y: mx(fx(y)), big: mx(fx(big)), small: mx(fx(small)) } };
-    }
-    if (x.k !== y.k || x.k === 'g' || x.k === 'p' || (x.k === 'v' && x.b !== y.b) || (x.k === 'r' && fkey(x) !== fkey(y))) return { type: 'none' };
-    const strictA = tidy(A.term), strictB = tidy(B.term);
-    if (strictA && strictB && sig(A.term) === sig(B.term)) return { type: 'addTerms' };
-    // not like terms: the shared piece can go outside brackets (allowed everywhere)
-    if (x.k === 'n' && x.v !== y.v) {
-      if (gcd(x.v, y.v) === 1) return { type: 'fizzle', msg: S.goal === 'factor' ? 'noCommon' : 'notLike', p: { a: x.v, b: y.v, v1: mx(termHTML(A.term)), v2: mx(termHTML(B.term)) } };
-      return { type: 'fizzle', msg: 'explodeFirst', p: { a: x.v, b: y.v } };
-    }
-    if (x.k === 'n' && x.v === 1) return { type: 'none' };
-    if (x.k === 'v' && x.e !== y.e) {
-      if (S.goal !== 'factor' && strictA && strictB) return { type: 'fizzle', msg: 'notLike', p: { v1: mx(termHTML(A.term)), v2: mx(termHTML(B.term)) } };
-      const big = x.e > y.e ? x : y, small = big === x ? y : x;
-      return { type: 'fizzle', msg: 'explodeFirstVar', p: { x: mx(fx(x)), y: mx(fx(y)), big: mx(fx(big)), small: mx(fx(small)) } };
-    }
-    return { type: 'factor', useless: S.goal !== 'factor' && strictA && strictB };
-  }
-  if (A.side === B.side || A.depth || B.depth) {
-    if (!related(x, y)) return { type: 'none' };
-    if (A.side === B.side) return { type: 'fizzle', msg: 'bracketWall' };
-    return { type: 'fizzle', msg: 'cancelSum' };
-  }
-  // across the fraction bar
-  const P = S.parts[A.p];
-  // a used-up fraction while multiplying: 1 over 1 cancels away, and the fraction with it
-  if (S.op === '·' && usedUp(P)) return { type: 'ones' };
-  const sameVar = x.k === 'v' && y.k === 'v' && x.b === y.b;
-  const nums = x.k === 'n' && y.k === 'n';
-  const brk = x.k === 'p' && y.k === 'p' && sumKey(x.terms) === sumKey(y.terms);
-  const grp = (x.k === 'g' && (y.k === 'g' || (y.k === 'v' && groupHasBase(x, y.b)) || y.k === 'n'))
-    || (y.k === 'g' && ((x.k === 'v' && groupHasBase(y, x.b)) || x.k === 'n'));
-  if (!sameVar && !nums && !grp && !brk) return { type: 'none' };
-  if (P.num.length > 1 || P.den.length > 1) return { type: 'fizzle', msg: 'cancelSum' };
-  if (grp) return { type: 'fizzle', msg: 'cancelGroup' };
-  return cancelCheck(x, y);
-}
-
 /* Putting outside brackets: only from the two terms the player tapped, only the tapped pieces.
    The sign of the first term goes in front with it, so −3x + 6 becomes −3(x − 2). */
 export function opFactor(S, A, B) {
@@ -196,71 +90,6 @@ export function opSplitTwo(S, tid, p) {
   const nts = [mk(p), mk(q)];
   L.terms.splice(L.t, 1, ...nts);
   return { ok: 'splitTwo', p: { x: mx(sumHTML([t])), ex: mx(sumHTML(nts)), a: sgn(p), b: q < 0 ? `(${sgn(q)})` : q, c: sgn(c) }, born: nts.flatMap(n => n.f.map(f => f.id)) };
-}
-
-export function opPair(S, aId, bId) {
-  const A = locate(S, aId), B = locate(S, bId);
-  const r = pairCheck(S, A, B);
-  if (r.type === 'fizzle') return { no: r.msg, p: r.p || {}, ids: [aId, bId] };
-  if (r.type === 'none') return null;
-  if (r.type === 'move') return opMove(S, A, B);
-  if (r.type === 'factorRest') {
-    const [P, Q] = restOf(A, B) ? [A, B] : [B, A], { set, sign } = restOf(P, Q), terms = P.terms;
-    const ex = mx(sumHTML([P.term, ...set].sort((u, v) => terms.indexOf(u) - terms.indexOf(v))));
-    const c = cloneF(P.f), lead = P.term.neg;
-    const rest = cleanTerm(T(P.term.f.filter(f => f !== P.f), false));
-    const wrap = Pr([rest, T([N(1)], (sign < 0) !== lead)]), nt = T([c, wrap], lead);
-    const at = Math.min(terms.indexOf(P.term), ...set.map(t => terms.indexOf(t)));
-    [P.term, ...set].forEach(t => terms.splice(terms.indexOf(t), 1));
-    terms.splice(at, 0, nt);
-    return { ok: 'factorRest', p: { b: mx(fx(P.f)), t: mx(sumHTML(set)), ex, r: mx(termHTML(nt)), one: sign < 0 ? '−1' : '1' }, born: [c.id], origins: { [c.id]: [P.f.id] }, arcs: true, wrap: wrap.id };
-  }
-  if (r.type === 'rootOut') {
-    const out = locate(S, A.in.id), arr = A.term.f, shown = mx(fx(A.in));
-    arr.splice(arr.indexOf(A.f), 1); arr.splice(arr.indexOf(B.f), 1);
-    if (!arr.length) arr.push(N(1));
-    const n = N(A.f.v);
-    out.term.f.splice(out.i, 0, n);
-    return { ok: 'rootOut', p: { x: shown, n: A.f.v, r: mx(fx(out.f)) }, born: [n.id], origins: { [n.id]: [A.f.id, B.f.id] } };
-  }
-  if (r.type === 'ones') {
-    const P = S.parts[A.p], other = S.parts[1 - A.p];
-    if (P.num[0].neg !== P.den[0].neg) negate(other.num);   // −1 over 1: the minus goes to the other fraction
-    S.parts.splice(A.p, 1);
-    return { ok: 'cancelOnes', cancel: true };
-  }
-  if (r.type === 'factor') {
-    const v1 = mx(termHTML(A.term)), v2 = mx(termHTML(B.term));
-    const res = opFactor(S, A, B);
-    if (r.useless) { res.ok = 'factorUseless'; res.p.v1 = v1; res.p.v2 = v2; }
-    return res;
-  }
-  if (r.type === 'addTerms') {
-    const vp = varPart(A.term);
-    const res = termPair(S, A.term.id, B.term.id);
-    if (res.ok === 'likeAdd' && vp.length) {
-      const one = factorsHTML(vp), sq = factorsHTML(vp.map(f => V(f.b, f.e * 2)));
-      res.p.extra = { v: mx(one), two: mx('2' + one), sq: mx(sq) };
-      res.ok = 'likeAddTap';
-    }
-    return res;
-  }
-  const x = A.f, y = B.f;
-  if (r.type === 'merge' && x.k === 'n' && x.v * y.v > 1e12) return { no: 'tooBig', ids: [aId, bId] };   // beyond exact arithmetic
-  if (r.type === 'merge') {
-    const m = mergeF(x, y);
-    const arr = A.term.f;
-    arr.splice(A.i, 1, m);
-    arr.splice(arr.indexOf(y), 1);
-    const origins = { [m.id]: [x.id, y.id] };
-    if (x.k === 'v') return { ok: 'mergeVar', p: { x: mx(fx(x)), y: mx(fx(y)), r: mx(fx(m)), b: bx(x.b), m: x.e, n: y.e, s: m.e }, born: [m.id], origins };
-    if (x.k === 'n') return { ok: 'mergeNum', p: { x: x.v, y: y.v, r: m.v }, born: [m.id], origins };
-    return { ok: 'mergeGroup', p: { x: mx(fx(x)), y: mx(fx(y)), r: mx(fx(m)) }, born: [m.id], origins };
-  }
-  // cancel
-  const shown = mx(fx(x));
-  if (x.k === 'n') { x.v = 1; y.v = 1; } else { x.e = 0; y.e = 0; }
-  return { ok: 'cancelVar', p: { x: shown }, cancel: true };
 }
 
 export function opGather(S, id) {
@@ -418,3 +247,10 @@ export function partnersOf(S, sel) {
   }
   return out;
 }
+
+defineMove('gather', 'piece', opGather);
+defineMove('sweep', 'sweep', opSweep);
+defineMove('termPair', 'terms', termPair);
+defineMove('splitTwo', 'split', opSplitTwo);
+defineMove('sign', 'board', opOp);
+defineMove('bar', 'board', opBar);

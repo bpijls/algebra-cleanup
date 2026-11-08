@@ -10,6 +10,7 @@ import { Rt } from './kinds/root.js';
 import { F, T, cloneF, cloneT, evalTerms, fHasU, fkey } from './kinds/sums.js';
 import { addCond, canMerge, cleanTerm, hasU, isOne, params, unknownOf, walkTerms } from './model.js';
 import { branchCount, eqView, hasBranch, pairOf, setBranch } from './problem.js';
+import { defineMove } from './rules/registry.js';
 import { bx, condHTML, fracHTML, fx, mx, orWord, sumHTML, termHTML } from '../render/text.js';
 
 /* ---- quadratic equations: two moves that split an equation into branches ("or") ----
@@ -175,3 +176,6 @@ export function quadHint(S, q) {
   }
   return { k: 'hMul4a', p: { a: A, v: 4 * A }, ids: ['op'], balance: { op: '·', value: T([N(Math.abs(4 * A))], A < 0) } };
 }
+
+defineMove('root', 'branch', opRoot);
+defineMove('zero', 'branch', opZero);

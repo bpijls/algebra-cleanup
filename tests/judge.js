@@ -63,32 +63,41 @@ function equivalent(u, v) {
 }
 const same = (u, v) => u.every((x, i) => (!isFinite(x) && !isFinite(v[i])) || Math.abs(x - v[i]) <= 1e-7 * Math.max(1, Math.abs(x)));
 
-// every move a player can make from S: explode any factor, tap any pair, sweep any pair, tap the sign/bar, split any term
-function candidates(S) {
+// every move a player can make from S: each registered move (G.MOVES) with every argument its gesture allows,
+// plus, for equations, balance values that must work and ones that must be refused
+function argsOf(S, gesture) {
   const fs = [], ts = [];
   G.walk(S, L => (L.kind === 'f' ? fs : ts).push(L.kind === 'f' ? L.f.id : L.term.id));
-  const out = [];
-  fs.forEach(id => out.push(s => G.opExplode(s, id)));
-  fs.forEach(a => fs.forEach(b => { if (a !== b) out.push(s => G.opPair(s, a, b)); }));
-  ts.forEach(id => [-3, 1, 2].forEach(k => out.push(s => G.opSplitTwo(s, id, k))));
-  ts.forEach(a => ts.forEach(b => { if (a !== b) out.push(s => G.termPair(s, a, b)); }));
-  out.push(s => G.opOp(s), s => G.opBar(s));
-  if (S.op === '=') {   // do the same to both sides: with every term, every number, and some things that must be refused
-    const mono = t => G.T(t.f.map(G.cloneF), t.neg);
-    S.parts.forEach(P => P.num.forEach(t => {
-      out.push(s => G.opBalance(s, '-', mono(t)), s => G.opBalance(s, '+', mono(t)));
-      t.f.filter(f => f.k === 'n').forEach(f => out.push(s => G.opBalance(s, ':', G.T([G.N(f.v)])), s => G.opBalance(s, '·', G.T([G.N(f.v)], true))));
-    }));
-    fs.concat(ts).forEach(id => out.push(s => G.opDrag(s, id)));   // drag any piece across the =
-    fs.forEach(id => out.push(s => G.opDrag(s, -id)));   // the ² of a lone square (and ids that have none)
-    for (let b = 0; b < S.parts.length / 2; b++)   // per branch: swap, root of both sides, product = 0, typed + and ·
-      out.push(s => G.opSwap(s, b), s => G.opRoot(s, b), s => G.opZero(s, b), s => G.opBalance(s, '+', G.T([G.N(9)]), b), s => G.opBalance(s, '·', G.T([G.N(4)]), b));
-    out.push(s => G.opBalance(s, '·', G.T([G.V('x')])), s => G.opBalance(s, ':', G.T([G.N(0)])), s => G.opBalance(s, '·', G.T([G.N(1)])));
-    // by the parameters: · a, : a, + b², · 4a, and a letter that isn't in the equation (refused)
-    G.params(S).forEach(l => out.push(s => G.opBalance(s, '·', G.T([G.V(l)])), s => G.opBalance(s, ':', G.T([G.V(l)], true)), s => G.opBalance(s, '+', G.T([G.V(l, 2)])), s => G.opBalance(s, '·', G.T([G.N(4), G.V(l)]))));
-    out.push(s => G.opBalance(s, ':', G.T([G.V('z')])));
+  const pairs = ids => ids.flatMap(a => ids.filter(b => b !== a).map(b => [a, b]));
+  const eq = S.op === '=', branches = Array.from({ length: eq ? S.parts.length / 2 : 0 }, (_, b) => b);
+  switch (gesture) {
+    case 'piece': return fs.map(id => [id]);
+    case 'pieces': return pairs(fs);
+    case 'terms': return pairs(ts);
+    case 'split': return ts.flatMap(id => [-3, 1, 2].map(k => [id, k]));
+    case 'sweep': return pairs(fs).map(ab => [ab]);
+    case 'board': return [[]];
+    case 'drag': return eq ? [...fs, ...ts, ...fs.map(id => -id)].map(id => [id]) : [];   // a piece, or the ² of a lone square
+    case 'branch': return branches.map(b => [b]);
+    case 'balance': {
+      if (!eq) return [];
+      const out = [], mono = t => G.T(t.f.map(G.cloneF), t.neg);
+      S.parts.forEach(P => P.num.forEach(t => {   // with every term and every number
+        out.push(['-', mono(t)], ['+', mono(t)]);
+        t.f.filter(f => f.k === 'n').forEach(f => out.push([':', G.T([G.N(f.v)])], ['·', G.T([G.N(f.v)], true)]));
+      }));
+      branches.forEach(b => out.push(['+', G.T([G.N(9)]), b], ['·', G.T([G.N(4)]), b]));
+      out.push(['·', G.T([G.V('x')])], [':', G.T([G.N(0)])], ['·', G.T([G.N(1)])]);   // refused: by the unknown, by 0, by 1
+      // by the parameters: · a, : a, + b², · 4a, and a letter that isn't in the equation (refused)
+      G.params(S).forEach(l => out.push(['·', G.T([G.V(l)])], [':', G.T([G.V(l)], true)], ['+', G.T([G.V(l, 2)])], ['·', G.T([G.N(4), G.V(l)])]));
+      out.push([':', G.T([G.V('z')])]);
+      return out;
+    }
   }
-  return out;
+  throw new Error(`the judge doesn't know the gesture ${gesture}`);
+}
+function candidates(S) {
+  return G.MOVES.flatMap(m => argsOf(S, m.gesture).map(args => s => m.run(s, ...args)));
 }
 
 function fuzz(start, steps, label) {

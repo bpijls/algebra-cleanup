@@ -45,7 +45,11 @@ Native ES modules, no framework, no build step needed to run (`index.html` loads
 | `src/core/model.js` | The model: `canMerge`/`mergeF` (via the kinds), tidiness, `normalize`, `isClean`, `walk`/`locate`, the unknown and parameters, `addCond`. No DOM. |
 | `src/core/problem.js` | The shape of a problem in one place: `isEquation`, `isFractionPair`, `isBranched`, `hasBranch`, `branchCount`, `branchOf(p)`, `isRight(p)`, `pairOf`, `eqView`, `setBranch`. Nothing else reads the flat branch layout or tests `S.op === '='`. |
 | `src/render/text.js` | The text renderer: HTML for states, terms, sums and conditions (`stateHTML`, `termHTML`, `sqHTML`, `mx`, `blockHTML`, `orWord`, `condHTML`). The model (`core/model.js`) holds no HTML and doesn't import it; moves and hints call it only for the math inside their message params. |
-| `src/core/moves.js` | The tile moves: `opExplode`, `pairCheck`/`opPair`, `opFactor`, `opSplitTwo`, sweeps, `termPair`, the fraction sign (`opOp`, `opBar`). |
+| `src/core/rules/registry.js` | Leaf module (no imports, so registering works in any load order): pair-rule scopes (`parts`, `sum`, `wall`, `bar`), `definePairRule`, `defineAction`, `defineExplode`, and `MOVES`/`defineMove` (every move by gesture). |
+| `src/core/rules/engine.js` | `pairCheck` (asks the rules of A and B's scope in order), `opPair` (runs the verdict's action), `opExplode` (by kind), `play(S, move)` (a move on a copy; S never changes). |
+| `src/core/rules/pair.js` | The pair rules (what tapping A then B means, or why not) and the actions (`merge`, `cancel`, `factor`, `factorRest`, `rootOut`, `ones`, `addTerms`, `move`). |
+| `src/core/rules/explode.js` | One explode handler per kind (`12 → 2·2·3`, `x³ → x·x·x`, opening brackets, `(2a)³`, a root refuses). |
+| `src/core/moves.js` | The other moves: `opFactor`, `opSplitTwo`, sweeps, `opGather`, `termPair`, the fraction sign (`opOp`, `opBar`), `opMove`, and the helpers the rules use (`cancelCheck`, `restOf`). |
 | `src/core/hints.js` | Simplify and factor hints (`factorHint`, `sumProductHint`) and the `hint` entry point. |
 | `src/core/balance.js` | Equations: `opBalance`, `opSwap`, `loneSquare`, `dragBalance`, `opDrag`, `isSolved`. |
 | `src/core/done.js` | `whyNotDone`. |
@@ -89,7 +93,7 @@ Every move function either:
 - leaves `S` untouched and returns `{ no: messageKey, p: params, ids: [idsToShake] }`, or
 - returns `null` (not a meaningful pair; the UI just changes the selection).
 
-`pairCheck(S, A, B)` decides what tapping A then B means (`merge`, `cancel`, `addTerms`, `factor`, `move`, `fizzle`, `none`). `hint(S)` returns the next suggested move; `autoSolve` follows hints, and the generator only accepts problems it can solve in ≤ 60 moves, that don't start clean and don't end as 0.
+`pairCheck(S, A, B)` (rules/engine.js) decides what tapping A then B means: the first rule of their scope with an opinion gives a verdict (`merge`, `cancel`, `addTerms`, `factor`, `move`, `fizzle`, `none` …), and `opPair` runs the action registered for it. A new pair move is a `definePairRule` (with `before:` to place it) plus a `defineAction`; a new kind's explode is a `defineExplode`. The UI plays every move through `play` (on a copy), so a refused move can't touch the state. `hint(S)` returns the next suggested move; `autoSolve` follows hints, and the generator only accepts problems it can solve in ≤ 60 moves, that don't start clean and don't end as 0.
 
 Factor-goal hints (`factorHint`, `sumProductHint`) work on a *focus*: the terms without a bracket once some term has one (`x(x+2) + 3x + 6` → work on `3x + 6`), or the first pair of a four-term sum. In order: a bracket shared by two terms; a piece exactly in every focus term; explode a number or power that hides a shared factor (`hExplodeFor`, `hExplodeVar`); merges; like terms; then the sum-product split (`hSumProduct`, carries `split`). In simplify levels the merge hint never folds `(a+b)(a+b)` back into a square.
 
@@ -119,7 +123,7 @@ npm run build   # write dist/algebra-cleanup.html
 npm start       # serve the folder locally (or just open index.html)
 ```
 
-Run `npm test` after any change to `src/core/`, `src/content/`, `practice.js` or `parse.js`; the suite checks that no hint path changed (`golden.test.js`; a refactor must leave it untouched), that every level, generated problem and corpus exercise is still solvable, that random play never changes an expression's value, and that the no-magic rules hold. A new move needs nothing extra to be judged: `fuzz` in `tests/judge.js` tries every move on every state it reaches (add new move functions to its `candidates`).
+Run `npm test` after any change to `src/core/`, `src/content/`, `practice.js` or `parse.js`; the suite checks that no hint path changed (`golden.test.js`; a refactor must leave it untouched), that every level, generated problem and corpus exercise is still solvable, that random play never changes an expression's value, and that the no-magic rules hold. A new move needs nothing extra to be judged: register it with `defineMove(id, gesture, fn)` and `fuzz` in `tests/judge.js` tries it with every argument its gesture allows on every state it reaches (a new gesture needs a case in the judge's `argsOf`).
 
 ## Running the stack
 
@@ -149,7 +153,7 @@ Config is in `.env` (copy `.env.example`): `APP_DOMAIN`, `CADDY_NETWORK`, `HOST_
 
 ## Refactoring towards an algebra system
 
-`docs/refactor-plan.md` is the agreed plan (SOLID): node-type and rule registries, explicit problem types, goals built from tactics, rendering out of core, ES modules, in steps that each keep `npm test` and the golden traces green. Done: step 0 (golden traces), step 1 (ES modules), step 2 (rendering out of the model). step 3 (node-type registry). step 4 (problem shape behind `core/problem.js`). Next: step 5 (rule engine).
+`docs/refactor-plan.md` is the agreed plan (SOLID): node-type and rule registries, explicit problem types, goals built from tactics, rendering out of core, ES modules, in steps that each keep `npm test` and the golden traces green. Done: step 0 (golden traces), step 1 (ES modules), step 2 (rendering out of the model). step 3 (node-type registry). step 4 (problem shape behind `core/problem.js`). step 5 (rule engine, move registry). Next: step 6 (hints as tactics).
 
 ## Known limitations and ideas
 

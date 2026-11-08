@@ -7,8 +7,9 @@ import { V } from './core/kinds/letter.js';
 import { N } from './core/kinds/number.js';
 import { T, cloneF, sumKey } from './core/kinds/sums.js';
 import { canMerge, coef, isClean, isOne, locate, normalize, params, tidy, unknownOf, varPart, walkTerms } from './core/model.js';
-import { opBar, opExplode, opGather, opOp, opPair, opSplitTwo, opSweep, partnersOf, termPair } from './core/moves.js';
+import { opBar, opGather, opOp, opSplitTwo, opSweep, partnersOf, termPair } from './core/moves.js';
 import { branchCount, branchOf, isBranched, isEquation, isRight, pairOf } from './core/problem.js';
+import { opExplode, opPair, play } from './core/rules/engine.js';
 import { lang, setLang, t } from './i18n.js';
 import { guessGoal, parseProblem } from './parse.js';
 import { autoSolve, autoSolveStep, makeProblem } from './practice.js';
@@ -172,7 +173,7 @@ function balBounds() {
 const balShown = balText;
 // what the panel would do, from a dry run on a copy
 function balTry() {
-  return { r: opBalance(JSON.parse(JSON.stringify(S)), bal.op, balTerm(), balBranch) };
+  return { r: play(S, s => opBalance(s, bal.op, balTerm(), balBranch)).r };
 }
 function balSync(preview) {
   const [lo, hi] = balBounds(), range = $('balRange');
@@ -220,8 +221,7 @@ function splitTermOf(id) {
 }
 // "before = after" for a move, from a dry run on a copy; null when the move would be refused
 function previewOf(fn) {
-  const copy = JSON.parse(JSON.stringify(S));
-  const r = fn(copy);
+  const { r } = play(S, fn);
   if (!r || r.no) return null;
   const p = r.p || {};
   const inner = h => String(h).replace(/^<span class="mx">([\s\S]*)<\/span>$/, '$1');
@@ -615,14 +615,14 @@ function run(fn, animIds) {
   if (busy || won) return;
   const rects = tileRects();
   const before = snap();
-  const r = fn(S);
+  const { S: next, r } = play(S, fn);   // on a copy: a refused move can't touch S
   if (!r) return false;
   if (r.no) {
-    S = JSON.parse(before).S; // ensure untouched
     sel = null; hintIds = new Set(); born = new Set();
     render(); say(r.no, r.p, 'warn'); shake(r.ids || []);
     return true;
   }
+  S = next;
   const finish = () => {
     history.push(before); moves++; normalize(S);
     // only bracket moves (putting outside brackets, opening brackets) travel along arcs; everything else just pops

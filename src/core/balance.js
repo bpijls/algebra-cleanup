@@ -7,6 +7,7 @@ import { T, cloneF, cloneT, fHasU, tHasU } from './kinds/sums.js';
 import { SIDES, addCond, eachFactor, hasU, isClean, isOne, params, unknownOf, walkTerms } from './model.js';
 import { branchCount, branchOf, eqView, hasBranch, isBranched, isEquation, pairOf, setBranch } from './problem.js';
 import { hasLetter, opRoot, opZero } from './quadratic.js';
+import { defineMove } from './rules/registry.js';
 import { condHTML, factorsHTML, fracHTML, mx } from '../render/text.js';
 
 /* ---- equations: the balance method ----
@@ -147,3 +148,7 @@ export function isSolved(S) {
     return !has && isClean({ parts: [other], op: null, goal: 'simplify' });
   });
 }
+
+defineMove('drag', 'drag', opDrag);
+defineMove('swap', 'branch', opSwap);
+defineMove('balance', 'balance', opBalance);
