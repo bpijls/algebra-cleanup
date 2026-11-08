@@ -52,7 +52,8 @@ export function balSync(preview) {
   Object.keys(bal.lets).forEach(b => { if (!ls.includes(b)) delete bal.lets[b]; });
   $('balLets').hidden = !ls.length;
   $('balLets').setAttribute('aria-label', t('balLetters'));
-  $('balLets').innerHTML = ls.map(b => { const e = bal.lets[b] || 0; return `<button type="button" class="ballet${e ? ' on' : ''}" data-let="${b}" aria-pressed="${!!e}"><i>${b}</i>${e > 1 ? '<sup>2</sup>' : ''}</button>`; }).join('');
+  // a chip that is on shows a faint ² for its next tap, so b² can be found without being told
+  $('balLets').innerHTML = ls.map(b => { const e = bal.lets[b] || 0; return `<button type="button" class="ballet${e ? ' on' : ''}" data-let="${b}" aria-pressed="${!!e}" aria-label="${t(['balLetOff', 'balLetOn', 'balLetSq'][e], { b })}"><i>${b}</i>${e ? `<sup${e === 1 ? ' class="next"' : ''}>2</sup>` : ''}</button>`; }).join('');
   $('balGo').querySelector('span').textContent = `${BOPS[bal.op]} ${bal.v < 0 ? '(' + balShown() + ')' : balShown()}`;
   $('balGo').setAttribute('aria-label', t('balGoAria', { op: BOPS[bal.op], v: balShown() }));
   if (!preview) return;
@@ -85,7 +86,7 @@ export function setBalancing(on) {
   if (ui.balancing) { bal.lets = {}; balFromHint(); }
   ui.sel = null; ui.born = new Set();
   if (!ui.balancing || !(ui.lastHint && ui.lastHint.balance && ui.lastHint.drag == null)) ui.hintIds = new Set();
-  render(); say(ui.balancing ? 'balanceMode' : 'balanceOff', {}, 'info');
+  render(); say(ui.balancing ? (balLetters().length ? 'balanceModeLets' : 'balanceMode') : 'balanceOff', {}, 'info');
 }
 export function dropAcross(id) {
   run(s => { const r = opDrag(s, id); if (r && !r.no) ui.balancing = false; return r; });
