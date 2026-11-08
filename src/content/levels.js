@@ -1,5 +1,9 @@
 /* The levels. */
-import { F, G, N, Pr, T, V } from '../core/model.js';
+import { Pr } from '../core/kinds/bracket.js';
+import { G } from '../core/kinds/group.js';
+import { V } from '../core/kinds/letter.js';
+import { N } from '../core/kinds/number.js';
+import { F, T } from '../core/kinds/sums.js';
 import { parseProblem } from '../parse.js';
 
 /* ---- levels ---- */

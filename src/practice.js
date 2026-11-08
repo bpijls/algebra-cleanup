@@ -1,7 +1,12 @@
 /* ===== PRACTICE: random problem generator ===== */
 import { opBalance, opDrag, opSwap } from './core/balance.js';
 import { hint } from './core/hints.js';
-import { F, G, N, Pr, T, V, coefAbs, gcd, isClean, normalize, primeFactors, varPart } from './core/model.js';
+import { Pr } from './core/kinds/bracket.js';
+import { G } from './core/kinds/group.js';
+import { V } from './core/kinds/letter.js';
+import { N } from './core/kinds/number.js';
+import { F, T } from './core/kinds/sums.js';
+import { coefAbs, gcd, isClean, normalize, primeFactors, varPart } from './core/model.js';
 import { opExplode, opOp, opPair, opSplitTwo } from './core/moves.js';
 import { parseProblem } from './parse.js';
 import { stateHTML } from './render/text.js';

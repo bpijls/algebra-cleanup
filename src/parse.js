@@ -2,7 +2,12 @@
    Accepts textbook notation: 3a²·2a, (x+3)(x−2), −2(x−4), (2a)^3, 12a^5/4a^2, 12a⁵ : 4a², (8x/3y) : (3x/y).
    Returns { S } or { err: messageKey, at: index }. */
 import { letters } from './core/balance.js';
-import { F, G, N, Pr, T, V, isClean, isOne, normalize } from './core/model.js';
+import { Pr } from './core/kinds/bracket.js';
+import { G } from './core/kinds/group.js';
+import { V } from './core/kinds/letter.js';
+import { N } from './core/kinds/number.js';
+import { F, T } from './core/kinds/sums.js';
+import { isClean, isOne, normalize } from './core/model.js';
 
 export const SUP = { '⁰': 0, '¹': 1, '²': 2, '³': 3, '⁴': 4, '⁵': 5, '⁶': 6, '⁷': 7, '⁸': 8, '⁹': 9 };
 export function tokenize(src) {

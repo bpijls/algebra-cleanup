@@ -1,6 +1,7 @@
 /* "Done?" pressed too early: say what is still left, without giving the move away. */
 import { quadSplit } from './hints.js';
-import { SIDES, branchCount, coefAbs, eqView, gcd, hasU, isClean, isOne, sig, sumClean, sumKey, tidy, unbare, unknownOf, varPart } from './model.js';
+import { sumKey } from './kinds/sums.js';
+import { SIDES, branchCount, coefAbs, eqView, gcd, hasU, isClean, isOne, sig, sumClean, tidy, unbare, unknownOf, varPart } from './model.js';
 import { bx, fx, mx, termHTML } from '../render/text.js';
 
 /* "Done?" pressed too early: say what is still left, without giving the move away */

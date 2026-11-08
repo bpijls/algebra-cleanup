@@ -1,26 +1,29 @@
 /* The text renderer: states, terms, sums and conditions as HTML (the board's formula line, notes, win sheets).
    The model and the moves hold no HTML; they call these for the math inside their messages. */
-import { branchCount, eqView, isOne, sumKey, tidy, unbare } from '../core/model.js';
+import { sumKey } from '../core/kinds/sums.js';
+import { branchCount, eqView, isOne, tidy, unbare } from '../core/model.js';
 import { I18N, lang } from '../i18n.js';
 
 /* ---- notation (HTML) ---- */
 // √ over some HTML: the hook is drawn so it meets the bar at any height; the glyph stays as hidden text
 export const sqHTML = inner => `<span class="sq"><svg class="rs-svg" viewBox="0 0 10 100" preserveAspectRatio="none" aria-hidden="true"><path d="M0.5 64 L2.8 58 L5.4 100 L10 0"/></svg><span class="rs">√</span><span class="rad">${inner}</span></span>`;
 
-export function fx(f) {
-  if (f.k === 'n') return `<span class="mn">${f.v}</span>`;
-  if (f.k === 'v') return `<i class="mv">${f.b}</i>${f.e > 1 ? `<sup>${f.e}</sup>` : ''}`;
-  if (f.k === 'p') return `(${sumHTML(f.terms)})${f.e > 1 ? `<sup>${f.e}</sup>` : ''}`;
-  if (f.k === 'r') return sqHTML(sumHTML(f.terms));
-  if (f.k === 'bk') return `<span class="bk">${sumHTML(f.terms)}</span>${f.e > 1 ? `<sup>${f.e}</sup>` : ''}`;
-  return `(${factorsHTML(f.f)})${f.e > 1 ? `<sup>${f.e}</sup>` : ''}`;
-}
+// how each kind of node is written; rank orders the factors of a tidy term (numbers, letters, roots, brackets)
+const HTML = {};
+export const defineHTML = (k, rank, html) => { HTML[k] = { rank, html }; };
+const sup = e => e > 1 ? `<sup>${e}</sup>` : '';
+defineHTML('n', 0, f => `<span class="mn">${f.v}</span>`);
+defineHTML('v', 1, f => `<i class="mv">${f.b}</i>${sup(f.e)}`);
+defineHTML('r', 2, f => sqHTML(sumHTML(f.terms)));
+defineHTML('g', 2, f => `(${factorsHTML(f.f)})${sup(f.e)}`);
+defineHTML('p', 3, f => `(${sumHTML(f.terms)})${sup(f.e)}`);
+defineHTML('bk', 3, f => `<span class="bk">${sumHTML(f.terms)}</span>${sup(f.e)}`);   // a bracket shown as a block (blockHTML)
 
-export const RANK = { n: 0, v: 1, r: 2, g: 2, p: 3, bk: 3 };
+export const fx = f => HTML[f.k].html(f);
 
 export function factorsHTML(fs, sort) {
   let list = fs;
-  if (sort) list = [...fs].sort((a, b) => RANK[a.k] - RANK[b.k] || (a.b || '').localeCompare(b.b || ''));
+  if (sort) list = [...fs].sort((a, b) => HTML[a.k].rank - HTML[b.k].rank || (a.b || '').localeCompare(b.b || ''));
   return list.map((f, i) => (i > 0 && f.k === 'n' ? '·' : '') + fx(f)).join('');
 }
 

@@ -1,62 +1,21 @@
-/* The algebra model: nodes (N, V, G, Pr, Rt), terms and fractions, keys, tidiness, normalize, isClean, walking. No DOM. */
+/* The algebra model: tidiness, normalize, isClean, walking, branches. The nodes themselves are in kinds/. No DOM. */
+import './kinds/index.js';   // registers every kind of node
 import { isSolved, letters } from './balance.js';
 import { quadSplit } from './hints.js';
-
-export let uid = 1;
-
-export const nid = () => uid++;
-
-export const N = v => ({ k: 'n', v, id: nid() });
-
-export const V = (b, e = 1) => ({ k: 'v', b, e, id: nid() });
-
-export const G = (f, e) => ({ k: 'g', f, e, id: nid() });
-
-          // bracket around a product, with exponent
-export const Pr = (terms, e = 1) => ({ k: 'p', terms, e, id: nid() });
-
-  // bracket around a sum, with exponent
-export const Rt = terms => ({ k: 'r', terms, e: 1, id: nid() });
-
-      // square root of a sum (of one term, mostly)
-export const T = (f, neg = false) => ({ k: 't', f, neg, id: nid() });
-
-export const F = (num, den) => ({ num, den: den || [T([N(1)])] });
+import { G } from './kinds/group.js';
+import { N } from './kinds/number.js';
+import { kindOf } from './kinds/registry.js';
+import { F, T, fkey, sumKey, tHasU } from './kinds/sums.js';
 
 export const MAX_VAR = 16, MAX_GROUP = 8;
-
-export const cloneF = f => f.k === 'n' ? N(f.v) : f.k === 'v' ? V(f.b, f.e) : f.k === 'g' ? G(f.f.map(cloneF), f.e) : f.k === 'r' ? Rt(f.terms.map(cloneT)) : Pr(f.terms.map(cloneT), f.e);
-
-export const cloneT = t => T(t.f.map(cloneF), t.neg);
 
 export const gcd = (a, b) => { a = Math.abs(a); b = Math.abs(b); while (b) [a, b] = [b, a % b]; return a; };
 
 export function primeFactors(n) { const r = []; let d = 2; while (n > 1) { while (n % d === 0) { r.push(d); n /= d; } d++; } return r; }
 
-export const fkey = f => f.k === 'n' ? 'n' + f.v : f.k === 'v' ? f.b + '^' + f.e : f.k === 'g' ? '(' + f.f.map(fkey).join('*') + ')^' + f.e
-  : f.k === 'r' ? '√' + sumKey(f.terms) : sumKey(f.terms) + '^' + f.e;
-
-// a sum, independent of the order of its terms and of the factors inside each term
-export const sumKey = terms => '[' + terms.map(t => (t.neg ? '-' : '+') + t.f.map(fkey).sort().join('*')).sort().join('') + ']';
-
-export const innerKey = g => g.f.map(fkey).join('*');
-
-export function canMerge(x, y) {
-  if (x.k !== y.k) return false;
-  if (x.k === 'n') return true;
-  if (x.k === 'v') return x.b === y.b;
-  if (x.k === 'p') return sumKey(x.terms) === sumKey(y.terms);
-  if (x.k === 'r') return x.terms.length === 1 && y.terms.length === 1;   // √2 · √3 = √(2·3)
-  return innerKey(x) === innerKey(y);
-}
-
-export function mergeF(x, y) {
-  if (x.k === 'n') return N(x.v * y.v);
-  if (x.k === 'v') return V(x.b, x.e + y.e);
-  if (x.k === 'p') return Pr(x.terms.map(cloneT), x.e + y.e);
-  if (x.k === 'r') return Rt([T([...x.terms[0].f, ...y.terms[0].f].map(cloneF), x.terms[0].neg !== y.terms[0].neg)]);
-  return G(x.f.map(cloneF), x.e + y.e);
-}
+// x · y can become one piece: same kind, and that kind says so (same letter, same bracket, two numbers …)
+export const canMerge = (x, y) => x.k === y.k && kindOf(x).canMerge(x, y);
+export const mergeF = (x, y) => kindOf(x).merge(x, y);
 
 export const varPart = t => t.f.filter(f => f.k === 'v');
 
@@ -212,7 +171,8 @@ export function walkTerms(terms, ctx, fn) {
     fn({ kind: 't', ...ctx, t, term, terms });
     term.f.forEach((f, i) => {
       fn({ kind: 'f', ...ctx, t, i, term, terms, f });
-      if (f.k === 'p' || f.k === 'r') walkTerms(f.terms, { ...ctx, depth: ctx.depth + 1, in: f }, fn);
+      const inner = kindOf(f).terms(f);   // a bracket's or a root's terms are tiles too
+      if (inner) walkTerms(inner, { ...ctx, depth: ctx.depth + 1, in: f }, fn);
     });
   });
 }
@@ -236,19 +196,14 @@ export const branchCount = S => S.op === '=' ? S.parts.length >> 1 : 1;
 
 export const pairOf = (S, bi) => S.parts.slice(2 * bi, 2 * bi + 2);
 
-export const eqView = (S, bi) => ({ parts: pairOf(S, bi), op: '=', goal: 'solve', unknown: unknownOf(S) });
+export const eqView = (S, bi) => ({ parts: pairOf(S, bi), op: '=', goal: 'solve', unknown: unknownOf(S) });   // shares the tiles with S
 
-   // shares the tiles with S
 // the letter an equation is solved for; the other letters are parameters (a, b, c in ax² + bx + c = 0)
 export function unknownOf(S) {
   if (S.unknown) return S.unknown;
   const ls = letters(S);
   return ls.includes('x') ? 'x' : ls.sort()[0];
 }
-
-export const fHasU = (f, u) => f.k === 'v' ? f.b === u : f.k === 'n' ? false : f.k === 'g' ? f.f.some(g => fHasU(g, u)) : f.terms.some(t => tHasU(t, u));
-
-export const tHasU = (t, u) => t.f.some(f => fHasU(f, u));
 
 export const hasU = (side, u) => side.some(t => tHasU(t, u));
 

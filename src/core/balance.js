@@ -1,6 +1,10 @@
 /* Equations: the balance method (do the same to both sides), dragging across the =, isSolved. */
 import { numProd } from './hints.js';
-import { N, Pr, SIDES, T, V, addCond, branchCount, cloneF, cloneT, eachFactor, eqView, fHasU, hasU, isClean, isOne, pairOf, params, tHasU, unknownOf, walkTerms } from './model.js';
+import { Pr } from './kinds/bracket.js';
+import { V } from './kinds/letter.js';
+import { N } from './kinds/number.js';
+import { T, cloneF, cloneT, fHasU, tHasU } from './kinds/sums.js';
+import { SIDES, addCond, branchCount, eachFactor, eqView, hasU, isClean, isOne, pairOf, params, unknownOf, walkTerms } from './model.js';
 import { hasLetter, opRoot, opZero } from './quadratic.js';
 import { condHTML, factorsHTML, fracHTML, mx } from '../render/text.js';
 

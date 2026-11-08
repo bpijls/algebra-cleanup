@@ -2,7 +2,13 @@
 import { isSolved, isZeroSide, letters, loneSquare } from './balance.js';
 import { genHint, pairHint } from './generic.js';
 import { hint, quadSplit, sumProductHint } from './hints.js';
-import { F, G, N, Pr, Rt, T, V, addCond, branchCount, canMerge, cleanTerm, cloneF, cloneT, eqView, fHasU, fkey, hasU, isOne, pairOf, params, unknownOf, walkTerms } from './model.js';
+import { Pr } from './kinds/bracket.js';
+import { G } from './kinds/group.js';
+import { V } from './kinds/letter.js';
+import { N } from './kinds/number.js';
+import { Rt } from './kinds/root.js';
+import { F, T, cloneF, cloneT, evalTerms, fHasU, fkey } from './kinds/sums.js';
+import { addCond, branchCount, canMerge, cleanTerm, eqView, hasU, isOne, pairOf, params, unknownOf, walkTerms } from './model.js';
 import { bx, condHTML, fracHTML, fx, mx, orWord, sumHTML, termHTML } from '../render/text.js';
 
 /* ---- quadratic equations: two moves that split an equation into branches ("or") ----
@@ -14,16 +20,6 @@ export function constVal(P) {
   if (hasLetter(P.num) || hasLetter(P.den)) return null;
   return evalTerms(P.num, {}) / evalTerms(P.den, {});
 }
-
-export function evalF(f, env) {
-  if (f.k === 'n') return f.v;
-  if (f.k === 'v') return Math.pow(env[f.b] ?? 0, f.e);
-  if (f.k === 'g') return Math.pow(f.f.reduce((p, g) => p * evalF(g, env), 1), f.e);
-  if (f.k === 'r') return Math.sqrt(evalTerms(f.terms, env));
-  return Math.pow(evalTerms(f.terms, env), f.e);
-}
-
-export const evalTerms = (ts, env) => ts.reduce((s, t) => s + (t.neg ? -1 : 1) * t.f.reduce((p, f) => p * evalF(f, env), 1), 0);
 
 // L − R as a·x² + b·x + c, read off from its values at x = 0, 1, 2 (null when it isn't one)
 // parameters get fixed values that are unlikely to cancel anything (a − c ≠ 0, b² − 4ac > 0)

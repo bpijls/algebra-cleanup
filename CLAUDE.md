@@ -41,7 +41,8 @@ Native ES modules, no framework, no build step needed to run (`index.html` loads
 
 | File | What it holds |
 |---|---|
-| `src/core/model.js` | The model: node constructors (`N V G Pr Rt T F`), keys, tidiness, `normalize`, `isClean`, `walk`/`locate`, branches (`branchCount`, `pairOf`, `eqView`), the unknown and parameters, `addCond`. No DOM. |
+| `src/core/kinds/` | The node-type registry (`registry.js`: `defineKind`, `kindOf`) and one file per kind: `number.js` (`N`), `letter.js` (`V`), `group.js` (`G`), `bracket.js` (`Pr`), `root.js` (`Rt`), plus `sums.js` (`T`, `F`, `cloneF`, `fkey`, `sumKey`, `evalF`). Each kind implements `clone, key, canMerge, merge, terms, has, eval`; generic code calls those instead of switching on `f.k`. `index.js` registers them all. |
+| `src/core/model.js` | The model: `canMerge`/`mergeF` (via the kinds), tidiness, `normalize`, `isClean`, `walk`/`locate`, branches (`branchCount`, `pairOf`, `eqView`), the unknown and parameters, `addCond`. No DOM. |
 | `src/render/text.js` | The text renderer: HTML for states, terms, sums and conditions (`stateHTML`, `termHTML`, `sqHTML`, `mx`, `blockHTML`, `orWord`, `condHTML`). The model (`core/model.js`) holds no HTML and doesn't import it; moves and hints call it only for the math inside their message params. |
 | `src/core/moves.js` | The tile moves: `opExplode`, `pairCheck`/`opPair`, `opFactor`, `opSplitTwo`, sweeps, `termPair`, the fraction sign (`opOp`, `opBar`). |
 | `src/core/hints.js` | Simplify and factor hints (`factorHint`, `sumProductHint`) and the `hint` entry point. |
@@ -76,7 +77,7 @@ Native ES modules, no framework, no build step needed to run (`index.html` loads
 - State `S = { parts: [Fraction, ...], op: null | ':' | '·' | '/' | '=', goal: 'simplify' | 'factor' | 'solve', allowB? }`. Two parts only while dividing/multiplying fractions, or for an equation (`op: '='`, left and right). An equation that has branched (`x = 3 ∨ x = −3`) keeps them flat: `parts = [L1, R1, L2, R2, …]`; `branchCount`, `pairOf(S, bi)`, `eqView(S, bi)` (a view that shares tiles), and `stateHTML` joins them with `orWord()` (`or` / `∨`). `isClean` for `goal: 'solve'` is `isSolved`: in every branch one side is the letter alone, the other a clean value without it (`x = 9/2`, `x = 2√3`, `x = (√17 − 3)/4` count). `normalize` moves a minus from below a bar to the top (`6/−2` → `−6/2`) and drops `+ 0` terms.
 - `Fraction = { num: Term[], den: Term[] }` (each side is a sum of terms).
 - `Term = { k:'t', f: Factor[], neg }`.
-- Factors: `N(v)` number, `V(b, e)` letter with exponent, `G(f, e)` bracket around a *product* with exponent, `Pr(terms, e)` bracket around a *sum* with exponent. Every node has a unique `id`; tiles in the DOM carry it as `data-id`. `sumKey(terms)` compares sums regardless of term and factor order.
+- Factors: `N(v)` number, `V(b, e)` letter with exponent, `G(f, e)` bracket around a *product* with exponent, `Pr(terms, e)` bracket around a *sum* with exponent, `Rt(terms)` root. Each is a kind in `core/kinds/`; **a new kind** (log, sin, π) is a new file there calling `defineKind`, a `defineHTML(k, rank, html)` in `render/text.js` and a tile in ui.js, and the judge evaluates it through its `eval`. Every node has a unique `id`; tiles in the DOM carry it as `data-id`. `sumKey(terms)` compares sums regardless of term and factor order.
 - `normalize(S)` cleans up after every move (drops `1`s and `x⁰`/`(…)⁰`, unwraps one-term brackets (a one-term `Pr` with a power becomes a `G`), unwraps a bare `+(…)` term but never `−(…)` or `(…)²`, collapses `(a/1)/(b/1)`). A bracket that is the whole top or bottom of a fraction stays a bracket, so `(x+2)/((x+2)(x+3))` can cancel it as one piece; `isClean` reads such a side as its sum (`unbare`).
 - `isClean(S)` decides whether Done? wins. `goal: 'factor'` levels use `isFactored`: one term, a tidy rest, any number of *different* brackets (`(x+2)(x+2)` must be merged to `(x+2)²`), each with no common factor and not a trinomial that `quadSplit` can still split.
 
@@ -147,7 +148,7 @@ Config is in `.env` (copy `.env.example`): `APP_DOMAIN`, `CADDY_NETWORK`, `HOST_
 
 ## Refactoring towards an algebra system
 
-`docs/refactor-plan.md` is the agreed plan (SOLID): node-type and rule registries, explicit problem types, goals built from tactics, rendering out of core, ES modules, in steps that each keep `npm test` and the golden traces green. Done: step 0 (golden traces), step 1 (ES modules), step 2 (rendering out of the model). Next: step 3 (node-type registry).
+`docs/refactor-plan.md` is the agreed plan (SOLID): node-type and rule registries, explicit problem types, goals built from tactics, rendering out of core, ES modules, in steps that each keep `npm test` and the golden traces green. Done: step 0 (golden traces), step 1 (ES modules), step 2 (rendering out of the model). step 3 (node-type registry). Next: step 4 (problem types).
 
 ## Known limitations and ideas
 

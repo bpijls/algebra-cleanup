@@ -1,7 +1,10 @@
 /* Generic equations: letters for numbers (ax + b = cx + d, ax² + bx + c = 0). */
 import { isZeroSide, letters, loneSquare } from './balance.js';
 import { hint } from './hints.js';
-import { N, T, V, canMerge, cloneF, fHasU, hasU, isOne, locate, tHasU, walkTerms } from './model.js';
+import { V } from './kinds/letter.js';
+import { N } from './kinds/number.js';
+import { T, cloneF, fHasU, tHasU } from './kinds/sums.js';
+import { canMerge, hasU, isOne, locate, walkTerms } from './model.js';
 import { opRoot, opZero, sideView } from './quadratic.js';
 import { bx, fx, mx, sumHTML, termHTML } from '../render/text.js';
 

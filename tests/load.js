@@ -1,5 +1,5 @@
 // The game's modules (no DOM) as one object, so tests can call everything by name: G.normalize, G.LEVELS …
-const MODULES = ['core/model', 'render/text', 'core/moves', 'core/hints', 'core/balance', 'core/done', 'core/quadratic',
+const MODULES = ['core/kinds/index', 'core/model', 'render/text', 'core/moves', 'core/hints', 'core/balance', 'core/done', 'core/quadratic',
   'core/generic', 'content/levels', 'practice', 'parse', 'i18n'];
 
 function load() {
