@@ -57,6 +57,10 @@ export function tokenize(src) {
   return { toks: out };
 }
 
+// a letter that a topic reads as a piece of its own: defineLetter('i', { flag: 'complex', make: e => [...] })
+const LETTERS = {};
+export const defineLetter = (ch, h) => { LETTERS[ch] = h; };
+
 export function parseProblem(src, goal, unknown) {
   const tk = tokenize(src || '');
   if (tk.err) return tk;
@@ -108,6 +112,7 @@ export function parseProblem(src, goal, unknown) {
   }
   // a whole or half exponent; a negative one or a half turns on the moves that explode them (S.exps)
   let exps = false;
+  const flags = new Set();   // a letter a topic reads as something else (i: the imaginary unit, S.complex)
   const power = () => {
     if (!(peek() && peek().t === 'pow')) return 1;
     const v = toks[i++].v;
@@ -123,7 +128,7 @@ export function parseProblem(src, goal, unknown) {
       if (!p.v && e < 0) { i--; fail('pDivZero'); }
       return [e !== 1 && p.v ? G([N(p.v)], e) : N(p.v)];
     }
-    if (p.t === 'var') return [V(p.v, power())];
+    if (p.t === 'var') { const e = power(), h = LETTERS[p.v]; if (h) { flags.add(h.flag); return h.make(e); } return [V(p.v, e)]; }
     // √12, √(x + 1): the root of what follows (a number, a letter, or a bracket)
     if (p.t === 'sqrt') {
       const n = peek();
@@ -176,6 +181,8 @@ export function parseProblem(src, goal, unknown) {
       if (peek()) fail(peek().t === '=' ? 'pTwoEq' : peek().t === ')' ? 'pParen' : 'pMissing');
       S = { parts: [A, B], op: '=', goal: 'solve' };
       if (rel) S.rel = rel;
+      if (exps) S.exps = true;
+      for (const fl of flags) S[fl] = true;
       normalize(S);
       // the unknown: the one asked for, else x, else the only letter (a, b, p … are then parameters)
       const bs = letters(S);
@@ -196,6 +203,7 @@ export function parseProblem(src, goal, unknown) {
     if (peek()) fail(peek().t === ')' ? 'pParen' : 'pMissing');
     S.goal = goal || 'simplify';
     if (exps) S.exps = true;
+    for (const fl of flags) S[fl] = true;
     normalize(S);
     return { S };
   } catch (e) {

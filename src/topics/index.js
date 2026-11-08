@@ -10,3 +10,6 @@ import '../content/exponents.js';
 import '../content/inequalities.js';
 import './exp/rules.js';
 import './exp/levels.js';
+import './complex/kind.js';
+import './complex/rules.js';
+import './complex/levels.js';

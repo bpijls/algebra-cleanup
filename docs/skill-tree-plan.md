@@ -166,8 +166,9 @@ Done:
 
 - **Keystone D, a symbolic exponent** (`src/topics/exp`, `Ex(base, terms)`: `2ˣ`, `3^(x+1)`), the log quotient rule, equal bases (a drag of the power), the log of both sides (a panel button), and the first **earned shortcut** (`log(aˣ) = x log a`, `defineShortcut`). Skills logrules, expeq, growth. Decay with a fraction base (`(½)ᵗ`) waits: the base is a whole number.
 
+- **Complex numbers** (`src/topics/complex`): `i` as a kind, `i · i = −1` as a tap, `√(−a) = √a · i`, √ of both sides and the quadratic hints past `D < 0` when `S.complex`. No ring in the game itself: only the judge needed complex arithmetic (`valueC`), so the ring stayed in tests/judge.js. Skill complex (6 levels).
+
 To come, in this order:
-4. **Complex numbers** (the `COMPLEX` ring, `i · i = −1`, `quadHint` past `D < 0`).
 5. **Boolean logic** (`S.algebra = 'bool'`, truth-table judge, `a·a = a`, De Morgan as an explode).
 6. **Sequences and sums** (`opSubstitute`; a design spike for a `Σ` kind, Gauss's pairing), plus **physics formulas**.
 7. **Calculus** (derivatives with an operator kind and a numeric-derivative judge; integrals; differential equations), then the rest of goniometry (`π`, radians, trig equations with `k ∈ ℤ`).

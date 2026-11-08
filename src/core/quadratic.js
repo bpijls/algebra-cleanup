@@ -54,7 +54,7 @@ export function opRoot(S, bi = 0) {
   if (hasU(O.num, u) || hasU(O.den, u)) return { no: 'rootLetter', ids: [sq.id] };
   if (!isOne(O.den)) return { no: 'rootFrac', ids: [sq.id] };
   const v = constVal(O);   // null with letters in it: then it has to be ≥ 0, and the answer says so
-  if (v != null && v < -1e-12) return { no: 'rootNeg', p: { s: mx(fx(sq)), v: mx(sumHTML(O.num)) }, ids: [sq.id] };
+  if (v != null && v < -1e-12 && !S.complex) return { no: 'rootNeg', p: { s: mx(fx(sq)), v: mx(sumHTML(O.num)) }, ids: [sq.id] };
   const base = () => sq.k === 'v' ? V(sq.b, 1) : sq.k === 'g' ? G(sq.f.map(cloneF), 1) : Pr(sq.terms.map(cloneT), 1);
   const side = (neg) => F([T([Rt(O.num.map(cloneT))], neg)]);
   const branch = neg => { const pair = [F([T([base()])]), side(neg)]; return qi ? pair.reverse() : pair; };
@@ -163,7 +163,7 @@ export function quadHint(S, q) {
     if (!isZeroSide(R.num)) return take(R.num[0], 'right', R.num);   // everything to the left: … = 0
     const h = sumProductHint({ parts: [L] }); if (h) return h;
   }
-  if (disc < -1e-9) return { k: 'hNoRealD', ids: [] };
+  if (disc < -1e-9 && !S.complex) return { k: 'hNoRealD', ids: [] };   // with complex numbers, D < 0 is solved too
   if (cL) return take(cL, 'left', L.num);   // completing the square: the number goes to the right
   const s = Math.round(Math.sqrt(A));
   if (A > 0 && s * s === A && B % (2 * s) === 0) {

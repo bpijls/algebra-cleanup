@@ -24,6 +24,36 @@ function evF(f, env) {
 const evT = (t, env) => (t.neg ? -1 : 1) * t.f.reduce((p, f) => p * evF(f, env), 1);
 const evTerms = (ts, env) => ts.reduce((s, t) => s + evT(t, env), 0);
 const evP = (P, env) => evTerms(P.num, env) / evTerms(P.den, env);
+// complex numbers (S.complex): values are [re, im]. The real judge can't see i · i = −1 or √(−4) = 2i.
+const C = {
+  add: (a, b) => [a[0] + b[0], a[1] + b[1]], sub: (a, b) => [a[0] - b[0], a[1] - b[1]],
+  mul: (a, b) => [a[0] * b[0] - a[1] * b[1], a[0] * b[1] + a[1] * b[0]],
+  div: (a, b) => { const d = b[0] * b[0] + b[1] * b[1]; return [(a[0] * b[0] + a[1] * b[1]) / d, (a[1] * b[0] - a[0] * b[1]) / d]; },
+  abs: a => Math.hypot(a[0], a[1]),
+  sqrt: a => { const r = Math.hypot(a[0], a[1]), re = Math.sqrt((r + a[0]) / 2), im = Math.sqrt(Math.max(0, (r - a[0]) / 2)); return [re, a[1] < 0 ? -im : im]; },
+  pow(a, e) {
+    if (Number.isInteger(e)) { let r = [1, 0]; for (let k = 0; k < Math.abs(e); k++) r = C.mul(r, a); return e < 0 ? C.div([1, 0], r) : r; }
+    const m = Math.pow(C.abs(a), e), t = Math.atan2(a[1], a[0]) * e; return [m * Math.cos(t), m * Math.sin(t)];
+  },
+};
+function evFC(f, env) {
+  if (f.k === 'n') return [f.v, 0];
+  if (f.k === 'v') return [Math.pow(env[f.b] ?? 1.37, f.e), 0];
+  if (f.k === 'im') return C.pow([0, 1], f.e);
+  if (f.k === 'g') return C.pow(f.f.reduce((p, g) => C.mul(p, evFC(g, env)), [1, 0]), f.e);
+  if (f.k === 'p') return C.pow(evTermsC(f.terms, env), f.e);
+  if (f.k === 'r') return C.sqrt(evTermsC(f.terms, env));
+  if (f.k === 'q') return C.div(evTermsC(f.num, env), evTermsC(f.den, env));
+  return [G.evalF(f, env), 0];
+}
+const evTC = (t, env) => { const v = t.f.reduce((p, f) => C.mul(p, evFC(f, env)), [1, 0]); return t.neg ? [-v[0], -v[1]] : v; };
+const evTermsC = (ts, env) => ts.reduce((s, t) => C.add(s, evTC(t, env)), [0, 0]);
+const evPC = (P, env) => C.div(evTermsC(P.num, env), evTermsC(P.den, env));
+function valueC(S, env) {
+  const [a, b] = S.parts.map(P => evPC(P, env));
+  if (S.parts.length === 1) return a;
+  return S.op === '=' ? C.sub(a, b) : S.op === '·' ? C.mul(a, b) : C.div(a, b);
+}
 function value(S, env) {
   const [a, b] = S.parts.map(P => evP(P, env));
   if (S.parts.length === 1) return a;
@@ -34,7 +64,7 @@ function value(S, env) {
 // the value at each sample point; null where a condition a move wrote down doesn't hold (a > 0 under a log):
 // a move may take its own written conditions for granted. Pass the conditions of the later state to compare.
 const holds = (conds, env) => (conds || []).every(c => { const v = evTerms(c.terms, env); return c.rel === 'gt' ? v > 0 : c.rel === 'ge' ? v >= 0 : v !== 0; });
-const values = (S, conds = S.conds) => (VALS.some(env => holds(conds, env)) ? VALS : NEG).map(env => holds(conds, env) ? value(S, env) : null);
+const values = (S, conds = S.conds) => { const set = VALS.some(env => holds(conds, env)) ? VALS : NEG; return S.complex ? set.flatMap(env => holds(conds, env) ? valueC(S, env) : [null, null]) : set.map(env => holds(conds, env) ? value(S, env) : null); };
 
 // an equation with parameters (ax + b = cx + d) is judged at fixed parameter values, the ones the game uses
 // too (a − c ≠ 0, b² − 4ac > 0 …); only the unknown varies
@@ -53,7 +83,28 @@ function numericRoots(f) {
   }
   return roots;
 }
+// the complex solutions of each branch (degree ≤ 2, complex coefficients): sorted, as [re, im, re, im …]
+function solutionsC(S) {
+  const out = [];
+  for (let b = 0; b < S.parts.length / 2; b++) {
+    const [L, R] = S.parts.slice(2 * b, 2 * b + 2);
+    const f = x => C.sub(evPC(L, envOf(S, x)), evPC(R, envOf(S, x)));
+    const [f0, f1, f2, f3, f4] = [0, 1, 2, 3, 4].map(f);
+    const a = C.mul(C.add(C.sub(f2, C.mul([2, 0], f1)), f0), [0.5, 0]), bb = C.sub(C.sub(f1, f0), a), c = f0;
+    const at = x => C.add(C.add(C.mul(a, [x * x, 0]), C.mul(bb, [x, 0])), c), tol = 1e-7 * Math.max(1, C.abs(f3), C.abs(f4));
+    assert.ok(C.abs(C.sub(at(3), f3)) < tol && C.abs(C.sub(at(4), f4)) < tol, `branch is not of degree ≤ 2: ${G.stateHTML(S)}`);
+    const small = v => C.abs(v) < 1e-9 * Math.max(1, C.abs(f0), C.abs(f1), C.abs(f2));
+    if (small(a) && small(bb)) { if (small(c)) return 'all'; continue; }
+    if (small(a)) { out.push(C.div([-c[0], -c[1]], bb)); continue; }
+    const d = C.sqrt(C.sub(C.mul(bb, bb), C.mul([4, 0], C.mul(a, c)))), a2 = C.mul([2, 0], a), nb = [-bb[0], -bb[1]];
+    out.push(C.div(C.add(nb, d), a2), C.div(C.sub(nb, d), a2));
+  }
+  const key = z => z.map(v => +v.toPrecision(9) || 0);
+  const uniq = [...new Map(out.map(z => [key(z).join(','), key(z)])).values()];
+  return uniq.sort((p, q) => p[0] - q[0] || p[1] - q[1]).flat();
+}
 function solutions(S) {
+  if (S.complex) return solutionsC(S);
   const out = [];
   for (let b = 0; b < S.parts.length / 2; b++) {
     const [L, R] = S.parts.slice(2 * b, 2 * b + 2);
@@ -102,6 +153,14 @@ function equivalent(u, v) {
   const j = u.reduce((m, x, i) => Math.abs(x) > Math.abs(u[m]) ? i : m, 0), k = r[j];
   const noise = 1e-12 * ((v.mag || 0) + Math.abs(k) * (u.mag || 0));
   return u.every((x, i) => Math.abs(v[i] - k * x) <= 1e-7 * Math.max(Math.abs(v[i]), Math.abs(k * x), 1e-300) + noise);
+}
+// the same for complex values: L − R changes by one nonzero complex constant
+const eqValuesC = (S, ref) => { let mag = 0; const out = XS.map(x => { const [L, R] = S.parts, l = evPC(L, envOf(ref, x)), r = evPC(R, envOf(ref, x)); mag = Math.max(mag, C.abs(l) + C.abs(r)); return C.sub(l, r); }); out.mag = mag; return out; };
+function equivalentC(u, v) {
+  const j = u.reduce((m, x, i) => C.abs(x) > C.abs(u[m]) ? i : m, 0), k = C.div(v[j], u[j]);
+  if (!(isFinite(k[0]) && isFinite(k[1]) && C.abs(k) > 1e-9)) return false;
+  const noise = 1e-12 * ((v.mag || 0) + C.abs(k) * (u.mag || 0));
+  return u.every((x, i) => C.abs(C.sub(v[i], C.mul(k, x))) <= 1e-7 * Math.max(C.abs(v[i]), C.abs(C.mul(k, x))) + noise);
 }
 // times the unknown (4/x = 2 · x, allowed because x is below a bar and so not 0): L − R is multiplied by exactly that
 const scaled = (u, t, ref) => u.map((v, i) => v * evT(t, envOf(ref, XS[i])));
@@ -178,6 +237,7 @@ function fuzz(start, steps, label) {
       const sides = X => X.parts.map(P => VALS.map(env => holds(trial.conds, env) ? evP(P, env) : null));
       const kept = S.goal === 'prove' ? sides(old).every((u, i) => same(u, sides(trial)[i]))
         : branching ? sameSolutions(solutions(old), solutions(trial))
+        : S.op === '=' && S.complex ? old.parts.every((_, i) => i % 2 || equivalentC(eqValuesC(pair(old, i / 2), old), eqValuesC(pair(trial, i / 2), old)))
         : S.op === '=' ? old.parts.every((_, i) => i % 2 || equivalent(eqValues(pair(old, i / 2), old), eqValues(pair(trial, i / 2), old))
           || (r.scale && equivalent(scaled(eqValues(pair(old, i / 2), old), r.scale, old), eqValues(pair(trial, i / 2), old))))
         : same(values(old, trial.conds), values(trial));

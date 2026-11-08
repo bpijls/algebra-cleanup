@@ -19,6 +19,6 @@ export const hasBranch = (S, bi) => isEquation(S) && bi < branchCount(S);
 export const branchOf = p => p >> 1;
 export const isRight = p => p % 2 === 1;
 export const pairOf = (S, bi) => S.parts.slice(2 * bi, 2 * bi + 2);
-export const eqView = (S, bi) => ({ parts: pairOf(S, bi), op: '=', goal: 'solve', unknown: unknownOf(S), ...(S.rel ? { rel: S.rel } : {}) });   // shares the tiles with S
+export const eqView = (S, bi) => ({ parts: pairOf(S, bi), op: '=', goal: 'solve', unknown: unknownOf(S), ...(S.rel ? { rel: S.rel } : {}), ...(S.complex ? { complex: true } : {}) });   // shares the tiles with S
 // branch bi becomes the given parts: [L, R] to change it, [L1, R1, L2, R2 …] to split it into branches
 export const setBranch = (S, bi, parts) => { S.parts.splice(2 * bi, 2, ...parts); };
