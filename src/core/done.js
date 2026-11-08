@@ -9,6 +9,11 @@ import { bx, fx, mx, termHTML } from '../render/text.js';
 export function whyNotDone(S) {
   if (isClean(S)) return null;
   const th = t => mx(termHTML(t));
+  // an identity: first what is left on each side, then that the two sides don't read the same yet
+  if (S.goal === 'prove') {
+    for (const P of S.parts) { const w = whyNotDone({ parts: [P], op: null, goal: 'simplify', conds: S.conds }); if (w) return w; }
+    return { k: 'nyProve' };
+  }
   if (S.goal === 'solve' && isBranched(S)) {
     for (let b = 0; b < branchCount(S); b++) { const w = whyNotDone(eqView(S, b)); if (w) return w; }
     return null;

@@ -65,7 +65,7 @@ board.addEventListener('click', e => {
   if (ui.suppressClick) { ui.suppressClick = false; return; }
   if (ui.busy || ui.won) return;
   const chip = e.target.closest('.opchip');
-  if (chip) { if (!isEquation(ui.S)) return run(s => opOp(s)); ui.balBranch = +chip.dataset.b || 0; return setBalancing(!ui.balancing); }
+  if (chip) { if (!isEquation(ui.S)) return run(s => opOp(s)); if (ui.S.goal === 'prove') return say('proveNoBalance', {}, 'info'); ui.balBranch = +chip.dataset.b || 0; return setBalancing(!ui.balancing); }
   if (e.target.closest('.fbar')) return run(s => opBar(s));
   const hit = e.target.closest('.tile, .term');
   if (ui.balancing) {

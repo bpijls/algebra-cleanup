@@ -3,6 +3,7 @@
 import { Pr } from '../kinds/bracket.js';
 import { V } from '../kinds/letter.js';
 import { N } from '../kinds/number.js';
+import { KINDS } from '../kinds/registry.js';
 import { T, cloneF, fkey, sumKey } from '../kinds/sums.js';
 import { canMerge, cleanTerm, gcd, locate, mergeF, negate, sig, tidy, varPart } from '../model.js';
 import { cancelCheck, groupHasBase, opFactor, opMove, related, restOf, termPair, usedUp } from '../moves.js';
@@ -89,7 +90,8 @@ definePairRule('bar', 'cancel', (S, A, B) => {
   const brk = x.k === 'p' && y.k === 'p' && sumKey(x.terms) === sumKey(y.terms);
   const grp = (x.k === 'g' && (y.k === 'g' || (y.k === 'v' && groupHasBase(x, y.b)) || y.k === 'n'))
     || (y.k === 'g' && ((x.k === 'v' && groupHasBase(y, x.b)) || x.k === 'n'));
-  if (!sameVar && !nums && !grp && !brk) return NONE;
+  const fn = x.k === y.k && (x.k === 'r' || KINDS[x.k]?.base) && cancelCheck(x, y) != null;   // √2 over √2, sin a over sin a
+  if (!sameVar && !nums && !grp && !brk && !fn) return NONE;
   if (P.num.length > 1 || P.den.length > 1) return { type: 'fizzle', msg: 'cancelSum' };
   if (grp) return { type: 'fizzle', msg: 'cancelGroup' };
   return cancelCheck(x, y);

@@ -9,6 +9,7 @@ import { opExplode } from '../core/rules/engine.js';
 import { lang, t } from '../i18n.js';
 import { fx, mx, stateHTML, sumHTML } from '../render/text.js';
 import { balSync } from './balance.js';
+import { run } from './controller.js';
 import { SVGNS } from './input.js';
 import { fitBoard } from './layout.js';
 import { previewOf, splitTermOf } from './split.js';
@@ -35,6 +36,10 @@ function powEl(f) {
 }
 // a kind's own tile (its pieces inside are tiles too, through sideEl): defineTile(k, (f, partners, sideEl) => element)
 const TILES = {};
+// extra move buttons for a selected piece, from topics: defineToolMove(id, (S, pieceId) => move). The button shows
+// what the move does (a dry run, like the others) and only appears when the move would be accepted.
+const TOOL_MOVES = [];
+export const defineToolMove = (id, move) => { TOOL_MOVES.push({ id, move }); };
 export const defineTile = (k, make) => { TILES[k] = make; };
 // the state a tile shows: picked, a partner of the picked one, hinted, just made
 function mark(b, f, partners) {
@@ -124,7 +129,7 @@ function sideEl(terms, partners) {
 export function render() {
   const partners = partnersOf(ui.S, ui.sel);
   ui.block = blockOf(ui.S, ui.sel);
-  ui.detached = new Set(isEquation(ui.S) ? ui.S.parts.map(loneSquare).filter(Boolean).map(f => f.id) : []);
+  ui.detached = new Set(isEquation(ui.S) && ui.S.goal !== 'prove' ? ui.S.parts.map(loneSquare).filter(Boolean).map(f => f.id) : []);
   ui.born.idx = 0;
   const wrap = document.createElement('div'); wrap.className = 'expr';
   const stacked = ui.S.parts.length > 1 && ui.S.op === '/';
@@ -189,7 +194,7 @@ export function render() {
     // the skill and where in it: "Powers · 3/6"
     const id = LEVELS[ui.lvl].id, K = skillOfLevel(id);
     $('lvlTitle').textContent = K ? `${K.title[lang]} · ${K.levels.indexOf(id) + 1}/${K.levels.length}` : t('level', { n: ui.lvl + 1 });
-    $('lvlBadge').hidden = !LEVELS[ui.lvl].book && !LEVELS[ui.lvl].goal; $('lvlBadge').textContent = LEVELS[ui.lvl].book ? t('book') : t(LEVELS[ui.lvl].goal === 'solve' ? 'solveBadge' : 'factorBadge');
+    $('lvlBadge').hidden = !LEVELS[ui.lvl].book && !LEVELS[ui.lvl].goal; $('lvlBadge').textContent = LEVELS[ui.lvl].book ? t('book') : t({ solve: 'solveBadge', prove: 'proveBadge' }[LEVELS[ui.lvl].goal] || 'factorBadge');
     $('moves').innerHTML = t('moves', { n: ui.moves }) + (ui.done[id] != null ? t('best', { n: ui.done[id] }) : '');
   }
   $('writtenLabel').textContent = t('written');
@@ -215,8 +220,32 @@ export function render() {
   $('btnGather').hidden = !gatherable;
   if (gatherable) $('btnGather').querySelector('span').innerHTML = previewOf(s => opGather(s, ui.sel.id));
   // from a piece only when factoring (a lone −x is hard to hit as a term); elsewhere it would just be noise
-  const twoId = tSel || (fSel && (ui.S.goal === 'factor' || ui.S.goal === 'solve')) ? splitTermOf(ui.sel.id) : null;
+  const twoId = tSel || (fSel && (ui.S.goal === 'factor' || ui.S.goal === 'solve' || ui.S.goal === 'prove' || locate(ui.S, ui.sel.id)?.depth)) ? splitTermOf(ui.sel.id) : null;
   $('btnSplitTwo').hidden = !twoId;
+  for (const tm of TOOL_MOVES) {
+    let b = $('tm-' + tm.id);
+    if (!b) {
+      b = Object.assign(document.createElement('button'), { className: 'tool preview', id: 'tm-' + tm.id, type: 'button', innerHTML: '<span></span>' });
+      b.onclick = () => ui.sel && run(s => tm.move(s, ui.sel.id));
+      $('btnSplitTwo').after(b);
+    }
+    const label = fSel && previewOf(s => tm.move(s, ui.sel.id));
+    b.hidden = !label; if (label) b.querySelector('span').innerHTML = label;
+  }
   if (twoId) $('btnSplitTwo').querySelector('span').innerHTML = mx(sumHTML([locate(ui.S, twoId).term]) + ' = … + …');
+  shortenPreviews();
   document.documentElement.lang = lang;
+}
+// a label cut off by the bar drops its left side (the selected piece, which is on the board), so two buttons for
+// the same piece still read differently: = cos(a) · cos(a) and = 1 − sin²(a). The full label stays as aria-label.
+function shortenPreviews() {
+  for (const b of document.querySelectorAll('.tool.preview')) {
+    const sp = b.querySelector('span');
+    b.removeAttribute('aria-label');
+    if (b.hidden || !sp || sp.scrollWidth <= sp.clientWidth + 1) continue;
+    const m = sp.innerHTML.match(/^(<span class="mx">)([\s\S]*?) = ([\s\S]*)(<\/span>)$/);
+    if (!m) continue;
+    b.setAttribute('aria-label', sp.textContent);
+    sp.innerHTML = m[1] + '= ' + m[3] + m[4];
+  }
 }

@@ -2,6 +2,7 @@
    point at ("these two cancel", "explode that power first", "open the brackets"). */
 import { defineGoal } from './registry.js';
 import { factorHint, sumProductHint } from '../hints.js';
+import { fkey } from '../kinds/sums.js';
 import { SIDES, canMerge, containers, eachFactor, eachTerm, isFactored, isOne, isSimplified, isUnit, primeFactors, sig, squareFactor, tidy } from '../model.js';
 import { cancelCheck, joinable, usedUp } from '../moves.js';
 import { fx, mx, sumHTML, termHTML } from '../../render/text.js';
@@ -64,7 +65,7 @@ export function cancelAcross(S) {
   for (const x of a.f) for (const y of b.f) {
     const cr = cancelCheck(x, y);
     if (!cr || cr.type !== 'fizzle' || cr.msg === 'cancelCoprime') continue;
-    const ids = x.k === 'v' ? [(x.e > y.e ? x : y).id] : [x, y].filter(f => primeFactors(f.v).length > 1).map(f => f.id);
+    const ids = x.k !== 'n' ? [(x.e > y.e ? x : y).id] : [x, y].filter(f => primeFactors(f.v).length > 1).map(f => f.id);
     return { k: 'hExplodeCancel', p: { x: mx(fx(x)), y: mx(fx(y)) }, ids };
   }
   return null;
@@ -88,7 +89,7 @@ export function likeTerms(S) {
   for (const ts of containers(S))
     for (let i = 0; i < ts.length; i++) for (let j = i + 1; j < ts.length; j++)
       if (tidy(ts[i]) && tidy(ts[j]) && sig(ts[i]) === sig(ts[j]))
-        return { k: 'hLike', p: { x: mx(termHTML(ts[i])), y: mx(termHTML(ts[j])) }, ids: [pick(ts[i]).id, (ts[j].f.find(f => f.k === 'v' && f.b === pick(ts[i]).b) || pick(ts[j])).id] };
+        return { k: 'hLike', p: { x: mx(termHTML(ts[i])), y: mx(termHTML(ts[j])) }, ids: [pick(ts[i]).id, (ts[j].f.find(f => f.k === pick(ts[i]).k && (f.k === 'v' ? f.b === pick(ts[i]).b : fkey(f) === fkey(pick(ts[i])))) || pick(ts[j])).id] };
   return null;
 }
 

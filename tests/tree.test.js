@@ -40,7 +40,7 @@ test('skill tree: old progress by level number migrates to level ids', () => {
   assert.deepEqual(won, { 'powers.1': 3, 'powers.5': 5, 'logs.1': 2 });
   assert.equal(level, 'genquad.4');
   // the old order is the order the levels are still registered in, so a level's number meant the same level
-  assert.deepEqual(G.LEVELS.map(L => L.id), G.LEGACY_ORDER);
+  assert.deepEqual(G.LEVELS.slice(0, G.LEGACY_ORDER.length).map(L => L.id), G.LEGACY_ORDER);
   assert.equal(G.migrate({}, 999).level, 'powers.1');
 });
 

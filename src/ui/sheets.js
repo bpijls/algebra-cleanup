@@ -25,7 +25,7 @@ export function win(refresh) {
     const show = () => {
       const host = openSheet(`
         <h2>${t('win')}</h2>
-        <p style="margin-bottom:0">${t(ui.S.goal === 'factor' ? 'winSubF' : ui.S.goal === 'solve' ? 'winSubS' : 'winSub')}</p>
+        <p style="margin-bottom:0">${t({ factor: 'winSubF', solve: 'winSubS', prove: 'winSubP' }[ui.S.goal] || 'winSub')}</p>
         <div class="result expr-n">${stateHTML(ui.S)}</div>${condsHTML()}
         <p>${t('winMoves', { n: ui.moves })} ${t('winPractice', { n: ui.session.solved })}</p>
         <div class="row">
@@ -52,7 +52,7 @@ export function win(refresh) {
   const show = () => {
     const host = openSheet(`
       <h2>${t('win')}</h2>
-      <p style="margin-bottom:0">${t(ui.S.goal === 'factor' ? 'winSubF' : ui.S.goal === 'solve' ? 'winSubS' : 'winSub')}</p>
+      <p style="margin-bottom:0">${t({ factor: 'winSubF', solve: 'winSubS', prove: 'winSubP' }[ui.S.goal] || 'winSub')}</p>
       <div class="result expr-n">${stateHTML(ui.S)}</div>${condsHTML()}
       <p>${t('winMoves', { n: ui.moves })}${t('winBest', { n: ui.done[id] })}</p>
       ${LEVELS[ui.lvl].abc ? `<div class="abc">${abcHTML(LEVELS[ui.lvl].abc)}</div>` : ''}

@@ -22,6 +22,7 @@ export const isZeroSide = side => side.length === 1 && side[0].f.length === 1 &&
 
 // v: a monomial Term (its sign counts). op: '+', '-', '·', ':'
 export function opBalance(S, op, v, bi = 0) {
+  if (S.goal === 'prove') return { no: 'proveNoBalance', ids: [] };   // an identity is shown by rewriting each side, not by doing things to both
   if (!hasBranch(S, bi) || !v || !v.f || !v.f.length) return null;
   const u = unknownOf(S), ps = params(S);
   const vNum = v.f.filter(f => f.k === 'n').reduce((a, f) => a * f.v, 1);
@@ -75,6 +76,7 @@ export function opBalance(S, op, v, bi = 0) {
 }
 
 export function opSwap(S, bi = 0) {
+  if (S.goal === 'prove') return { no: 'proveNoBalance', ids: [] };   // an identity is shown by rewriting each side, not by doing things to both
   if (!hasBranch(S, bi)) return null;
   const [a, b] = pairOf(S, bi);
   setBranch(S, bi, [b, a]);
@@ -122,6 +124,7 @@ export function dragBalance(S, id) {
 }
 
 export function opDrag(S, id) {
+  if (S.goal === 'prove') return { no: 'proveNoBalance', ids: [] };   // an identity is shown by rewriting each side, not by doing things to both
   const d = dragBalance(S, id);
   if (!d) return null;
   if (d.no) return { no: d.no, ids: [id] };

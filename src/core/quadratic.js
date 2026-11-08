@@ -40,6 +40,7 @@ export function quadOf(S) {
 
 // "take the root of both sides": the square on one side, a number ≥ 0 on the other → two branches
 export function opRoot(S, bi = 0) {
+  if (S.goal === 'prove') return { no: 'proveNoBalance', ids: [] };   // an identity is shown by rewriting each side, not by doing things to both
   if (!hasBranch(S, bi)) return null;
   const parts = pairOf(S, bi);
   const u = unknownOf(S);
@@ -66,6 +67,7 @@ export function opRoot(S, bi = 0) {
 
 // a product that is 0: one of its factors is 0 → a branch for each factor with a letter in it
 export function opZero(S, bi = 0) {
+  if (S.goal === 'prove') return { no: 'proveNoBalance', ids: [] };   // an identity is shown by rewriting each side, not by doing things to both
   if (!hasBranch(S, bi)) return null;
   const parts = pairOf(S, bi);
   const zi = parts.findIndex(P => isZeroSide(P.num) && isOne(P.den));

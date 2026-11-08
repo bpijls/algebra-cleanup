@@ -3,7 +3,8 @@
    rules use (cancelCheck, restOf, related). Each move returns {ok,p,born} after mutating, or {no,p,ids} without mutating. */
 import { Pr } from './kinds/bracket.js';
 import { N } from './kinds/number.js';
-import { F, T, cloneF, cloneT, sumKey } from './kinds/sums.js';
+import { KINDS } from './kinds/registry.js';
+import { F, T, cloneF, cloneT, fkey, sumKey } from './kinds/sums.js';
 import { canMerge, cleanTerm, coef, eachFactor, eachTerm, gcd, isOne, isUnit, locate, mergeF, negate, sig, tidy, varPart } from './model.js';
 import { isEquation, isFractionPair } from './problem.js';
 import { pairCheck } from './rules/engine.js';
@@ -22,6 +23,12 @@ export function cancelCheck(x, y) {
     return { type: 'fizzle', msg: 'cancelUnequal', p: { x: mx(fx(x)), y: mx(fx(y)), big: mx(fx(big)), small: mx(fx(small)) } };
   }
   if (x.k === 'p' && y.k === 'p' && sumKey(x.terms) === sumKey(y.terms)) {
+    if (x.e === y.e) return { type: 'cancel' };
+    const big = x.e > y.e ? x : y, small = big === x ? y : x;
+    return { type: 'fizzle', msg: 'cancelUnequal', p: { x: mx(fx(x)), y: mx(fx(y)), big: mx(fx(big)), small: mx(fx(small)) } };
+  }
+  // a root, or a kind that says what it is apart from its power (sin a in sin²a): equal pieces cancel
+  if (x.k === y.k && (x.k === 'r' || KINDS[x.k]?.base) && (x.k === 'r' ? fkey(x) === fkey(y) : KINDS[x.k].base(x) === KINDS[y.k].base(y))) {
     if (x.e === y.e) return { type: 'cancel' };
     const big = x.e > y.e ? x : y, small = big === x ? y : x;
     return { type: 'fizzle', msg: 'cancelUnequal', p: { x: mx(fx(x)), y: mx(fx(y)), big: mx(fx(big)), small: mx(fx(small)) } };

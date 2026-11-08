@@ -1,6 +1,6 @@
 // The game's modules (no DOM) as one object, so tests can call everything by name: G.normalize, G.LEVELS …
 const MODULES = ['core/kinds/index', 'core/model', 'core/problem', 'render/text', 'core/moves', 'core/rules/registry', 'core/rules/engine', 'core/hints', 'core/goals/registry', 'core/goals/index', 'core/goals/simplify', 'core/goals/solve', 'core/balance', 'core/done', 'core/quadratic',
-  'core/generic', 'content/registry', 'content/tree', 'content/levels', 'content/progress', 'practice', 'parse', 'i18n', 'topics/index', 'topics/log/kind', 'topics/log/rules', 'topics/log/levels'];
+  'core/generic', 'content/registry', 'content/tree', 'content/levels', 'content/progress', 'practice', 'parse', 'i18n', 'topics/index', 'topics/log/kind', 'topics/log/rules', 'topics/log/levels', 'topics/trig/kind', 'topics/trig/rules', 'topics/trig/levels', 'core/goals/prove'];
 
 function load() {
   const api = {};

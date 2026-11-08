@@ -50,7 +50,7 @@ export function tidy(t, allowB) {
   const seen = {};   // for kinds with their own rule (tidyIn): how many of each are in the term so far
   for (const f of t.f) {
     const K = KINDS[f.k];   // (bk, a bracket drawn as a block, is no kind)
-    if (K?.tidyIn) { seen[f.k] = (seen[f.k] || 0) + 1; if (!K.tidyIn(f, seen[f.k])) return false; continue; }
+    if (K?.tidyIn) { seen[f.k] = (seen[f.k] || 0) + 1; if (!K.tidyIn(f, seen[f.k], t)) return false; continue; }
     if (f.k === 'g') return false;
     if (f.k === 'r') { if (!rootClean(f) || r++) return false; continue; }
     if (f.k === 'p') { if (!allowB || f.e !== 1 || !sumClean(f.terms)) return false; p++; }

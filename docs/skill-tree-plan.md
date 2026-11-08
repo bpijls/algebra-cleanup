@@ -173,7 +173,7 @@ This keeps the rule "nothing happens that the player can't see the reason for": 
    - complex numbers.
 3. **Applied leaves** on the algebra: physics formulas, growth and decay.
 4. **Boolean logic** (`S.algebra = 'bool'`, truth-table judge).
-5. **Goniometry** (function factory, `π`, the identities, trig equations with `k`).
+5. **Goniometry** (function factory, `π`, the identities, trig equations with `k`). *Started ahead of phase 2, at the user's request (Nov 2026): exact values, identities (a new `prove` goal) and sum formulas are in `src/topics/trig`, with one `trig` kind instead of a function factory. Still to do: `π` and radians, trig equations with `k`.*
 6. **Derivatives**, plus the kinematics and marginal leaves (operator kind, numeric-derivative judge, power-rule shortcut).
 7. **Integrals.**
 8. **Differential equations**, plus the cooling and RC leaves.

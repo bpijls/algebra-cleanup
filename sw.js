@@ -1,7 +1,7 @@
 /* Service worker: the game works offline once it has been opened.
    Own files are network-first (edits on the server show up on the next load; the cache is the fallback),
    Google Fonts are cache-first (they never change for a given URL). Bump VERSION when SHELL changes. */
-const VERSION = 'v12';
+const VERSION = 'v14';
 const SHELL_CACHE = 'alg-shell-' + VERSION, FONT_CACHE = 'alg-fonts-' + VERSION;
 const SHELL = [
   './', 'index.html', 'manifest.webmanifest',
@@ -12,12 +12,13 @@ const SHELL = [
   'src/topics/tiles.js', 'src/ui/balance.js', 'src/ui/buttons.js', 'src/ui/controller.js', 'src/ui/input.js',
   'src/ui/layout.js', 'src/ui/map.js', 'src/ui/menu.js', 'src/ui/motion.js', 'src/ui/note.js', 'src/ui/own.js',
   'src/ui/practice.js', 'src/ui/sheets.js', 'src/ui/split.js', 'src/ui/state.js', 'src/ui/tiles.js',
-  'src/core/goals/index.js', 'src/core/goals/play.js', 'src/core/goals/registry.js', 'src/core/goals/simplify.js',
-  'src/core/goals/solve.js', 'src/core/kinds/bracket.js', 'src/core/kinds/group.js', 'src/core/kinds/index.js',
-  'src/core/kinds/letter.js', 'src/core/kinds/number.js', 'src/core/kinds/registry.js', 'src/core/kinds/root.js',
-  'src/core/kinds/sums.js', 'src/core/rules/engine.js', 'src/core/rules/explode.js', 'src/core/rules/pair.js',
-  'src/core/rules/registry.js', 'src/topics/log/kind.js', 'src/topics/log/levels.js', 'src/topics/log/rules.js',
-  'src/topics/log/tile.js',
+  'src/core/goals/index.js', 'src/core/goals/play.js', 'src/core/goals/prove.js', 'src/core/goals/registry.js',
+  'src/core/goals/simplify.js', 'src/core/goals/solve.js', 'src/core/kinds/bracket.js', 'src/core/kinds/group.js',
+  'src/core/kinds/index.js', 'src/core/kinds/letter.js', 'src/core/kinds/number.js', 'src/core/kinds/registry.js',
+  'src/core/kinds/root.js', 'src/core/kinds/sums.js', 'src/core/rules/engine.js', 'src/core/rules/explode.js',
+  'src/core/rules/pair.js', 'src/core/rules/registry.js', 'src/topics/log/kind.js', 'src/topics/log/levels.js',
+  'src/topics/log/rules.js', 'src/topics/log/tile.js', 'src/topics/trig/kind.js', 'src/topics/trig/levels.js',
+  'src/topics/trig/rules.js', 'src/topics/trig/tile.js',
   'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png',
 ];
 

@@ -13,7 +13,7 @@ const FILE = path.join(__dirname, 'golden', 'traces.json');
 const MSGS = path.join(__dirname, 'golden', 'messages.json');   // the same paths, as the player reads them (English HTML)
 const GENERIC = ['ax=b', 'ax+b=c', 'ax+b=cx+d', 'ax-b=cx', 'a(x-b)=cx', '3x+a=x+b', 'x/a=b', 'x^2=a', '(x+p)^2=q',
   '(x-a)(x-b)=0', 'px^2+qx=0', 'x^2+2px+q=0', 'x^2+px+q=0', 'ax^2+bx+c=0'];
-const TOPICS = ['powers', 'like', 'frac', 'open', 'double', 'square', 'trinomial', 'factor', 'equations', 'quadratic', 'generic', 'mixed'];
+const TOPICS = ['powers', 'like', 'frac', 'open', 'double', 'square', 'trinomial', 'factor', 'equations', 'quadratic', 'generic', 'mixed', 'trigvals', 'trigid'];
 
 function seeded(seed) {   // mulberry32 as Math.random (the generators use it); record() puts the real one back
   let a = seed >>> 0;

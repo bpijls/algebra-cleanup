@@ -597,6 +597,155 @@
   "hLike [nyLike] → likeZero | 2log(a)",
   "clean"
  ],
+ "level trigvals.1": [
+  "sin(30°)",
+  "hExplodeTrig [nyTidy] → trigValue | [1/2",
+  "clean"
+ ],
+ "level trigvals.2": [
+  "6sin(30°)",
+  "hExplodeTrig [nyTidy] → trigValue | [6/2",
+  "hExplodeCancel [nyCancelNum] → explodeNum | [2·3/2",
+  "hCancel [nyTidy] → cancelVar | 3",
+  "clean"
+ ],
+ "level trigvals.3": [
+  "sin(90°) + cos(0°)",
+  "hExplodeTrig [nyTidy] → trigValue | 1 + cos(0°)",
+  "hExplodeTrig [nyTidy] → trigValue | 1 + 1",
+  "hLike [nyLike] → likeAdd | 2",
+  "clean"
+ ],
+ "level trigvals.4": [
+  "4sin(30°)cos(60°)",
+  "hExplodeTrig [nyTidy] → trigValue | [4cos(60°)/2",
+  "hExplodeCancel [nyTidy] → explodeNum | [2·2cos(60°)/2",
+  "hCancel [nyTidy] → cancelVar | 2cos(60°)",
+  "hExplodeTrig [nyTidy] → trigValue | [2/2",
+  "hCancel [nyCancelNum] → cancelVar | 1",
+  "clean"
+ ],
+ "level trigvals.5": [
+  "sin(60°)cos(30°)",
+  "hExplodeTrig [nyTidy] → trigValue | [√3cos(30°)/2",
+  "hExplodeTrig [nyTidy] → trigValue | [√3√3/2·2",
+  "hMerge [nyTidy] → mergeGroup | [√3·3/2·2",
+  "hRootPair [nyTidy] → rootOut | [3/2·2",
+  "hMerge [nyTidy] → mergeNum | [3/4",
+  "clean"
+ ],
+ "level trigvals.6": [
+  "tan(45°)",
+  "hExplodeTrig [nyTidy] → tanSinCos | [sin(45°)/cos(45°)",
+  "hExplodeTrig [nyTidy] → trigValue | [√2/cos(45°)·2",
+  "hExplodeTrig [nyTidy] → trigValue | [2√2/2√2",
+  "hCancel [nyCancelNum] → cancelVar | [2/2",
+  "hCancel [nyCancelNum] → cancelVar | 1",
+  "clean"
+ ],
+ "level trigvals.7": [
+  "tan(60°)",
+  "hExplodeTrig [nyTidy] → tanSinCos | [sin(60°)/cos(60°)",
+  "hExplodeTrig [nyTidy] → trigValue | [√3/cos(60°)·2",
+  "hExplodeTrig [nyTidy] → trigValue | [2√3/2",
+  "hCancel [nyCancelNum] → cancelVar | √3",
+  "clean"
+ ],
+ "level trigid.1": [
+  "3sin^2(a) + 3cos^2(a) = 3",
+  "hPyth [nyProve] → pythOne | 3 = 3",
+  "clean"
+ ],
+ "level trigid.2": [
+  "tan(a)cos(a) = sin(a)",
+  "hExplodeTrig [nyTidy] → tanSinCos | [sin(a)cos(a)/cos(a) = sin(a)",
+  "hCancel [nyProve] → cancelVar | sin(a) = sin(a)",
+  "clean"
+ ],
+ "level trigid.3": [
+  "1 − sin^2(a) = cos^2(a)",
+  "hPythSwap [nyProve] → pythSwap | 1 − 1 + cos^2(a) = cos^2(a)",
+  "hLike [nyLike] → likeZero | cos^2(a) = cos^2(a)",
+  "clean"
+ ],
+ "level trigid.4": [
+  "(sin(a) + cos(a))^2 = 1 + 2sin(a)cos(a)",
+  "hGroup [nyBracket] → explodeGroup | (sin(a) + cos(a))(sin(a) + cos(a)) = 1 + 2sin(a)cos(a)",
+  "hOpen [nyBracket] → distribute | sin(a)(sin(a) + cos(a)) + cos(a)(sin(a) + cos(a)) = 1 + 2sin(a)cos(a)",
+  "hOpen [nyBracket] → distribute | sin(a)sin(a) + sin(a)cos(a) + cos(a)(sin(a) + cos(a)) = 1 + 2sin(a)cos(a)",
+  "hMerge [nyTidy] → mergeGroup | sin^2(a) + sin(a)cos(a) + cos(a)(sin(a) + cos(a)) = 1 + 2sin(a)cos(a)",
+  "hOpen [nyBracket] → distribute | sin^2(a) + sin(a)cos(a) + cos(a)sin(a) + cos(a)cos(a) = 1 + 2sin(a)cos(a)",
+  "hMerge [nyTidy] → mergeGroup | sin^2(a) + sin(a)cos(a) + cos(a)sin(a) + cos^2(a) = 1 + 2sin(a)cos(a)",
+  "hPyth [nyLike] → pythOne | 1 + sin(a)cos(a) + cos(a)sin(a) = 1 + 2sin(a)cos(a)",
+  "hLike [nyLike] → likeAdd | 1 + 2sin(a)cos(a) = 1 + 2sin(a)cos(a)",
+  "clean"
+ ],
+ "level trigid.5": [
+  "cos^2(a) − sin^2(a) = 2cos^2(a) − 1",
+  "hPythSwap [nyProve] → pythSwap | cos^2(a) − 1 + cos^2(a) = 2cos^2(a) − 1",
+  "hLike [nyLike] → likeAdd | 2cos^2(a) − 1 = 2cos^2(a) − 1",
+  "clean"
+ ],
+ "level trigid.6": [
+  "(1 − sin(a))(1 + sin(a)) = cos^2(a)",
+  "hOpen [nyBracket] → distribute | 1 + sin(a) − sin(a)(1 + sin(a)) = cos^2(a)",
+  "hOpen [nyBracket] → distribute | 1 + sin(a) − sin(a) − sin(a)sin(a) = cos^2(a)",
+  "hMerge [nyTidy] → mergeGroup | 1 + sin(a) − sin(a) − sin^2(a) = cos^2(a)",
+  "hLike [nyLike] → likeZero | 1 − sin^2(a) = cos^2(a)",
+  "hPythSwap [nyProve] → pythSwap | 1 − 1 + cos^2(a) = cos^2(a)",
+  "hLike [nyLike] → likeZero | cos^2(a) = cos^2(a)",
+  "clean"
+ ],
+ "level trigsum.1": [
+  "sin(a + 90°) = cos(a)",
+  "hExplodeTrig [nyTidy] → trigSumSin | sin(a)cos(90°) + cos(a)sin(90°) = cos(a)",
+  "hExplodeTrig [nyTidy] → trigValue | cos(a)sin(90°) = cos(a)",
+  "hExplodeTrig [nyTidy] → trigValue | cos(a) = cos(a)",
+  "clean"
+ ],
+ "level trigsum.2": [
+  "cos(180° − a) = −cos(a)",
+  "hExplodeTrig [nyTidy] → trigSumCos | cos(180°)cos(−a) − sin(180°)sin(−a) = −cos(a)",
+  "hExplodeTrig [nyTidy] → trigValue | −cos(−a) − sin(180°)sin(−a) = −cos(a)",
+  "hExplodeTrig [nyTidy] → trigEven | −cos(a) − sin(180°)sin(−a) = −cos(a)",
+  "hExplodeTrig [nyTidy] → trigValue | −cos(a) = −cos(a)",
+  "clean"
+ ],
+ "level trigsum.3": [
+  "cos(a − b) + cos(a + b) = 2cos(a)cos(b)",
+  "hExplodeTrig [nyTidy] → trigSumCos | cos(a)cos(−b) − sin(a)sin(−b) + cos(a + b) = 2cos(a)cos(b)",
+  "hExplodeTrig [nyTidy] → trigEven | cos(a)cos(b) − sin(a)sin(−b) + cos(a + b) = 2cos(a)cos(b)",
+  "hExplodeTrig [nyTidy] → trigOdd | cos(a)cos(b) + sin(a)sin(b) + cos(a + b) = 2cos(a)cos(b)",
+  "hExplodeTrig [nyTidy] → trigSumCos | cos(a)cos(b) + sin(a)sin(b) + cos(a)cos(b) − sin(a)sin(b) = 2cos(a)cos(b)",
+  "hLike [nyLike] → likeAdd | 2cos(a)cos(b) + sin(a)sin(b) − sin(a)sin(b) = 2cos(a)cos(b)",
+  "hLike [nyLike] → likeZero | 2cos(a)cos(b) = 2cos(a)cos(b)",
+  "clean"
+ ],
+ "level trigsum.4": [
+  "sin(2a) = 2sin(a)cos(a)",
+  "hSplitAngle [nyTidy] → splitTwo | sin(a + a) = 2sin(a)cos(a)",
+  "hExplodeTrig [nyTidy] → trigSumSin | sin(a)cos(a) + cos(a)sin(a) = 2sin(a)cos(a)",
+  "hLike [nyLike] → likeAdd | 2sin(a)cos(a) = 2sin(a)cos(a)",
+  "clean"
+ ],
+ "level trigsum.5": [
+  "cos(2a) = cos^2(a) − sin^2(a)",
+  "hSplitAngle [nyTidy] → splitTwo | cos(a + a) = cos^2(a) − sin^2(a)",
+  "hExplodeTrig [nyTidy] → trigSumCos | cos(a)cos(a) − sin(a)sin(a) = cos^2(a) − sin^2(a)",
+  "hMerge [nyTidy] → mergeGroup | cos^2(a) − sin(a)sin(a) = cos^2(a) − sin^2(a)",
+  "hMerge [nyTidy] → mergeGroup | cos^2(a) − sin^2(a) = cos^2(a) − sin^2(a)",
+  "clean"
+ ],
+ "level trigsum.6": [
+  "cos(2a) = 1 − 2sin^2(a)",
+  "hSplitAngle [nyTidy] → splitTwo | cos(a + a) = 1 − 2sin^2(a)",
+  "hExplodeTrig [nyTidy] → trigSumCos | cos(a)cos(a) − sin(a)sin(a) = 1 − 2sin^2(a)",
+  "hMerge [nyTidy] → mergeGroup | cos^2(a) − sin(a)sin(a) = 1 − 2sin^2(a)",
+  "hMerge [nyTidy] → mergeGroup | cos^2(a) − sin^2(a) = 1 − 2sin^2(a)",
+  "hPythSwap [nyProve] → pythSwap | 1 − sin^2(a) − sin^2(a) = 1 − 2sin^2(a)",
+  "hLike [nyLike] → likeAdd | 1 − 2sin^2(a) = 1 − 2sin^2(a)",
+  "clean"
+ ],
  "machten (powers): 3a^2·2a^5": [
   "3a^2·2a^5",
   "hMerge [nyTidy] → mergeNum | 6a^2a^5",
@@ -3390,6 +3539,191 @@
   "hCancel [nyTidy] → cancelVar | 5aaa",
   "hMerge [nyTidy] → mergeVar | 5a^2a",
   "hMerge [nyTidy] → mergeVar | 5a^3",
+  "clean"
+ ],
+ "practice trigvals d1 #0": [
+  "6sin(30°)",
+  "hExplodeTrig [nyTidy] → trigValue | [6/2",
+  "hExplodeCancel [nyCancelNum] → explodeNum | [2·3/2",
+  "hCancel [nyTidy] → cancelVar | 3",
+  "clean"
+ ],
+ "practice trigvals d1 #1": [
+  "sin(90°) + cos(0°)",
+  "hExplodeTrig [nyTidy] → trigValue | 1 + cos(0°)",
+  "hExplodeTrig [nyTidy] → trigValue | 1 + 1",
+  "hLike [nyLike] → likeAdd | 2",
+  "clean"
+ ],
+ "practice trigvals d1 #2": [
+  "8cos(300°)",
+  "hExplodeTrig [nyTidy] → trigValue | [8/2",
+  "hExplodeCancel [nyCancelNum] → explodeNum | [2·2·2/2",
+  "hCancel [nyTidy] → cancelVar | 2·2",
+  "hMerge [nyTidy] → mergeNum | 4",
+  "clean"
+ ],
+ "practice trigvals d1 #3": [
+  "sin(90°) + cos(360°)",
+  "hExplodeTrig [nyTidy] → trigValue | 1 + cos(360°)",
+  "hExplodeTrig [nyTidy] → trigValue | 1 + 1",
+  "hLike [nyLike] → likeAdd | 2",
+  "clean"
+ ],
+ "practice trigvals d2 #0": [
+  "sin(60°)cos(30°)",
+  "hExplodeTrig [nyTidy] → trigValue | [√3cos(30°)/2",
+  "hExplodeTrig [nyTidy] → trigValue | [√3√3/2·2",
+  "hMerge [nyTidy] → mergeGroup | [√3·3/2·2",
+  "hRootPair [nyTidy] → rootOut | [3/2·2",
+  "hMerge [nyTidy] → mergeNum | [3/4",
+  "clean"
+ ],
+ "practice trigvals d2 #1": [
+  "4sin(30°)cos(60°)",
+  "hExplodeTrig [nyTidy] → trigValue | [4cos(60°)/2",
+  "hExplodeCancel [nyTidy] → explodeNum | [2·2cos(60°)/2",
+  "hCancel [nyTidy] → cancelVar | 2cos(60°)",
+  "hExplodeTrig [nyTidy] → trigValue | [2/2",
+  "hCancel [nyCancelNum] → cancelVar | 1",
+  "clean"
+ ],
+ "practice trigvals d2 #2": [
+  "4sin(30°)cos(60°)",
+  "hExplodeTrig [nyTidy] → trigValue | [4cos(60°)/2",
+  "hExplodeCancel [nyTidy] → explodeNum | [2·2cos(60°)/2",
+  "hCancel [nyTidy] → cancelVar | 2cos(60°)",
+  "hExplodeTrig [nyTidy] → trigValue | [2/2",
+  "hCancel [nyCancelNum] → cancelVar | 1",
+  "clean"
+ ],
+ "practice trigvals d2 #3": [
+  "4sin(30°)cos(60°)",
+  "hExplodeTrig [nyTidy] → trigValue | [4cos(60°)/2",
+  "hExplodeCancel [nyTidy] → explodeNum | [2·2cos(60°)/2",
+  "hCancel [nyTidy] → cancelVar | 2cos(60°)",
+  "hExplodeTrig [nyTidy] → trigValue | [2/2",
+  "hCancel [nyCancelNum] → cancelVar | 1",
+  "clean"
+ ],
+ "practice trigvals d3 #0": [
+  "tan(60°)",
+  "hExplodeTrig [nyTidy] → tanSinCos | [sin(60°)/cos(60°)",
+  "hExplodeTrig [nyTidy] → trigValue | [√3/cos(60°)·2",
+  "hExplodeTrig [nyTidy] → trigValue | [2√3/2",
+  "hCancel [nyCancelNum] → cancelVar | √3",
+  "clean"
+ ],
+ "practice trigvals d3 #1": [
+  "tan(45°)",
+  "hExplodeTrig [nyTidy] → tanSinCos | [sin(45°)/cos(45°)",
+  "hExplodeTrig [nyTidy] → trigValue | [√2/cos(45°)·2",
+  "hExplodeTrig [nyTidy] → trigValue | [2√2/2√2",
+  "hCancel [nyCancelNum] → cancelVar | [2/2",
+  "hCancel [nyCancelNum] → cancelVar | 1",
+  "clean"
+ ],
+ "practice trigvals d3 #2": [
+  "tan(45°)",
+  "hExplodeTrig [nyTidy] → tanSinCos | [sin(45°)/cos(45°)",
+  "hExplodeTrig [nyTidy] → trigValue | [√2/cos(45°)·2",
+  "hExplodeTrig [nyTidy] → trigValue | [2√2/2√2",
+  "hCancel [nyCancelNum] → cancelVar | [2/2",
+  "hCancel [nyCancelNum] → cancelVar | 1",
+  "clean"
+ ],
+ "practice trigvals d3 #3": [
+  "tan(45°)",
+  "hExplodeTrig [nyTidy] → tanSinCos | [sin(45°)/cos(45°)",
+  "hExplodeTrig [nyTidy] → trigValue | [√2/cos(45°)·2",
+  "hExplodeTrig [nyTidy] → trigValue | [2√2/2√2",
+  "hCancel [nyCancelNum] → cancelVar | [2/2",
+  "hCancel [nyCancelNum] → cancelVar | 1",
+  "clean"
+ ],
+ "practice trigid d1 #0": [
+  "3sin^2(x) + 3cos^2(x) = 3",
+  "hPyth [nyProve] → pythOne | 3 = 3",
+  "clean"
+ ],
+ "practice trigid d1 #1": [
+  "3sin^2(b) + 3cos^2(b) = 3",
+  "hPyth [nyProve] → pythOne | 3 = 3",
+  "clean"
+ ],
+ "practice trigid d1 #2": [
+  "tan(b)cos(b) = sin(b)",
+  "hExplodeTrig [nyTidy] → tanSinCos | [sin(b)cos(b)/cos(b) = sin(b)",
+  "hCancel [nyProve] → cancelVar | sin(b) = sin(b)",
+  "clean"
+ ],
+ "practice trigid d1 #3": [
+  "tan(a)cos(a) = sin(a)",
+  "hExplodeTrig [nyTidy] → tanSinCos | [sin(a)cos(a)/cos(a) = sin(a)",
+  "hCancel [nyProve] → cancelVar | sin(a) = sin(a)",
+  "clean"
+ ],
+ "practice trigid d2 #0": [
+  "(1 − sin(x))(1 + sin(x)) = cos^2(x)",
+  "hOpen [nyBracket] → distribute | 1 + sin(x) − sin(x)(1 + sin(x)) = cos^2(x)",
+  "hOpen [nyBracket] → distribute | 1 + sin(x) − sin(x) − sin(x)sin(x) = cos^2(x)",
+  "hMerge [nyTidy] → mergeGroup | 1 + sin(x) − sin(x) − sin^2(x) = cos^2(x)",
+  "hLike [nyLike] → likeZero | 1 − sin^2(x) = cos^2(x)",
+  "hPythSwap [nyProve] → pythSwap | 1 − 1 + cos^2(x) = cos^2(x)",
+  "hLike [nyLike] → likeZero | cos^2(x) = cos^2(x)",
+  "clean"
+ ],
+ "practice trigid d2 #1": [
+  "(sin(x) + cos(x))^2 = 1 + 2sin(x)cos(x)",
+  "hGroup [nyBracket] → explodeGroup | (sin(x) + cos(x))(sin(x) + cos(x)) = 1 + 2sin(x)cos(x)",
+  "hOpen [nyBracket] → distribute | sin(x)(sin(x) + cos(x)) + cos(x)(sin(x) + cos(x)) = 1 + 2sin(x)cos(x)",
+  "hOpen [nyBracket] → distribute | sin(x)sin(x) + sin(x)cos(x) + cos(x)(sin(x) + cos(x)) = 1 + 2sin(x)cos(x)",
+  "hMerge [nyTidy] → mergeGroup | sin^2(x) + sin(x)cos(x) + cos(x)(sin(x) + cos(x)) = 1 + 2sin(x)cos(x)",
+  "hOpen [nyBracket] → distribute | sin^2(x) + sin(x)cos(x) + cos(x)sin(x) + cos(x)cos(x) = 1 + 2sin(x)cos(x)",
+  "hMerge [nyTidy] → mergeGroup | sin^2(x) + sin(x)cos(x) + cos(x)sin(x) + cos^2(x) = 1 + 2sin(x)cos(x)",
+  "hPyth [nyLike] → pythOne | 1 + sin(x)cos(x) + cos(x)sin(x) = 1 + 2sin(x)cos(x)",
+  "hLike [nyLike] → likeAdd | 1 + 2sin(x)cos(x) = 1 + 2sin(x)cos(x)",
+  "clean"
+ ],
+ "practice trigid d2 #2": [
+  "cos^2(x) − sin^2(x) = 2cos^2(x) − 1",
+  "hPythSwap [nyProve] → pythSwap | cos^2(x) − 1 + cos^2(x) = 2cos^2(x) − 1",
+  "hLike [nyLike] → likeAdd | 2cos^2(x) − 1 = 2cos^2(x) − 1",
+  "clean"
+ ],
+ "practice trigid d2 #3": [
+  "cos^2(a) − sin^2(a) = 2cos^2(a) − 1",
+  "hPythSwap [nyProve] → pythSwap | cos^2(a) − 1 + cos^2(a) = 2cos^2(a) − 1",
+  "hLike [nyLike] → likeAdd | 2cos^2(a) − 1 = 2cos^2(a) − 1",
+  "clean"
+ ],
+ "practice trigid d3 #0": [
+  "cos(180° − b) = −cos(b)",
+  "hExplodeTrig [nyTidy] → trigSumCos | cos(180°)cos(−b) − sin(180°)sin(−b) = −cos(b)",
+  "hExplodeTrig [nyTidy] → trigValue | −cos(−b) − sin(180°)sin(−b) = −cos(b)",
+  "hExplodeTrig [nyTidy] → trigEven | −cos(b) − sin(180°)sin(−b) = −cos(b)",
+  "hExplodeTrig [nyTidy] → trigValue | −cos(b) = −cos(b)",
+  "clean"
+ ],
+ "practice trigid d3 #1": [
+  "sin(2x) = 2sin(x)cos(x)",
+  "hSplitAngle [nyTidy] → splitTwo | sin(x + x) = 2sin(x)cos(x)",
+  "hExplodeTrig [nyTidy] → trigSumSin | sin(x)cos(x) + cos(x)sin(x) = 2sin(x)cos(x)",
+  "hLike [nyLike] → likeAdd | 2sin(x)cos(x) = 2sin(x)cos(x)",
+  "clean"
+ ],
+ "practice trigid d3 #2": [
+  "sin(2a) = 2sin(a)cos(a)",
+  "hSplitAngle [nyTidy] → splitTwo | sin(a + a) = 2sin(a)cos(a)",
+  "hExplodeTrig [nyTidy] → trigSumSin | sin(a)cos(a) + cos(a)sin(a) = 2sin(a)cos(a)",
+  "hLike [nyLike] → likeAdd | 2sin(a)cos(a) = 2sin(a)cos(a)",
+  "clean"
+ ],
+ "practice trigid d3 #3": [
+  "sin(a + 90°) = cos(a)",
+  "hExplodeTrig [nyTidy] → trigSumSin | sin(a)cos(90°) + cos(a)sin(90°) = cos(a)",
+  "hExplodeTrig [nyTidy] → trigValue | cos(a)sin(90°) = cos(a)",
+  "hExplodeTrig [nyTidy] → trigValue | cos(a) = cos(a)",
   "clean"
  ]
 }

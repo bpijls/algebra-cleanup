@@ -87,6 +87,6 @@ export function select(s) {
   if (ui.block) return say('pickedBlock', { x: mx(fx(ui.block.L.f)), ex: mx(blockHTML(ui.block.L.terms, ui.block.key)) }, 'info');
   const has = partnersOf(ui.S, ui.sel).size > 0;
   const canExplode = s.t === 'f' && !$('btnExplode').hidden;
-  if (isEquation(ui.S) && !has) return say('pickedEq', {}, 'info');
+  if (isEquation(ui.S) && ui.S.goal !== 'prove' && !has) return say('pickedEq', {}, 'info');
   say(s.t === 'f' ? (has ? 'pickedP' : canExplode ? 'picked' : 'pickedAtom') : (has ? 'pickedTermP' : 'pickedTerm'), {}, 'info');
 }

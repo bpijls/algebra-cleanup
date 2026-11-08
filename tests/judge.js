@@ -125,7 +125,10 @@ function fuzz(start, steps, label) {
       const old = JSON.parse(snap);
       const branching = S.op === '=' && (trial.parts.length !== old.parts.length || ['rootBoth', 'rootZero', 'zeroProduct'].includes(r.ok));
       const pair = (X, b) => ({ parts: X.parts.slice(2 * b, 2 * b + 2), op: '=' });
-      const kept = branching ? sameSolutions(solutions(old), solutions(trial))
+      // an identity to show (goal prove): each side keeps its own value; L − R is 0 everywhere, so a ratio says nothing
+      const sides = X => X.parts.map(P => VALS.map(env => holds(trial.conds, env) ? evP(P, env) : null));
+      const kept = S.goal === 'prove' ? sides(old).every((u, i) => same(u, sides(trial)[i]))
+        : branching ? sameSolutions(solutions(old), solutions(trial))
         : S.op === '=' ? old.parts.every((_, i) => i % 2 || equivalent(eqValues(pair(old, i / 2), old), eqValues(pair(trial, i / 2), old)))
         : same(values(old, trial.conds), values(trial));
       assert.ok(kept, `${label}: move ${r.ok} changed the ${S.op === '=' ? 'solutions' : 'value'}\nbefore ${G.stateHTML(JSON.parse(snap))}\nafter  ${G.stateHTML(trial)}`);
