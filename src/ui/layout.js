@@ -25,8 +25,9 @@ export function fitBoard(wrap) {
   if (isEquation(ui.S)) {
     wrap.classList.add('oneline');                    // nothing wraps, so this is its natural width
     const k = wrap.parentElement.clientWidth * 0.94 / wrap.scrollWidth;
-    if (k >= 1) return;
-    if (k >= 0.72) { wrap.style.zoom = String(k); return; }
+    // (its height too: a phone on its side with the balance panel open has little of it)
+    if (k >= 1) { fitHeight(wrap); return; }
+    if (k >= 0.72) { wrap.style.zoom = String(k); fitHeight(wrap); return; }
     wrap.classList.remove('oneline');                 // too long: break before the =, then fit each line
   }
   // a product reads best whole: shrink it rather than break it between two factors
@@ -62,7 +63,9 @@ function dotsDown(wrap) {
 function fitHeight(wrap) {
   const cs = getComputedStyle(board), room = board.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
   const h = wrap.getBoundingClientRect().height, z = parseFloat(wrap.style.zoom) || 1;
-  if (room > 0 && h > room) wrap.style.zoom = String(Math.max(0.55, z * room / h));
+  // two branches with the balance panel open get a little further: a row under the panel can't be dragged
+  const floor = isBranched(ui.S) ? 0.45 : 0.55;
+  if (room > 0 && h > room) wrap.style.zoom = String(Math.max(floor, z * room / h));
 }
 window.addEventListener('resize', () => { const w = board.querySelector('.expr'); if (w) fitBoard(w); });
 // the board keeps its tiles in the open space between the bars, whatever their height
