@@ -50,13 +50,18 @@ Native ES modules, no framework, no build step needed to run (`index.html` loads
 | `src/core/rules/pair.js` | The pair rules (what tapping A then B means, or why not) and the actions (`merge`, `cancel`, `factor`, `factorRest`, `rootOut`, `ones`, `addTerms`, `move`). |
 | `src/core/rules/explode.js` | One explode handler per kind (`12 → 2·2·3`, `x³ → x·x·x`, opening brackets, `(2a)³`, a root refuses). |
 | `src/core/moves.js` | The other moves: `opFactor`, `opSplitTwo`, sweeps, `opGather`, `termPair`, the fraction sign (`opOp`, `opBar`), `opMove`, and the helpers the rules use (`cancelCheck`, `restOf`). |
-| `src/core/hints.js` | Simplify and factor hints (`factorHint`, `sumProductHint`) and the `hint` entry point. |
+| `src/core/goals/registry.js` | Leaf module: `defineGoal(id, { isDone, tactics })`, `goalOf`, `runTactics`, `defineBranchStrategy`, `defineHintMove`. |
+| `src/core/goals/index.js` | `hint(S)` (the goal's tactics in order; an equation always uses the solve goal) and `playHint(S, h)` (the move a hint stands for). |
+| `src/core/goals/simplify.js` | The simplify and factor goals as tactic lists: `fractionPair`, `rootPairs`, `groups`, `cancelAcross`, (`factorHint`), `merges`, `likeTerms`, `openBrackets` / (`sumProductHint`). |
+| `src/core/goals/solve.js` | The solve goal: `eqHint` gives each unsolved branch the first branch strategy that applies (`generic` → `genHint`, `quadratic` → `quadHint`, `linear` → `pairHint`). |
+| `src/core/goals/play.js` | Hint → move: which move each hint key (or `drag`/`balance`) stands for; `autoSolveStep` plays it. |
+| `src/core/hints.js` | Factor-goal hints (`factorHint`, `sumProductHint`), used as tactics. |
 | `src/core/balance.js` | Equations: `opBalance`, `opSwap`, `loneSquare`, `dragBalance`, `opDrag`, `isSolved`. |
 | `src/core/done.js` | `whyNotDone`. |
-| `src/core/quadratic.js` | `opRoot`, `opZero`, `quadOf`, `PVAL`, `eqHint`, `quadHint`. |
+| `src/core/quadratic.js` | `opRoot`, `opZero`, `quadOf`, `PVAL`, `quadHint`. |
 | `src/core/generic.js` | Letters for numbers: monomial helpers, `genHint`, `pairHint`. |
 | `src/content/levels.js` | `LEVELS` and `buildLevel`. |
-| `src/practice.js` | Random problem generator (`GEN`, `makeProblem`), `autoSolveStep` and `autoSolve`. |
+| `src/practice.js` | Random problem generator (`GEN`, `makeProblem`), `autoSolveStep` (`playHint(S, hint(S))`, then normalize) and `autoSolve`. |
 | `src/parse.js` | `parseProblem(text, goal, unknown)` turns typed textbook notation (`(x+3)(x-2)`, `12a^5/4a^2`, `12a⁵ : 4a²`, `(8x/3y):(3x/y)`, `−2(x+4)`, equations like `5x+3=2x+12`) into a state, or `{ err, at }` with an i18n key (`pParen`, `pFracSum`, …). `guessGoal` picks factor for a plain clean sum and solve for an equation. A sum next to `/` must be bracketed (`x/3 + 2` would read as `x/(3+2)`: `pFracSum`). An equation needs a letter (`pEqNoLetter`); with several, the unknown is the one asked for, else `x` (`S.unknown`), else `pEqWhich` (`pEqUnknown` when the asked letter isn't there). |
 | `src/i18n.js` | `I18N.en` / `I18N.nl`: all player-facing text; `lang`/`setLang` (unset in tests, so `orWord` gives `∨`); `t(key, params)` fills in a template. |
 | `src/ui.js` | The entry module: rendering, tap/swipe/drag input, animation, the menu and floating bars, level and practice screens. `window.alg` exposes its state and entry points (`alg.S`, `alg.loadLevel(i)`, `alg.hint`) for devtools and browser playthrough scripts. |
@@ -84,7 +89,7 @@ Native ES modules, no framework, no build step needed to run (`index.html` loads
 - `Term = { k:'t', f: Factor[], neg }`.
 - Factors: `N(v)` number, `V(b, e)` letter with exponent, `G(f, e)` bracket around a *product* with exponent, `Pr(terms, e)` bracket around a *sum* with exponent, `Rt(terms)` root. Each is a kind in `core/kinds/`; **a new kind** (log, sin, π) is a new file there calling `defineKind`, a `defineHTML(k, rank, html)` in `render/text.js` and a tile in ui.js, and the judge evaluates it through its `eval`. Every node has a unique `id`; tiles in the DOM carry it as `data-id`. `sumKey(terms)` compares sums regardless of term and factor order.
 - `normalize(S)` cleans up after every move (drops `1`s and `x⁰`/`(…)⁰`, unwraps one-term brackets (a one-term `Pr` with a power becomes a `G`), unwraps a bare `+(…)` term but never `−(…)` or `(…)²`, collapses `(a/1)/(b/1)`). A bracket that is the whole top or bottom of a fraction stays a bracket, so `(x+2)/((x+2)(x+3))` can cancel it as one piece; `isClean` reads such a side as its sum (`unbare`).
-- `isClean(S)` decides whether Done? wins. `goal: 'factor'` levels use `isFactored`: one term, a tidy rest, any number of *different* brackets (`(x+2)(x+2)` must be merged to `(x+2)²`), each with no common factor and not a trinomial that `quadSplit` can still split.
+- `isClean(S)` decides whether Done? wins: `goalOf(S).isDone(S)` (`isSimplified`, `isFactored`, `isSolved`). `goal: 'factor'` levels use `isFactored`: one term, a tidy rest, any number of *different* brackets (`(x+2)(x+2)` must be merged to `(x+2)²`), each with no common factor and not a trinomial that `quadSplit` can still split.
 
 ### Move contract
 
@@ -97,7 +102,7 @@ Every move function either:
 
 Factor-goal hints (`factorHint`, `sumProductHint`) work on a *focus*: the terms without a bracket once some term has one (`x(x+2) + 3x + 6` → work on `3x + 6`), or the first pair of a four-term sum. In order: a bracket shared by two terms; a piece exactly in every focus term; explode a number or power that hides a shared factor (`hExplodeFor`, `hExplodeVar`); merges; like terms; then the sum-product split (`hSumProduct`, carries `split`). In simplify levels the merge hint never folds `(a+b)(a+b)` back into a square.
 
-Equation hints (`eqHint`): first tidy each side with the ordinary hints (`hint(sideView(P))`), then: a fraction → multiply both sides by its bottom (`hBalanceMul`); letters only on the right → swap (`hSwap`); a letter term on the right or a number on the left → take it away from both sides (`hBalanceTerm`); `a·x = c` → divide by `a` (`hBalanceDiv`). Balance hints carry `drag` (the piece to drag; for a term alone on its side a non-number tile, since dragging its number would divide) and `balance: { op, value }`; `autoSolveStep` plays `opDrag(S, h.drag)`, and a corpus test checks that the drag does exactly what `balance` says.
+Equation hints (`eqHint`): first tidy each side with the ordinary hints (`hint(sideView(P))`), then: a fraction → multiply both sides by its bottom (`hBalanceMul`); letters only on the right → swap (`hSwap`); a letter term on the right or a number on the left → take it away from both sides (`hBalanceTerm`); `a·x = c` → divide by `a` (`hBalanceDiv`). Balance hints carry `drag` (the piece to drag; for a term alone on its side a non-number tile, since dragging its number would divide) and `balance: { op, value }`; `autoSolveStep` plays `opDrag(S, h.drag)` (goals/play.js), and a corpus test checks that the drag does exactly what `balance` says.
 
 Quadratic hints: `eqHint` gives each branch `quadHint` when `quadOf` finds an `x²` term, else `pairHint` (the linear route above). `quadHint`, in order: swap; product = 0 (`hZero`); merge equal brackets; a square alone → root (tidy the other side first; `hRoot`, or divide away a coefficient); factoring under way → the factor-goal hints on the left side; tidy; letters to the left; a perfect square → sum-product; factorable (`quadSplit`) → everything to the left, `= 0`, sum-product; `D < 0` → `hNoRealD` (no move); else constant to the right, then `hComplete` (+k²) or `hMul4a` (×4a). Hints carry `zero`, `root` or `balance` (with `bi`); `autoSolveStep` plays them. `hNoReal*` returns null (nothing to do).
 
@@ -153,7 +158,7 @@ Config is in `.env` (copy `.env.example`): `APP_DOMAIN`, `CADDY_NETWORK`, `HOST_
 
 ## Refactoring towards an algebra system
 
-`docs/refactor-plan.md` is the agreed plan (SOLID): node-type and rule registries, explicit problem types, goals built from tactics, rendering out of core, ES modules, in steps that each keep `npm test` and the golden traces green. Done: step 0 (golden traces), step 1 (ES modules), step 2 (rendering out of the model). step 3 (node-type registry). step 4 (problem shape behind `core/problem.js`). step 5 (rule engine, move registry). Next: step 6 (hints as tactics).
+`docs/refactor-plan.md` is the agreed plan (SOLID): node-type and rule registries, explicit problem types, goals built from tactics, rendering out of core, ES modules, in steps that each keep `npm test` and the golden traces green. Done: step 0 (golden traces), step 1 (ES modules), step 2 (rendering out of the model). step 3 (node-type registry). step 4 (problem shape behind `core/problem.js`). step 5 (rule engine, move registry). step 6 (goals, tactics, branch strategies). Next: step 7 (UI split).
 
 ## Known limitations and ideas
 

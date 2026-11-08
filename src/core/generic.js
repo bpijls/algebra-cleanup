@@ -1,6 +1,6 @@
 /* Generic equations: letters for numbers (ax + b = cx + d, ax² + bx + c = 0). */
 import { isZeroSide, letters, loneSquare } from './balance.js';
-import { hint } from './hints.js';
+import { hint } from './goals/index.js';
 import { V } from './kinds/letter.js';
 import { N } from './kinds/number.js';
 import { T, cloneF, fHasU, tHasU } from './kinds/sums.js';

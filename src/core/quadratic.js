@@ -1,15 +1,15 @@
 /* Quadratic equations: root of both sides, product = 0, and their hints. */
-import { isSolved, isZeroSide, letters, loneSquare } from './balance.js';
-import { genHint, pairHint } from './generic.js';
-import { hint, quadSplit, sumProductHint } from './hints.js';
+import { isZeroSide, letters, loneSquare } from './balance.js';
+import { hint } from './goals/index.js';
+import { quadSplit, sumProductHint } from './hints.js';
 import { Pr } from './kinds/bracket.js';
 import { G } from './kinds/group.js';
 import { V } from './kinds/letter.js';
 import { N } from './kinds/number.js';
 import { Rt } from './kinds/root.js';
 import { F, T, cloneF, cloneT, evalTerms, fHasU, fkey } from './kinds/sums.js';
-import { addCond, canMerge, cleanTerm, hasU, isOne, params, unknownOf, walkTerms } from './model.js';
-import { branchCount, eqView, hasBranch, pairOf, setBranch } from './problem.js';
+import { addCond, canMerge, cleanTerm, hasU, isOne, unknownOf, walkTerms } from './model.js';
+import { hasBranch, pairOf, setBranch } from './problem.js';
 import { defineMove } from './rules/registry.js';
 import { bx, condHTML, fracHTML, fx, mx, orWord, sumHTML, termHTML } from '../render/text.js';
 
@@ -89,17 +89,6 @@ export function opZero(S, bi = 0) {
 export const sideView = P => ({ parts: [P], op: null, goal: 'simplify' });
 
 // several branches: work on the first one that isn't solved yet (bi tells the move which branch)
-export function eqHint(S) {
-  if (isSolved(S)) return { k: 'hDone', ids: [] };
-  for (let b = 0; b < branchCount(S); b++) {
-    const E = eqView(S, b);
-    if (isSolved(E)) continue;
-    const q = quadOf(E);
-    const h = params(E).length ? genHint(E, unknownOf(E)) : q && Math.abs(q.a) > 1e-9 ? quadHint(E, q) : pairHint(E);
-    return { ...h, bi: b };
-  }
-  return { k: 'hDone', ids: [] };
-}
 
 export const isSquareTerm = t => t.f.some(f => f.e === 2 && f.k !== 'n');
 

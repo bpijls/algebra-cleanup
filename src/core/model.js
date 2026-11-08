@@ -1,6 +1,7 @@
 /* The algebra model: tidiness, normalize, isClean, walking, branches. The nodes themselves are in kinds/. No DOM. */
 import './kinds/index.js';   // registers every kind of node
-import { isSolved, letters } from './balance.js';
+import { letters } from './balance.js';
+import { goalOf } from './goals/registry.js';
 import { quadSplit } from './hints.js';
 import { G } from './kinds/group.js';
 import { N } from './kinds/number.js';
@@ -146,9 +147,11 @@ export function isFactored(S) {
 // a side that is one bare bracket reads as the sum inside it
 export const unbare = side => side.length === 1 && !side[0].neg && side[0].f.length === 1 && side[0].f[0].k === 'p' && side[0].f[0].e === 1 ? side[0].f[0].terms : side;
 
-export function isClean(S) {
-  if (S.goal === 'solve') return isSolved(S);
-  if (S.goal === 'factor') return isFactored(S);
+// finished, as the problem's goal sees it (Done? wins)
+export const isClean = S => goalOf(S).isDone(S);
+
+// a simplify goal is done when each side is a sum of tidy, unlike terms and the fraction can't cancel
+export function isSimplified(S) {
   if (S.parts.length > 1) return false;
   const P = S.parts[0];
   for (const side of SIDES) {

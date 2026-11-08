@@ -1,14 +1,11 @@
 /* ===== PRACTICE: random problem generator ===== */
-import { opBalance, opDrag, opSwap } from './core/balance.js';
-import { hint } from './core/hints.js';
+import { hint, playHint } from './core/goals/index.js';
 import { Pr } from './core/kinds/bracket.js';
 import { G } from './core/kinds/group.js';
 import { V } from './core/kinds/letter.js';
 import { N } from './core/kinds/number.js';
 import { F, T } from './core/kinds/sums.js';
 import { coefAbs, gcd, isClean, normalize, primeFactors, varPart } from './core/model.js';
-import { opOp, opSplitTwo } from './core/moves.js';
-import { opExplode, opPair } from './core/rules/engine.js';
 import { parseProblem } from './parse.js';
 import { stateHTML } from './render/text.js';
 
@@ -244,18 +241,9 @@ export const GEN = {
 };
 
 // follow one hint; returns the move's result, or null when the hint can't be followed
+// one hint, played; null when there is none or it can't be played
 export function autoSolveStep(S) {
-  const h = hint(S); let r = null;
-  if (h.k === 'hDone') return null;
-  if (h.k === 'hDiv' || h.k === 'hBar' || h.k === 'hJoin') r = opOp(S);
-  else if (h.k === 'hGroup' || h.k === 'hOpen' || h.k === 'hExplodeVar') r = opExplode(S, h.ids[0]);
-  else if (h.k === 'hExplodeCancel' || h.k === 'hExplodeNums' || h.k === 'hExplodeFor' || h.k === 'hExplodeRoot') { for (const id of h.ids) { r = opExplode(S, id); normalize(S); if (r && r.no) break; } }
-  else if (h.k === 'hSumProduct' || h.k === 'hSplitSquare') r = opSplitTwo(S, h.ids[0], h.split);
-  else if (h.drag != null) r = opDrag(S, h.drag);   // the hinted piece, dragged across the =
-  else if (h.k === 'hSwap') r = opSwap(S, h.bi || 0);
-  else if (h.balance) r = opBalance(S, h.balance.op, h.balance.value, h.bi || 0);   // typed: + 9, · 8
-  else if (h.k === 'hNoReal' || h.k === 'hNoRealD') return null;
-  else r = opPair(S, h.ids[0], h.ids[1]);
+  const r = playHint(S, hint(S));
   if (!r || r.no) return null;
   normalize(S);
   return r;

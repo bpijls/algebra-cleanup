@@ -2,7 +2,7 @@
 import { LEVELS, buildLevel } from './content/levels.js';
 import { BOPS, letters, loneSquare, opBalance, opDrag, opSwap } from './core/balance.js';
 import { whyNotDone } from './core/done.js';
-import { hint } from './core/hints.js';
+import { hint } from './core/goals/index.js';
 import { V } from './core/kinds/letter.js';
 import { N } from './core/kinds/number.js';
 import { T, cloneF, sumKey } from './core/kinds/sums.js';
