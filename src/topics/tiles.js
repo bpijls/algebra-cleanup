@@ -6,3 +6,4 @@ import './exp/tile.js';
 import './complex/tile.js';
 import './logic/tile.js';
 import './formulas/tile.js';
+import './calculus/tile.js';

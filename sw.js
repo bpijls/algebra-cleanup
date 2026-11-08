@@ -1,7 +1,7 @@
 /* Service worker: the game works offline once it has been opened.
    Own files are network-first (edits on the server show up on the next load; the cache is the fallback),
    Google Fonts are cache-first (they never change for a given URL). Bump VERSION when SHELL changes. */
-const VERSION = 'v21';
+const VERSION = 'v22';
 const SHELL_CACHE = 'alg-shell-' + VERSION, FONT_CACHE = 'alg-fonts-' + VERSION;
 const SHELL = [
   './', 'index.html', 'manifest.webmanifest',
@@ -15,7 +15,7 @@ const SHELL = [
   'src/core/goals/index.js', 'src/core/goals/play.js', 'src/core/goals/prove.js', 'src/core/goals/registry.js',
   'src/core/goals/simplify.js', 'src/core/goals/solve.js', 'src/core/kinds/bracket.js', 'src/core/kinds/group.js',
   'src/core/kinds/index.js', 'src/core/kinds/letter.js', 'src/core/kinds/number.js', 'src/core/kinds/registry.js',
-  'src/core/kinds/root.js', 'src/core/kinds/sums.js', 'src/core/kinds/fraction.js', 'src/core/fractions.js', 'src/content/fractions.js', 'src/core/kinds/exponent.js', 'src/core/exponents.js', 'src/content/exponents.js', 'src/content/inequalities.js', 'src/topics/exp/kind.js', 'src/topics/exp/rules.js', 'src/topics/exp/levels.js', 'src/topics/exp/tile.js', 'src/topics/complex/kind.js', 'src/topics/complex/rules.js', 'src/topics/complex/levels.js', 'src/topics/complex/tile.js', 'src/topics/logic/kind.js', 'src/topics/logic/rules.js', 'src/topics/logic/levels.js', 'src/topics/logic/tile.js', 'src/topics/formulas/rules.js', 'src/topics/formulas/levels.js', 'src/topics/formulas/tile.js', 'src/core/rules/engine.js', 'src/core/rules/explode.js',
+  'src/core/kinds/root.js', 'src/core/kinds/sums.js', 'src/core/kinds/fraction.js', 'src/core/fractions.js', 'src/content/fractions.js', 'src/core/kinds/exponent.js', 'src/core/exponents.js', 'src/content/exponents.js', 'src/content/inequalities.js', 'src/topics/exp/kind.js', 'src/topics/exp/rules.js', 'src/topics/exp/levels.js', 'src/topics/exp/tile.js', 'src/topics/complex/kind.js', 'src/topics/complex/rules.js', 'src/topics/complex/levels.js', 'src/topics/complex/tile.js', 'src/topics/logic/kind.js', 'src/topics/logic/rules.js', 'src/topics/logic/levels.js', 'src/topics/logic/tile.js', 'src/topics/formulas/rules.js', 'src/topics/formulas/levels.js', 'src/topics/formulas/tile.js', 'src/topics/calculus/kind.js', 'src/topics/calculus/rules.js', 'src/topics/calculus/levels.js', 'src/topics/calculus/tile.js', 'src/core/rules/engine.js', 'src/core/rules/explode.js',
   'src/core/rules/pair.js', 'src/core/rules/registry.js', 'src/topics/log/kind.js', 'src/topics/log/levels.js',
   'src/topics/log/rules.js', 'src/topics/log/tile.js', 'src/topics/trig/kind.js', 'src/topics/trig/levels.js',
   'src/topics/trig/rules.js', 'src/topics/trig/tile.js',

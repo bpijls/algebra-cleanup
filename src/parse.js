@@ -45,6 +45,7 @@ export function tokenize(src) {
       if (open) { if (s[j] !== ')') return { err: 'pPower', at: i }; j++; }
       out.push({ t: 'pow', v: neg ? -v : v, at: i }); i = j; continue;
     }
+    if ((ch === "'" || ch === '′') && UNARY.prime) { out.push({ t: 'prime', at: i }); i++; continue; }   // (x³)′: the derivative
     if ((ch === '¬' || ch === '!') && UNARY.not) { out.push({ t: 'not', at: i }); i++; continue; }   // logic: not
     if (/[a-z]/i.test(ch)) { out.push({ t: 'var', v: ch.toLowerCase(), at: i }); i++; continue; }
     if ('<>≤≥'.includes(ch)) {   // an inequality: x < 3, x <= 3, x ≥ 3
@@ -147,6 +148,7 @@ export function parseProblem(src, goal, unknown) {
     const inner = sum();
     if (!peek() || peek().t !== ')') { i = open; fail('pParen'); }
     i++;
+    if (peek() && peek().t === 'prime') { i++; return [UNARY.prime(inner)]; }
     const e = power();
     if (inner.length > 1) { if (e < 0 || !Number.isInteger(e)) fail('pPowSum'); return [Pr(inner, e)]; }
     const it = inner[0];

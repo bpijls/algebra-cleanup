@@ -18,3 +18,6 @@ import './logic/rules.js';
 import './logic/levels.js';
 import './formulas/rules.js';
 import './formulas/levels.js';
+import './calculus/kind.js';
+import './calculus/rules.js';
+import './calculus/levels.js';

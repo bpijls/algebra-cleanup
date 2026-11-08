@@ -29,6 +29,10 @@ const CHAPTERS = {
     ['a·(a+b)', 'a', 'logic'], ['a·b+a·¬b', 'a', 'logic'], ['¬(a·b)', '¬a + ¬b', 'logic'], ['¬(a+b)', '¬a¬b', 'logic'],
     ['¬(¬a·¬b)', 'a + b', 'logic'], ['(a+b)·(a+¬b)', 'a', 'logic'], ['!(a+!b)', '¬ab', 'logic'],
   ],
+  // a derivative is typed with a prime after a bracket: (x^3)'
+  'afgeleiden (derivatives)': [
+    ["(3x+5)'", '3'], ["(x^2)'", '2x'], ["(x^3)'", '3x^2'], ["(x^2+3x)'", '2x + 3'], ["(5x^2-4x+1)'", '10x − 4'], ["(x(x+1))'", '2x + 1'],
+  ],
   'machten (powers)': [
     ['3a^2·2a^5', '6a^7'], ['a^3·a^4·a', 'a^8'], ['(a^2)^3', 'a^6'], ['(2a)^3', '8a^3'], ['(3a^2b)^2', '9a^4b^2'],
     ['-2a·5a^3', '−10a^4'], ['2a^3·(a^2)^4', '2a^11'], ['3a^4b·2ab^3', '6a^5b^4'],

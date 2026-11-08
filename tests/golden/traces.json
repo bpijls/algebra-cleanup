@@ -1465,6 +1465,77 @@
   "hCancel [nyEqAlone] → cancelVar | t = [pv/nr",
   "clean"
  ],
+ "level deriv.1": [
+  "(3x + 5)′",
+  "hDeriv [nyTidy] → dSum | (3x)′ + (5)′",
+  "hDeriv [nyTidy] → dConst | 3(x)′ + (5)′",
+  "hDeriv [nyTidy] → dX | 3 + (5)′",
+  "hDeriv [nyTidy] → dZero | 3",
+  "clean"
+ ],
+ "level deriv.2": [
+  "(x^2)′",
+  "hDerivPower [nyTidy] → explodeVar | (xx)′",
+  "hDeriv [nyTidy] → dProduct | (x)′x + x(x)′",
+  "hDeriv [nyTidy] → dX | x + x(x)′",
+  "hDeriv [nyTidy] → dX | x + x",
+  "hLike [nyLike] → likeAddTap | 2x",
+  "clean"
+ ],
+ "level deriv.3": [
+  "(x^3)′",
+  "hDerivPower [nyTidy] → explodeVar | (xxx)′",
+  "hDeriv [nyTidy] → dProduct | (x)′xx + x(xx)′",
+  "hDeriv [nyTidy] → dX | xx + x(xx)′",
+  "hDeriv [nyTidy] → dProduct | xx + x((x)′x + x(x)′)",
+  "hDeriv [nyTidy] → dX | xx + x(x + x(x)′)",
+  "hDeriv [nyTidy] → dX | xx + x(x + x)",
+  "hMerge [nyTidy] → mergeVar | x^2 + x(x + x)",
+  "hLike [nyBracket] → likeAddTap | x^2 + x·2x",
+  "hMerge [nyTidy] → mergeVar | x^2 + 2x^2",
+  "hLike [nyLike] → likeAddTap | 3x^2",
+  "clean"
+ ],
+ "level deriv.4": [
+  "(x^2 + 3x)′",
+  "hDeriv [nyTidy] → dSum | (x^2)′ + (3x)′",
+  "hDerivPower [nyTidy] → explodeVar | (xx)′ + (3x)′",
+  "hDeriv [nyTidy] → dProduct | (x)′x + x(x)′ + (3x)′",
+  "hDeriv [nyTidy] → dX | x + x(x)′ + (3x)′",
+  "hDeriv [nyTidy] → dX | x + x + (3x)′",
+  "hDeriv [nyTidy] → dConst | x + x + 3(x)′",
+  "hDeriv [nyTidy] → dX | x + x + 3",
+  "hLike [nyLike] → likeAddTap | 2x + 3",
+  "clean"
+ ],
+ "level derivrules.1": [
+  "(x^5)′",
+  "hDeriv [nyTidy] → dPower | 5x^4",
+  "clean"
+ ],
+ "level derivrules.2": [
+  "(4x^3 − 2x)′",
+  "hDeriv [nyTidy] → dSum | (4x^3)′ − (2x)′",
+  "hDeriv [nyTidy] → dConst | 4(x^3)′ − (2x)′",
+  "hDeriv [nyTidy] → dPower | 4·3x^2 − (2x)′",
+  "hDeriv [nyTidy] → dConst | 4·3x^2 − 2(x)′",
+  "hDeriv [nyTidy] → dX | 4·3x^2 − 2",
+  "hMerge [nyTidy] → mergeNum | 12x^2 − 2",
+  "clean"
+ ],
+ "level derivrules.3": [
+  "((x + 1)(x + 2))′",
+  "hDeriv [nyTidy] → dProduct | (x + 1)′(x + 2) + (x + 1)(x + 2)′",
+  "hDeriv [nyBracket] → dSum | ((x)′ + (1)′)(x + 2) + (x + 1)(x + 2)′",
+  "hDeriv [nyBracket] → dX | (1 + (1)′)(x + 2) + (x + 1)(x + 2)′",
+  "hDeriv [nyBracket] → dZero | x + 2 + (x + 1)(x + 2)′",
+  "hDeriv [nyBracket] → dSum | x + 2 + (x + 1)((x)′ + (2)′)",
+  "hDeriv [nyBracket] → dX | x + 2 + (x + 1)(1 + (2)′)",
+  "hDeriv [nyBracket] → dZero | x + 2 + x + 1",
+  "hLike [nyLike] → likeAddTap | 2x + 2 + 1",
+  "hLike [nyLike] → likeAdd | 2x + 3",
+  "clean"
+ ],
  "breuken optellen (adding fractions): 1/2+1/3": [
   "[1/2 + [1/3",
   "hExpandTo [nyCombine] → expandBy | [3/2·3 + [1/3",
@@ -1978,6 +2049,74 @@
   "¬(a + ¬b)",
   "hNot [nyNot] → deMorganOr | ¬a¬¬b",
   "hNot [nyNot] → notNot | ¬ab",
+  "clean"
+ ],
+ "afgeleiden (derivatives): (3x+5)'": [
+  "(3x + 5)′",
+  "hDeriv [nyTidy] → dSum | (3x)′ + (5)′",
+  "hDeriv [nyTidy] → dConst | 3(x)′ + (5)′",
+  "hDeriv [nyTidy] → dX | 3 + (5)′",
+  "hDeriv [nyTidy] → dZero | 3",
+  "clean"
+ ],
+ "afgeleiden (derivatives): (x^2)'": [
+  "(x^2)′",
+  "hDerivPower [nyTidy] → explodeVar | (xx)′",
+  "hDeriv [nyTidy] → dProduct | (x)′x + x(x)′",
+  "hDeriv [nyTidy] → dX | x + x(x)′",
+  "hDeriv [nyTidy] → dX | x + x",
+  "hLike [nyLike] → likeAddTap | 2x",
+  "clean"
+ ],
+ "afgeleiden (derivatives): (x^3)'": [
+  "(x^3)′",
+  "hDerivPower [nyTidy] → explodeVar | (xxx)′",
+  "hDeriv [nyTidy] → dProduct | (x)′xx + x(xx)′",
+  "hDeriv [nyTidy] → dX | xx + x(xx)′",
+  "hDeriv [nyTidy] → dProduct | xx + x((x)′x + x(x)′)",
+  "hDeriv [nyTidy] → dX | xx + x(x + x(x)′)",
+  "hDeriv [nyTidy] → dX | xx + x(x + x)",
+  "hMerge [nyTidy] → mergeVar | x^2 + x(x + x)",
+  "hLike [nyBracket] → likeAddTap | x^2 + x·2x",
+  "hMerge [nyTidy] → mergeVar | x^2 + 2x^2",
+  "hLike [nyLike] → likeAddTap | 3x^2",
+  "clean"
+ ],
+ "afgeleiden (derivatives): (x^2+3x)'": [
+  "(x^2 + 3x)′",
+  "hDeriv [nyTidy] → dSum | (x^2)′ + (3x)′",
+  "hDerivPower [nyTidy] → explodeVar | (xx)′ + (3x)′",
+  "hDeriv [nyTidy] → dProduct | (x)′x + x(x)′ + (3x)′",
+  "hDeriv [nyTidy] → dX | x + x(x)′ + (3x)′",
+  "hDeriv [nyTidy] → dX | x + x + (3x)′",
+  "hDeriv [nyTidy] → dConst | x + x + 3(x)′",
+  "hDeriv [nyTidy] → dX | x + x + 3",
+  "hLike [nyLike] → likeAddTap | 2x + 3",
+  "clean"
+ ],
+ "afgeleiden (derivatives): (5x^2-4x+1)'": [
+  "(5x^2 − 4x + 1)′",
+  "hDeriv [nyTidy] → dSum | (5x^2)′ − (4x)′ + (1)′",
+  "hDeriv [nyTidy] → dConst | 5(x^2)′ − (4x)′ + (1)′",
+  "hDerivPower [nyTidy] → explodeVar | 5(xx)′ − (4x)′ + (1)′",
+  "hDeriv [nyTidy] → dProduct | 5((x)′x + x(x)′) − (4x)′ + (1)′",
+  "hDeriv [nyBracket] → dX | 5(x + x(x)′) − (4x)′ + (1)′",
+  "hDeriv [nyBracket] → dX | 5(x + x) − (4x)′ + (1)′",
+  "hDeriv [nyBracket] → dConst | 5(x + x) − 4(x)′ + (1)′",
+  "hDeriv [nyBracket] → dX | 5(x + x) − 4 + (1)′",
+  "hDeriv [nyBracket] → dZero | 5(x + x) − 4",
+  "hLike [nyBracket] → likeAddTap | 5·2x − 4",
+  "hMerge [nyTidy] → mergeNum | 10x − 4",
+  "clean"
+ ],
+ "afgeleiden (derivatives): (x(x+1))'": [
+  "(x(x + 1))′",
+  "hDeriv [nyTidy] → dProduct | (x)′(x + 1) + x(x + 1)′",
+  "hDeriv [nyBracket] → dX | x + 1 + x(x + 1)′",
+  "hDeriv [nyTidy] → dSum | x + 1 + x((x)′ + (1)′)",
+  "hDeriv [nyBracket] → dX | x + 1 + x(1 + (1)′)",
+  "hDeriv [nyBracket] → dZero | x + 1 + x",
+  "hLike [nyLike] → likeAddTap | 2x + 1",
   "clean"
  ],
  "machten (powers): 3a^2·2a^5": [
