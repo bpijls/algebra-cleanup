@@ -941,6 +941,106 @@
   "hLike [nyEqTidy] → likeAdd | x = −5",
   "clean"
  ],
+ "level negexp.1": [
+  "a−2a^5",
+  "hNegPower [nyNegPower] → negPower | [a^5/a^2",
+  "hExplodeCancel [nyCancelVar] → explodeVar | [aaaaa/a^2",
+  "hExplodeCancel [nyTidy] → explodeVar | [aaaaa/aa",
+  "hCancel [nyTidy] → cancelVar | [aaaa/a",
+  "hCancel [nyTidy] → cancelVar | aaa",
+  "hMerge [nyTidy] → mergeVar | a^2a",
+  "hMerge [nyTidy] → mergeVar | a^3",
+  "clean"
+ ],
+ "level negexp.2": [
+  "2−3",
+  "hNegPower [nyNegPower] → negPower | [1/2^3",
+  "hGroup [nyBracket] → explodeGroup | [1/222",
+  "hGroup [nyBracket] → unwrap | [1/222",
+  "hGroup [nyBracket] → unwrap | [1/2·22",
+  "hGroup [nyBracket] → unwrap | [1/2·2·2",
+  "hMerge [nyTidy] → mergeNum | [1/4·2",
+  "hMerge [nyTidy] → mergeNum | [1/8",
+  "clean"
+ ],
+ "level negexp.3": [
+  "(2a)−2",
+  "hNegPower [nyNegPower] → negPower | [1/(2a)^2",
+  "hGroup [nyBracket] → explodeGroup | [1/(2a)(2a)",
+  "hGroup [nyBracket] → unwrap | [1/2a(2a)",
+  "hGroup [nyBracket] → unwrap | [1/2a·2a",
+  "hMerge [nyTidy] → mergeNum | [1/4aa",
+  "hMerge [nyTidy] → mergeVar | [1/4a^2",
+  "clean"
+ ],
+ "level negexp.4": [
+  "3a−2·2a^4",
+  "hNegPower [nyNegPower] → negPower | [3·2a^4/a^2",
+  "hExplodeCancel [nyTidy] → explodeVar | [3·2aaaa/a^2",
+  "hExplodeCancel [nyTidy] → explodeVar | [3·2aaaa/aa",
+  "hCancel [nyTidy] → cancelVar | [3·2aaa/a",
+  "hCancel [nyTidy] → cancelVar | 3·2aa",
+  "hMerge [nyTidy] → mergeNum | 6aa",
+  "hMerge [nyTidy] → mergeVar | 6a^2",
+  "clean"
+ ],
+ "level negexp.5": [
+  "[a^3/a^5",
+  "hExplodeCancel [nyAsBar] → explodeVar | [a^3/aaaaa",
+  "hExplodeCancel [nyAsBar] → explodeVar | [aaa/aaaaa",
+  "hCancel [nyAsBar] → cancelVar | [aa/aaaa",
+  "hCancel [nyAsBar] → cancelVar | [a/aaa",
+  "hCancel [nyAsBar] → cancelVar | [1/aa",
+  "hMerge [nyAsBar] → mergeVar | [1/a^2",
+  "hToNeg [nyAsBar] → toNeg | a−2",
+  "clean"
+ ],
+ "level negexp.6": [
+  "[6a−3/2a^2",
+  "hExplodeCancel [nyAsBar] → explodeNum | [2·3a−3/2a^2",
+  "hCancel [nyAsBar] → cancelVar | [3a−3/a^2",
+  "hToNeg [nyAsBar] → toNeg | 3a−3a−2",
+  "hMerge [nyTidy] → mergeVar | 3a−5",
+  "clean"
+ ],
+ "level fracexp.1": [
+  "a½a½",
+  "hMerge [nyHalfPower] → mergeHalf | a",
+  "clean"
+ ],
+ "level fracexp.2": [
+  "9½",
+  "hGroup [nyHalfPower] → halfRoot | √9",
+  "hExplodeRoot [nyTidy] → explodeNum | √3·3",
+  "hRootPair [nyTidy] → rootOut | 3",
+  "clean"
+ ],
+ "level fracexp.3": [
+  "a3/2",
+  "hHalfPower [nyHalfPower] → halfSplit | aa½",
+  "hHalfPower [nyHalfPower] → halfRoot | a√a",
+  "clean"
+ ],
+ "level fracexp.4": [
+  "[a5/2/a½",
+  "hExplodeCancel [nyHalfPower] → halfSplit | [a^2a½/a½",
+  "hCancel [nyHalfPower] → cancelVar | a^2",
+  "clean"
+ ],
+ "level fracexp.5": [
+  "√a^3",
+  "hExplodeRoot [nyAsRoot] → explodeVar | √aaa",
+  "hRootPair [nyAsRoot] → rootOutIf | a√a",
+  "hToHalf [nyAsRoot] → toHalf | aa½",
+  "hMerge [nyTidy] → mergeHalf | a3/2",
+  "clean"
+ ],
+ "level fracexp.6": [
+  "a^2√a",
+  "hToHalf [nyAsRoot] → toHalf | a^2a½",
+  "hMerge [nyTidy] → mergeHalf | a5/2",
+  "clean"
+ ],
  "breuken optellen (adding fractions): 1/2+1/3": [
   "[1/2 + [1/3",
   "hExpandTo [nyCombine] → expandBy | [3/2·3 + [1/3",
@@ -1127,6 +1227,93 @@
   "hBalanceTerm [nyEqBoth] → balance | 3x − 2x = 2x + 12 − 2x",
   "hLike [nyEqBoth] → likeAddTap | x = 2x + 12 − 2x",
   "hLike [nyEqBoth] → likeZero | x = 12",
+  "clean"
+ ],
+ "negatieve en gebroken exponenten (negative and fractional exponents): a^-2·a^5": [
+  "a−2a^5",
+  "hNegPower [nyNegPower] → negPower | [a^5/a^2",
+  "hExplodeCancel [nyCancelVar] → explodeVar | [aaaaa/a^2",
+  "hExplodeCancel [nyTidy] → explodeVar | [aaaaa/aa",
+  "hCancel [nyTidy] → cancelVar | [aaaa/a",
+  "hCancel [nyTidy] → cancelVar | aaa",
+  "hMerge [nyTidy] → mergeVar | a^2a",
+  "hMerge [nyTidy] → mergeVar | a^3",
+  "clean"
+ ],
+ "negatieve en gebroken exponenten (negative and fractional exponents): 2^-3": [
+  "2−3",
+  "hNegPower [nyNegPower] → negPower | [1/2^3",
+  "hGroup [nyBracket] → explodeGroup | [1/222",
+  "hGroup [nyBracket] → unwrap | [1/222",
+  "hGroup [nyBracket] → unwrap | [1/2·22",
+  "hGroup [nyBracket] → unwrap | [1/2·2·2",
+  "hMerge [nyTidy] → mergeNum | [1/4·2",
+  "hMerge [nyTidy] → mergeNum | [1/8",
+  "clean"
+ ],
+ "negatieve en gebroken exponenten (negative and fractional exponents): 3a^-2·2a^4": [
+  "3a−2·2a^4",
+  "hNegPower [nyNegPower] → negPower | [3·2a^4/a^2",
+  "hExplodeCancel [nyTidy] → explodeVar | [3·2aaaa/a^2",
+  "hExplodeCancel [nyTidy] → explodeVar | [3·2aaaa/aa",
+  "hCancel [nyTidy] → cancelVar | [3·2aaa/a",
+  "hCancel [nyTidy] → cancelVar | 3·2aa",
+  "hMerge [nyTidy] → mergeNum | 6aa",
+  "hMerge [nyTidy] → mergeVar | 6a^2",
+  "clean"
+ ],
+ "negatieve en gebroken exponenten (negative and fractional exponents): (2a)^-2": [
+  "(2a)−2",
+  "hNegPower [nyNegPower] → negPower | [1/(2a)^2",
+  "hGroup [nyBracket] → explodeGroup | [1/(2a)(2a)",
+  "hGroup [nyBracket] → unwrap | [1/2a(2a)",
+  "hGroup [nyBracket] → unwrap | [1/2a·2a",
+  "hMerge [nyTidy] → mergeNum | [1/4aa",
+  "hMerge [nyTidy] → mergeVar | [1/4a^2",
+  "clean"
+ ],
+ "negatieve en gebroken exponenten (negative and fractional exponents): a^-1·a^-2": [
+  "a−1a−2",
+  "hNegPower [nyNegPower] → negPower | [a−2/a",
+  "hNegPower [nyNegPower] → negPower | [1/aa^2",
+  "hMerge [nyTidy] → mergeVar | [1/a^3",
+  "clean"
+ ],
+ "negatieve en gebroken exponenten (negative and fractional exponents): a⁻³·a⁵": [
+  "a−3a^5",
+  "hNegPower [nyNegPower] → negPower | [a^5/a^3",
+  "hExplodeCancel [nyCancelVar] → explodeVar | [aaaaa/a^3",
+  "hExplodeCancel [nyTidy] → explodeVar | [aaaaa/aaa",
+  "hCancel [nyTidy] → cancelVar | [aaaa/aa",
+  "hCancel [nyTidy] → cancelVar | [aaa/a",
+  "hCancel [nyTidy] → cancelVar | aa",
+  "hMerge [nyTidy] → mergeVar | a^2",
+  "clean"
+ ],
+ "negatieve en gebroken exponenten (negative and fractional exponents): a^(1/2)·a^(1/2)": [
+  "a½a½",
+  "hMerge [nyHalfPower] → mergeHalf | a",
+  "clean"
+ ],
+ "negatieve en gebroken exponenten (negative and fractional exponents): 16^(1/2)": [
+  "16½",
+  "hGroup [nyHalfPower] → halfRoot | √16",
+  "hExplodeRoot [nyTidy] → explodeNum | √2·2·2·2",
+  "hRootPair [nyTidy] → rootOut | 2√2·2",
+  "hRootPair [nyTidy] → rootOut | 2·2",
+  "hMerge [nyTidy] → mergeNum | 4",
+  "clean"
+ ],
+ "negatieve en gebroken exponenten (negative and fractional exponents): a^(3/2)": [
+  "a3/2",
+  "hHalfPower [nyHalfPower] → halfSplit | aa½",
+  "hHalfPower [nyHalfPower] → halfRoot | a√a",
+  "clean"
+ ],
+ "negatieve en gebroken exponenten (negative and fractional exponents): x^(5/2)/x^(1/2)": [
+  "[x5/2/x½",
+  "hExplodeCancel [nyHalfPower] → halfSplit | [x^2x½/x½",
+  "hCancel [nyHalfPower] → cancelVar | x^2",
   "clean"
  ],
  "machten (powers): 3a^2·2a^5": [

@@ -6,11 +6,14 @@ import { N } from '../kinds/number.js';
 import { KINDS } from '../kinds/registry.js';
 import { Q } from '../kinds/fraction.js';
 import { T, cloneF, fkey, sumKey } from '../kinds/sums.js';
-import { canMerge, cleanTerm, gcd, locate, mergeF, negate, sig, tidy, varPart } from '../model.js';
+import { addCond, canMerge, cleanTerm, gcd, locate, mergeF, negate, sig, tidy, varPart } from '../model.js';
+import { expText, isWhole } from '../kinds/exponent.js';
+import { baseKey, withE } from '../exponents.js';
+import { Q as Qf } from '../kinds/fraction.js';
 import { cancelCheck, groupHasBase, opFactor, opMove, related, restOf, termPair, usedUp } from '../moves.js';
 import { branchOf, isEquation } from '../problem.js';
 import { defineAction, definePairRule } from './registry.js';
-import { bx, factorsHTML, fx, mx, sumHTML, termHTML } from '../../render/text.js';
+import { bx, condHTML, factorsHTML, fx, mx, sumHTML, termHTML } from '../../render/text.js';
 
 const unequal = (x, y) => { const big = x.e > y.e ? x : y, small = big === x ? y : x; return { x: mx(fx(x)), y: mx(fx(y)), big: mx(fx(big)), small: mx(fx(small)) }; };
 const NONE = { type: 'none' };
@@ -33,16 +36,26 @@ definePairRule('parts', 'crossSide', () => ({ type: 'fizzle', msg: 'crossSide' }
 /* ---- in the same sum ---- */
 // x(x − 5) + x − 5: the loose terms are the bracket once
 definePairRule('sum', 'factorRest', (S, A, B) => A.term !== B.term && (restOf(A, B) || restOf(B, A)) ? { type: 'factorRest' } : undefined);
-// √(3·3·2): two equal numbers under a root come out as one, √(3·3) = 3
+// √(3·3·2): two equal numbers under a root come out as one, √(3·3) = 3; so do two equal letters, √(a·a) = a
 definePairRule('sum', 'rootOut', (S, A, B) => {
   const x = A.f, y = B.f;
-  if (!(A.term === B.term && A.in && A.in.k === 'r' && A.in.terms.length === 1 && x.k === 'n' && y.k === 'n')) return undefined;
+  if (!(A.term === B.term && A.in && A.in.k === 'r' && A.in.terms.length === 1)) return undefined;
+  // (not in an equation, where a letter may be a negative parameter and √(b·b) is |b|)
+  if (x.k === 'v' && y.k === 'v' && x.b === y.b && x.e === 1 && y.e === 1) return S.op === '=' ? undefined : { type: 'rootOut' };
+  if (!(x.k === 'n' && y.k === 'n')) return undefined;
   if (x.v === y.v && x.v > 1) return { type: 'rootOut' };
   if (x.v !== y.v && x.v > 1 && y.v > 1) return { type: 'merge' };
   return undefined;
 });
 // 3 · x/4: a piece beside a fraction goes onto its top, (3·x)/4 (tap the piece, then the fraction)
 definePairRule('sum', 'intoFracTile', (S, A, B) => A.term === B.term && (A.f.k === 'q') !== (B.f.k === 'q') ? { type: 'into', out: A.f.k === 'q' ? 'B' : 'A' } : undefined);
+// a⁵ · a⁻²: a negative power is 1/a² first, then a² cancels (no adding −2 to 5 unseen)
+definePairRule('sum', 'mixedSign', (S, A, B) => {
+  const x = A.f, y = B.f;
+  if (A.term !== B.term || !baseKey(x) || baseKey(x) !== baseKey(y) || x.e * y.e >= 0) return undefined;
+  const [ng, ps] = x.e < 0 ? [x, y] : [y, x];
+  return { type: 'fizzle', msg: 'mixedSign', p: { x: mx(fx(ng)), y: mx(fx(ps)), r: mx(fx(Qf([T([N(1)])], [T([withE(ng, -ng.e)])]))) } };
+});
 // two pieces of one term: they multiply into one when they can
 definePairRule('sum', 'sameTerm', (S, A, B) => A.term === B.term ? (canMerge(A.f, B.f) ? { type: 'merge' } : NONE) : undefined);
 // a(x+2) + 3(x+2): the same bracket in both terms goes outside
@@ -134,8 +147,12 @@ defineAction('rootOut', (S, A, B) => {
   const out = locate(S, A.in.id), arr = A.term.f, shown = mx(fx(A.in));
   arr.splice(arr.indexOf(A.f), 1); arr.splice(arr.indexOf(B.f), 1);
   if (!arr.length) arr.push(N(1));
-  const n = N(A.f.v);
+  const n = A.f.k === 'v' ? V(A.f.b, 1) : N(A.f.v);
   out.term.f.splice(out.i, 0, n);
+  if (A.f.k === 'v') {   // √(a·a) is a only when a isn't negative: written down
+    const c = condHTML(addCond(S, [T([V(A.f.b, 1)])], 'ge'));
+    return { ok: 'rootOutIf', p: { x: shown, n: mx(fx(n)), r: mx(fx(out.f)), c }, born: [n.id], origins: { [n.id]: [A.f.id, B.f.id] } };
+  }
   return { ok: 'rootOut', p: { x: shown, n: A.f.v, r: mx(fx(out.f)) }, born: [n.id], origins: { [n.id]: [A.f.id, B.f.id] } };
 });
 
@@ -172,7 +189,12 @@ defineAction('merge', (S, A, B, v, ids) => {
   arr.splice(A.i, 1, m);
   arr.splice(arr.indexOf(y), 1);
   const origins = { [m.id]: [x.id, y.id] };
-  if (x.k === 'v') return { ok: 'mergeVar', p: { x: mx(fx(x)), y: mx(fx(y)), r: mx(fx(m)), b: bx(x.b), m: x.e, n: y.e, s: m.e }, born: [m.id], origins };
+  if (x.k === 'v') {
+    const p = { x: mx(fx(x)), y: mx(fx(y)), r: mx(fx(m)), b: bx(x.b), m: expText(x.e), n: expText(y.e), s: expText(m.e) };
+    // a^½ · a^½ = a holds when a isn't negative (a^½ is √a): written down
+    if (!isWhole(x.e) || !isWhole(y.e)) { p.c = condHTML(addCond(S, [T([V(x.b, 1)])], 'ge')); return { ok: 'mergeHalf', p, born: [m.id], origins }; }
+    return { ok: 'mergeVar', p, born: [m.id], origins };
+  }
   if (x.k === 'n') return { ok: 'mergeNum', p: { x: x.v, y: y.v, r: m.v }, born: [m.id], origins };
   return { ok: 'mergeGroup', p: { x: mx(fx(x)), y: mx(fx(y)), r: mx(fx(m)) }, born: [m.id], origins };
 });

@@ -7,7 +7,8 @@ import { parseProblem } from '../parse.js';
 
 // a level or practice problem as a student would type it; rootFree: no root may stay below the bar
 const P = (src, goal, extra) => () => Object.assign(parseProblem(src, goal).S, extra || {});
-const level = (id, src, goal, en, nl, extra) => defineLevel({ id, s: P(src, goal, extra), goal, en, nl });
+// (a simplify level has no goal of its own: the badge only names other goals)
+const level = (id, src, goal, en, nl, extra) => defineLevel({ id, s: P(src, goal, extra), goal: goal === 'simplify' ? undefined : goal, en, nl });
 
 /* ---- number fractions (goal combine: write it as one fraction) ---- */
 level('numfrac.1', '1/5+2/5', 'combine',

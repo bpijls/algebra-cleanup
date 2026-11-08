@@ -35,6 +35,12 @@ export function rootPairs(S) {
   let h = null;
   eachFactor(S, L => {
     if (h || L.f.k !== 'r' || L.f.terms.length !== 1) return;
+    const vs = L.f.terms[0].f.filter(f => f.k === 'v' && f.e > 0 && Number.isInteger(f.e));   // √(a·a·a): a pair of a's comes out
+    for (let i = 0; !h && i < vs.length; i++) for (let j = i + 1; !h && j < vs.length; j++)
+      if (vs[i].b === vs[j].b && vs[i].e === 1 && vs[j].e === 1) h = { k: 'hRootPair', p: { x: mx(fx(L.f)), n: mx(fx(vs[i])) }, ids: [vs[i].id, vs[j].id] };
+    const bigV = vs.find(f => f.e > 1);
+    if (!h && bigV) h = { k: 'hExplodeRoot', p: { x: mx(fx(L.f)), n: mx(fx(bigV)) }, ids: [bigV.id] };
+    if (h) return;
     const ns = L.f.terms[0].f.filter(f => f.k === 'n' && f.v > 1);
     for (let i = 0; !h && i < ns.length; i++) for (let j = i + 1; !h && j < ns.length; j++)
       if (ns[i].v === ns[j].v) h = { k: 'hRootPair', p: { x: mx(fx(L.f)), n: ns[i].v }, ids: [ns[i].id, ns[j].id] };
@@ -69,7 +75,7 @@ export function cancelIn(P) {
     if (cancelCheck(x, y)?.type === 'cancel') return { k: 'hCancel', p: { x: mx(fx(x)), y: mx(fx(y)) }, ids: [x.id, y.id] };
   for (const x of a.f) for (const y of b.f) {
     const cr = cancelCheck(x, y);
-    if (!cr || cr.type !== 'fizzle' || cr.msg === 'cancelCoprime') continue;
+    if (!cr || cr.type !== 'fizzle' || cr.msg === 'cancelCoprime' || cr.msg === 'mixedSignBar') continue;
     const ids = x.k !== 'n' ? [(x.e > y.e ? x : y).id] : [x, y].filter(f => primeFactors(f.v).length > 1).map(f => f.id);
     return { k: 'hExplodeCancel', p: { x: mx(fx(x)), y: mx(fx(y)) }, ids };
   }
@@ -83,7 +89,8 @@ export function merges(S) {
     const t = L.term;
     for (let i = 0; !h && i < t.f.length; i++) for (let j = i + 1; !h && j < t.f.length; j++)
       // (a+b)·(a+b) only folds back into (a+b)² when the goal is to factor; to simplify, it gets opened
-      if (canMerge(t.f[i], t.f[j]) && (t.f[i].k !== 'p' || S.goal === 'factor')) h = { k: 'hMerge', p: { x: mx(fx(t.f[i])), y: mx(fx(t.f[j])) }, ids: [t.f[i].id, t.f[j].id] };
+      // a · a^½ stays apart unless the level wants one power: it is a√a, and merging would undo the explode
+      if (canMerge(t.f[i], t.f[j]) && (t.f[i].k !== 'p' || S.goal === 'factor') && (S.asPower || !(t.f[i].e % 1 || t.f[j].e % 1) || Number.isInteger(t.f[i].e + t.f[j].e))) h = { k: 'hMerge', p: { x: mx(fx(t.f[i])), y: mx(fx(t.f[j])) }, ids: [t.f[i].id, t.f[j].id] };
   });
   return h;
 }

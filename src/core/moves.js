@@ -19,6 +19,7 @@ export function groupHasBase(g, b) { return g.k === 'g' && g.f.some(f => f.k ===
 export function cancelCheck(x, y) {
   if (x.k === 'v' && y.k === 'v' && x.b === y.b) {
     if (x.e === y.e) return { type: 'cancel' };
+    if (x.e * y.e < 0) { const ng = x.e < 0 ? x : y; return { type: 'fizzle', msg: 'mixedSignBar', p: { x: mx(fx(ng)) } }; }   // a⁻³ over a: explode a⁻³ first
     const big = x.e > y.e ? x : y, small = big === x ? y : x;
     return { type: 'fizzle', msg: 'cancelUnequal', p: { x: mx(fx(x)), y: mx(fx(y)), big: mx(fx(big)), small: mx(fx(small)) } };
   }

@@ -3,6 +3,7 @@ import { quadSplit } from './hints.js';
 import { sumKey } from './kinds/sums.js';
 import { SIDES, coefAbs, fracTerm, gcd, hasU, isClean, isOne, joinablePair, rootBelow, sig, sumClean, tidy, unbare, unknownOf, varPart } from './model.js';
 import { cancelCheck } from './moves.js';
+import { powerLeft } from './exponents.js';
 import { branchCount, eqView, isBranched } from './problem.js';
 import { bx, fx, mx, sumHTML, termHTML } from '../render/text.js';
 
@@ -48,6 +49,8 @@ export function whyNotDone(S) {
     }
     return { k: 'nyTidyAll' };
   }
+  const pl = powerLeft(S);   // a⁻², a^½ (or, when the level wants powers, a root or a bar)
+  if (pl) return { k: pl.k, p: { x: mx(fx(pl.f)) } };
   for (const side of SIDES) {
     const ts = unbare(P[side]);
     const bad = ts.find(t => !tidy(t, !!S.allowB));

@@ -8,7 +8,7 @@ defineKind({
   k: 'g',
   clone: f => G(f.f.map(g => kindOf(g).clone(g)), f.e),
   key: f => '(' + inner(f) + ')^' + f.e,
-  canMerge: (x, y) => inner(x) === inner(y),
+  canMerge: (x, y) => inner(x) === inner(y) && x.e * y.e > 0,
   merge: (x, y) => G(x.f.map(g => kindOf(g).clone(g)), x.e + y.e),
   terms: () => null,
   has: (f, b) => f.f.some(g => kindOf(g).has(g, b)),

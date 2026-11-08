@@ -30,7 +30,7 @@ for (const [chapter, list] of Object.entries(CHAPTERS)) {
 }
 
 test('typing: the parser refuses what the game cannot do, with a reason', () => {
-  for (const [src, err] of [['x=4=5', 'pTwoEq'], ['2y+a=b', 'pEqWhich'], ['x/3/2=5', 'pFracTwo'], ['x/0', 'pDivZero'], ['3=4', 'pEqNoLetter'], ['3a + ', 'pMissing'], ['(x+2', 'pParen'], ['x^', 'pPower'], ['', 'pEmpty'], ['2x ? 3', 'pChar']])
+  for (const [src, err] of [['x=4=5', 'pTwoEq'], ['2y+a=b', 'pEqWhich'], ['x/3/2=5', 'pFracTwo'], ['x/0', 'pDivZero'], ['a^(1/3)', 'pPowHalf'], ['(a+b)^-1', 'pPowSum'], ['3=4', 'pEqNoLetter'], ['3a + ', 'pMissing'], ['(x+2', 'pParen'], ['x^', 'pPower'], ['', 'pEmpty'], ['2x ? 3', 'pChar']])
     { assert.equal(G.parseProblem(src).err, err, src); assert.ok(hasText(err), err); }
   assert.equal(G.guessGoal('x^2+5x+6'), 'factor');
   assert.equal(G.guessGoal('3x+5=20'), 'solve');

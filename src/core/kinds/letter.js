@@ -7,7 +7,7 @@ defineKind({
   k: 'v',
   clone: f => V(f.b, f.e),
   key: f => f.b + '^' + f.e,
-  canMerge: (x, y) => x.b === y.b,
+  canMerge: (x, y) => x.b === y.b && x.e * y.e > 0,   // a⁵ · a⁻²: not before a⁻² is seen as 1/a² (mixedSign)
   merge: (x, y) => V(x.b, x.e + y.e),
   terms: () => null,
   has: (f, b) => f.b === b,

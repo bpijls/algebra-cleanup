@@ -1,4 +1,5 @@
 /* Rendering the board: a tile per piece, sides, branches, the tool bar. */
+import { expText, showsExp } from '../core/kinds/exponent.js';
 import { LEVELS, SKILLS, skillOfLevel } from '../content/registry.js';
 import { loneSquare } from '../core/balance.js';
 import { sumKey } from '../core/kinds/sums.js';
@@ -14,6 +15,7 @@ import { SVGNS } from './input.js';
 import { fitBoard } from './layout.js';
 import { previewOf, showExpand, splitTermOf } from './split.js';
 import { expandTarget } from '../core/fractions.js';
+import { opToHalf, opToNeg } from '../core/exponents.js';
 import { $, board, ui } from './state.js';
 
 const VARCOL = { a: '--va', b: '--vb', x: '--vx', y: '--vy' };
@@ -42,6 +44,9 @@ const TILES = {};
 const TOOL_MOVES = [];
 export const defineToolMove = (id, move) => { TOOL_MOVES.push({ id, move }); };
 export const defineTile = (k, make) => { TILES[k] = make; };
+// written back as a power (levels with negative or half exponents): 1/a² = a⁻², √a = a^½
+defineToolMove('toNeg', opToNeg);
+defineToolMove('toHalf', opToHalf);
 // the state a tile shows: picked, a partner of the picked one, hinted, just made
 function mark(b, f, partners) {
   if (ui.sel && ui.sel.t === 'f' && ui.sel.id === f.id) b.classList.add('sel');
@@ -98,15 +103,16 @@ function tileEl(f, partners) {
   if (f.k === 'n') { b.textContent = f.v; b.setAttribute('aria-label', String(f.v)); }
   else if (f.k === 'v') {
     b.style.setProperty('--c', `var(${VARCOL[f.b] || '--vz'})`);
-    b.innerHTML = `${f.b}${f.e > 1 && !ui.detached.has(f.id) ? `<sup>${f.e}</sup>` : ''}`;
-    b.setAttribute('aria-label', f.e > 1 ? `${f.b} to the power ${f.e}` : f.b);
+    b.innerHTML = `${f.b}${showsExp(f.e) && !ui.detached.has(f.id) ? `<sup>${expText(f.e)}</sup>` : ''}`;
+    b.setAttribute('aria-label', showsExp(f.e) ? `${f.b} to the power ${expText(f.e)}` : f.b);
   } else {
     const inner = f.f.map(m => {
       const c = m.k === 'v' ? ` style="--c:var(${VARCOL[m.b] || '--vz'})"` : '';
-      return `<span class="mini ${m.k}"${c}>${m.k === 'n' ? m.v : m.b}${m.k === 'v' && m.e > 1 ? `<sup>${m.e}</sup>` : ''}</span>`;
+      return `<span class="mini ${m.k}"${c}>${m.k === 'n' ? m.v : m.b}${m.k === 'v' && showsExp(m.e) ? `<sup>${expText(m.e)}</sup>` : ''}</span>`;
     }).join('');
-    b.innerHTML = `<span class="paren">(</span>${inner}<span class="paren">)</span>${f.e > 1 && !ui.detached.has(f.id) ? `<sup>${f.e}</sup>` : ''}`;
-    b.setAttribute('aria-label', 'bracket' + (f.e > 1 ? ` to the power ${f.e}` : ''));
+    const bare = f.f.length === 1 && f.f[0].k === 'n';   // 2³: a power of a number needs no brackets
+    b.innerHTML = (bare ? inner : `<span class="paren">(</span>${inner}<span class="paren">)</span>`) + (showsExp(f.e) && !ui.detached.has(f.id) ? `<sup>${expText(f.e)}</sup>` : '');
+    b.setAttribute('aria-label', (bare ? String(f.f[0].v) : 'bracket') + (showsExp(f.e) ? ` to the power ${expText(f.e)}` : ''));
   }
   if (ui.sel && ui.sel.t === 'f' && ui.sel.id === f.id) b.classList.add('sel');
   if (partners.has(f.id)) b.classList.add('partner');
@@ -201,7 +207,7 @@ export function render() {
     // the skill and where in it: "Powers · 3/6"
     const id = LEVELS[ui.lvl].id, K = skillOfLevel(id);
     $('lvlTitle').textContent = K ? `${K.title[lang]} · ${K.levels.indexOf(id) + 1}/${K.levels.length}` : t('level', { n: ui.lvl + 1 });
-    $('lvlBadge').hidden = !LEVELS[ui.lvl].book && !LEVELS[ui.lvl].goal; $('lvlBadge').textContent = LEVELS[ui.lvl].book ? t('book') : t({ solve: 'solveBadge', prove: 'proveBadge', combine: 'combineBadge' }[LEVELS[ui.lvl].goal] || 'factorBadge');
+    $('lvlBadge').hidden = !LEVELS[ui.lvl].book && !LEVELS[ui.lvl].goal && !ui.S.asPower; $('lvlBadge').textContent = LEVELS[ui.lvl].book ? t('book') : t(ui.S.asPower ? 'asPowerBadge' : { solve: 'solveBadge', prove: 'proveBadge', combine: 'combineBadge' }[LEVELS[ui.lvl].goal] || 'factorBadge');
     $('moves').innerHTML = t('moves', { n: ui.moves }) + (ui.done[id] != null ? t('best', { n: ui.done[id] }) : '');
   }
   $('writtenLabel').textContent = t('written');
@@ -236,7 +242,7 @@ export function render() {
     ex.onclick = () => ui.sel && showExpand(ui.sel.id);
     $('btnSplitTwo').after(ex);
   }
-  ex.hidden = !(fSel && expandTarget(ui.S, ui.sel.id));
+  ex.hidden = !(fSel && expandTarget(ui.S, ui.sel.id)) || !!ui.S.exps;   // exponent levels have their own buttons, and the bar is narrow
   ex.querySelector('span').textContent = t('expandBtn') + ' ×ⁿ⁄ₙ';
   for (const tm of TOOL_MOVES) {
     let b = $('tm-' + tm.id);

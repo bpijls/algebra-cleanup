@@ -20,12 +20,30 @@ export function tokenize(src) {
     const ch = s[i];
     if (/\s/.test(ch)) { i++; continue; }
     if (/\d/.test(ch)) { let j = i; while (j < s.length && /\d/.test(s[j])) j++; out.push({ t: 'num', v: +s.slice(i, j), at: i }); i = j; continue; }
-    if (ch in SUP) { let j = i, v = ''; while (j < s.length && s[j] in SUP) v += SUP[s[j++]]; out.push({ t: 'pow', v: +v, at: i }); i = j; continue; }
-    if (ch === '^') {
+    if (ch in SUP || (ch === '⁻' && s[i + 1] in SUP)) {   // a⁵, a⁻²
+      let j = ch === '⁻' ? i + 1 : i, v = ''; while (j < s.length && s[j] in SUP) v += SUP[s[j++]];
+      out.push({ t: 'pow', v: (ch === '⁻' ? -1 : 1) * v, at: i }); i = j; continue;
+    }
+    if (ch === '^') {   // a^5, a^-2, a^(-2), a^(1/2), a^(3/2), a^½
       let j = i + 1; while (s[j] === ' ') j++;
-      let k = j; while (k < s.length && /\d/.test(s[k])) k++;
-      if (k === j) return { err: 'pPower', at: i };
-      out.push({ t: 'pow', v: +s.slice(j, k), at: i }); i = k; continue;
+      const open = s[j] === '('; if (open) j++;
+      const neg = s[j] === '-'; if (neg) j++;
+      let v;
+      if (s[j] === '½') { v = 0.5; j++; }
+      else {
+        let k = j; while (k < s.length && /\d/.test(s[k])) k++;
+        if (k === j) return { err: 'pPower', at: i };
+        v = +s.slice(j, k); j = k;
+        if (open && s[j] === '/') {   // a fraction as a power only in brackets: a^(3/2), while a^3/a^5 is a fraction
+          let m = j + 1; while (m < s.length && /\d/.test(s[m])) m++;
+          const d = +s.slice(j + 1, m);
+          if (m === j + 1 || !d) return { err: 'pPower', at: i };
+          if (!Number.isInteger(v * 2 / d)) return { err: 'pPowHalf', at: i };   // only halves: a^(1/3) has no tile yet
+          v /= d; j = m;
+        }
+      }
+      if (open) { if (s[j] !== ')') return { err: 'pPower', at: i }; j++; }
+      out.push({ t: 'pow', v: neg ? -v : v, at: i }); i = j; continue;
     }
     if (/[a-z]/i.test(ch)) { out.push({ t: 'var', v: ch.toLowerCase(), at: i }); i++; continue; }
     if ('+-·:/()='.includes(ch)) { out.push({ t: ch, at: i }); i++; continue; }
@@ -84,10 +102,23 @@ export function parseProblem(src, goal, unknown) {
     for (const f of fs) { if (f.flip) t.neg = !t.neg; else t.f.push(f); }
     return t;
   }
-  const power = () => { if (peek() && peek().t === 'pow') { const v = toks[i++].v; if (v < 1) fail('pZero'); if (v > 20) fail('pBig'); return v; } return 1; };
+  // a whole or half exponent; a negative one or a half turns on the moves that explode them (S.exps)
+  let exps = false;
+  const power = () => {
+    if (!(peek() && peek().t === 'pow')) return 1;
+    const v = toks[i++].v;
+    if (v === 0) fail('pZero');
+    if (Math.abs(v) > 20) fail('pBig');
+    if (v < 0 || !Number.isInteger(v)) exps = true;
+    return v;
+  };
   function factor() {
     const p = toks[i++];
-    if (p.t === 'num') { const e = power(); return [e > 1 && p.v ? G([N(p.v)], e) : N(p.v)]; }
+    if (p.t === 'num') {
+      const e = power();
+      if (!p.v && e < 0) { i--; fail('pDivZero'); }
+      return [e !== 1 && p.v ? G([N(p.v)], e) : N(p.v)];
+    }
     if (p.t === 'var') return [V(p.v, power())];
     // √12, √(x + 1): the root of what follows (a number, a letter, or a bracket)
     if (p.t === 'sqrt') {
@@ -103,11 +134,12 @@ export function parseProblem(src, goal, unknown) {
     if (!peek() || peek().t !== ')') { i = open; fail('pParen'); }
     i++;
     const e = power();
-    if (inner.length > 1) return [Pr(inner, e)];
+    if (inner.length > 1) { if (e < 0 || !Number.isInteger(e)) fail('pPowSum'); return [Pr(inner, e)]; }
     const it = inner[0];
     const simple = it.f.every(f => f.k === 'n' || f.k === 'v');
     if (e === 1) return it.neg ? [{ flip: true }, ...it.f] : it.f;   // (2a) is just 2a, (−a) is −a
     if (simple && !it.neg) return [G(it.f, e)];
+    if (e < 0 || !Number.isInteger(e)) fail('pPowSum');
     return [Pr(inner, e)];                                            // (−2a)³: normalize turns it into a sign and a power
   }
   // a side: a sum of terms, each of which may be a fraction (x/3 + 2); a side that is one fraction is its own bar
@@ -156,6 +188,7 @@ export function parseProblem(src, goal, unknown) {
     } else S = { parts: [A], op: null };
     if (peek()) fail(peek().t === ')' ? 'pParen' : 'pMissing');
     S.goal = goal || 'simplify';
+    if (exps) S.exps = true;
     normalize(S);
     return { S };
   } catch (e) {

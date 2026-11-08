@@ -4,7 +4,13 @@ import './solve.js';
 import './prove.js';
 import './play.js';
 import '../fractions.js';
-import { DONE, GOALS, HINT_MOVES, goalOf, runTactics } from './registry.js';
+import { asPowers, halfPowers, negPowers } from '../exponents.js';
+import { DONE, GOALS, HINT_MOVES, addTactic, goalOf, runTactics } from './registry.js';
+
+// negative and half exponents (registered here: exponents.js is loaded early, by the explode rules)
+addTactic('simplify', negPowers, { before: 'groups' });
+addTactic('simplify', asPowers, { before: 'likeTerms' });
+addTactic('simplify', halfPowers, { before: 'likeTerms' });
 
 // the next suggested move (an equation is solved, whatever its goal says, unless it is an identity to show)
 export const hint = S => runTactics((S.op === '=' && S.goal !== 'prove' ? GOALS.solve : goalOf(S)).tactics, S);

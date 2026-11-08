@@ -4,7 +4,9 @@ import { G } from '../kinds/group.js';
 import { V } from '../kinds/letter.js';
 import { N } from '../kinds/number.js';
 import { T, cloneF, cloneT } from '../kinds/sums.js';
+import { isWhole } from '../kinds/exponent.js';
 import { MAX_GROUP, MAX_VAR, primeFactors } from '../model.js';
+import { flipPower, halfPower } from '../exponents.js';
 import { defineExplode } from './registry.js';
 import { bx, fx, mx, sumHTML, termHTML } from '../../render/text.js';
 
@@ -16,6 +18,8 @@ defineExplode('r', (S, L, id) => ({ no: 'rootTap', ids: [id] }));
 // x³ → x · x · x
 defineExplode('v', (S, L, id) => {
   const f = L.f;
+  if (f.e < 0) return flipPower(S, L);         // a⁻² → 1/a²
+  if (!isWhole(f.e)) return halfPower(S, L);   // a^½ → √a
   if (f.e < 2) return { no: 'atom', p: { x: mx(fx(f)) }, ids: [id] };
   if (f.e > MAX_VAR) return { no: 'tooBig', ids: [id] };
   const copies = Array.from({ length: f.e }, () => V(f.b, 1));
@@ -58,6 +62,8 @@ defineExplode('p', (S, L, id) => {
 // (2a)³ → (2a)(2a)(2a); (2a) → 2 · a
 defineExplode('g', (S, L, id) => {
   const f = L.f;
+  if (f.e < 0) return flipPower(S, L);         // 2⁻³ → 1/2³
+  if (!isWhole(f.e)) return halfPower(S, L);   // 9^½ → √9
   if (f.e >= 2) {
     if (f.e > MAX_GROUP) return { no: 'tooBig', ids: [id] };
     const copies = Array.from({ length: f.e }, () => G(f.f.map(cloneF), 1));

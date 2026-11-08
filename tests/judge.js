@@ -83,8 +83,10 @@ function equivalent(u, v) {
 }
 // times the unknown (4/x = 2 · x, allowed because x is below a bar and so not 0): L − R is multiplied by exactly that
 const scaled = (u, t, ref) => u.map((v, i) => v * evT(t, envOf(ref, XS[i])));
+// where the state before is undefined because of a root of a negative number (√a · √a, a^½ at a < 0), a move may take
+// the root's own condition for granted: √a · √a = a holds wherever √a means something
 const same = (u, v) => u.some((x, i) => x !== null && v[i] !== null)
-  && u.every((x, i) => x === null || v[i] === null || (!isFinite(x) && !isFinite(v[i])) || Math.abs(x - v[i]) <= 1e-7 * Math.max(1, Math.abs(x)));
+  && u.every((x, i) => x === null || v[i] === null || Number.isNaN(x) || (!isFinite(x) && !isFinite(v[i])) || Math.abs(x - v[i]) <= 1e-7 * Math.max(1, Math.abs(x)));
 
 // every move a player can make from S: each registered move (G.MOVES) with every argument its gesture allows,
 // plus, for equations, balance values that must work and ones that must be refused

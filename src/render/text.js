@@ -1,5 +1,6 @@
 /* The text renderer: states, terms, sums and conditions as HTML (the board's formula line, notes, win sheets).
    The model and the moves hold no HTML; they call these for the math inside their messages. */
+import { expText, showsExp } from '../core/kinds/exponent.js';
 import { sumKey } from '../core/kinds/sums.js';
 import { isOne, tidy, unbare } from '../core/model.js';
 import { branchCount, eqView, isBranched } from '../core/problem.js';
@@ -12,11 +13,11 @@ export const sqHTML = inner => `<span class="sq"><svg class="rs-svg" viewBox="0 
 // how each kind of node is written; rank orders the factors of a tidy term (numbers, letters, roots, brackets)
 const HTML = {};
 export const defineHTML = (k, rank, html) => { HTML[k] = { rank, html }; };
-const sup = e => e > 1 ? `<sup>${e}</sup>` : '';
+const sup = e => showsExp(e) ? `<sup>${expText(e)}</sup>` : '';
 defineHTML('n', 0, f => `<span class="mn">${f.v}</span>`);
 defineHTML('v', 1, f => `<i class="mv">${f.b}</i>${sup(f.e)}`);
 defineHTML('r', 2, f => sqHTML(sumHTML(f.terms)));
-defineHTML('g', 2, f => `(${factorsHTML(f.f)})${sup(f.e)}`);
+defineHTML('g', 2, f => (f.f.length === 1 && f.f[0].k === 'n' ? factorsHTML(f.f) : `(${factorsHTML(f.f)})`) + sup(f.e));   // 2³ needs no brackets
 defineHTML('p', 3, f => `(${sumHTML(f.terms)})${sup(f.e)}`);
 defineHTML('q', 0, f => `<span class="nfrac q"><span class="nn">${sumHTML(unbare(f.num))}</span><span class="nd">${sumHTML(unbare(f.den))}</span></span>`);   // ⅔ in front, like a number
 defineHTML('bk', 3, f => `<span class="bk">${sumHTML(f.terms)}</span>${sup(f.e)}`);   // a bracket shown as a block (blockHTML)

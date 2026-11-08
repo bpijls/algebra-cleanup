@@ -4,6 +4,7 @@ import { letters } from './balance.js';
 import { goalOf } from './goals/registry.js';
 import { quadSplit } from './hints.js';
 import { cancelCheck } from './moves.js';
+import { powerLeft } from './exponents.js';
 import { Pr } from './kinds/bracket.js';
 import { G } from './kinds/group.js';
 import { N } from './kinds/number.js';
@@ -182,6 +183,7 @@ export const isClean = S => goalOf(S).isDone(S);
 // a simplify goal is done when each side is a sum of tidy, unlike terms and the fraction can't cancel
 export function isSimplified(S) {
   if (S.parts.length > 1) return false;
+  if (powerLeft(S)) return false;   // a⁻², a^½ written out (or, when the level asks for powers, a root or a bar left)
   const P = S.parts[0];
   for (const side of SIDES) {
     const ts = unbare(P[side]);
