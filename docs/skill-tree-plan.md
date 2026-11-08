@@ -168,9 +168,11 @@ Done:
 
 - **Complex numbers** (`src/topics/complex`): `i` as a kind, `i · i = −1` as a tap, `√(−a) = √a · i`, √ of both sides and the quadratic hints past `D < 0` when `S.complex`. No ring in the game itself: only the judge needed complex arithmetic (`valueC`), so the ring stayed in tests/judge.js. Skill complex (6 levels).
 
+- **Boolean logic** (`src/topics/logic`, `goal: 'logic'`): a goal and a move gate instead of an `S.algebra` ring: the and/or laws are pair rules placed before every number rule, De Morgan is the explode of `not`, and the judge reads truth tables. Skills logic, logicsimp, demorgan.
+
+- **Sequences, sums and physics formulas** (`src/topics/formulas`): `opSubstitute` and the `evaluate` goal; sequences (n-th term, which term), sums by their formulas, physics formulas solved for one letter. The Σ spike: a Σ tile that shows Gauss's pairing honestly needs a "write the sum backwards" move and terms that depend on k; not built yet, so the sums skill works from formulas and tells the pairing in its intro.
+
 To come, in this order:
-5. **Boolean logic** (`S.algebra = 'bool'`, truth-table judge, `a·a = a`, De Morgan as an explode).
-6. **Sequences and sums** (`opSubstitute`; a design spike for a `Σ` kind, Gauss's pairing), plus **physics formulas**.
 7. **Calculus** (derivatives with an operator kind and a numeric-derivative judge; integrals; differential equations), then the rest of goniometry (`π`, radians, trig equations with `k ∈ ℤ`).
 
 Every field comes with:

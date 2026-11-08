@@ -462,3 +462,9 @@ button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .tile.v.im { --c: #3b7fd0; } :root:not([data-theme="light"]) .mi { color: #7fb0ee; } }
 :root[data-theme="dark"] .tile.v.im { --c: #3b7fd0; }
 :root[data-theme="dark"] .mi { color: #7fb0ee; }
+
+/* logic: NOT is a bar over what it holds */
+.tile.not { flex-direction: column; align-items: stretch; padding: 4px 6px 6px; gap: 3px; }
+.tile.not > .notbar { display: block; height: 3px; border-radius: 2px; background: var(--ink); margin: 0 4px; }
+.ov { display: inline-block; border-top: .08em solid currentColor; padding-top: .1em; line-height: 1.1; }   /* a border, so a bar over a bar shows twice */
+.ovn { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

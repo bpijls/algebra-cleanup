@@ -45,6 +45,7 @@ export function tokenize(src) {
       if (open) { if (s[j] !== ')') return { err: 'pPower', at: i }; j++; }
       out.push({ t: 'pow', v: neg ? -v : v, at: i }); i = j; continue;
     }
+    if ((ch === '¬' || ch === '!') && UNARY.not) { out.push({ t: 'not', at: i }); i++; continue; }   // logic: not
     if (/[a-z]/i.test(ch)) { out.push({ t: 'var', v: ch.toLowerCase(), at: i }); i++; continue; }
     if ('<>≤≥'.includes(ch)) {   // an inequality: x < 3, x <= 3, x ≥ 3
       const eq = s[i + 1] === '=' && (ch === '<' || ch === '>');
@@ -60,6 +61,9 @@ export function tokenize(src) {
 // a letter that a topic reads as a piece of its own: defineLetter('i', { flag: 'complex', make: e => [...] })
 const LETTERS = {};
 export const defineLetter = (ch, h) => { LETTERS[ch] = h; };
+// a sign in front of a factor that a topic defines: defineUnary('not', factors => piece) reads ¬a, !(a + b)
+const UNARY = {};
+export const defineUnary = (id, make) => { UNARY[id] = make; };
 
 export function parseProblem(src, goal, unknown) {
   const tk = tokenize(src || '');
@@ -101,11 +105,11 @@ export function parseProblem(src, goal, unknown) {
       if (p.t === '·' && bottom) break;
       if (p.t === '·') { if (!fs.length) fail('pMissing'); i++; fs.push(...factor()); continue; }
       if (p.t === 'sqrt') { fs.push(...factor()); continue; }
-      if (p.t === 'num' || p.t === 'var' || p.t === '(') { fs.push(...factor()); continue; }
+      if (p.t === 'num' || p.t === 'var' || p.t === '(' || p.t === 'not') { fs.push(...factor()); continue; }
       break;
     }
     if (!fs.length) fail('pMissing');
-    if (fs.length > 1 && fs.some(f => f.k === 'n' && f.v === 0)) { i--; fail('pZeroNum'); }   // a lone 0 is fine: … = 0
+    if (fs.length > 1 && fs.some(f => f.k === 'n' && f.v === 0) && goal !== 'logic') { i--; fail('pZeroNum'); }   // logic: a · 0 is a move   // a lone 0 is fine: … = 0
     const t = T([], neg);
     for (const f of fs) { if (f.flip) t.neg = !t.neg; else t.f.push(f); }
     return t;
@@ -128,6 +132,7 @@ export function parseProblem(src, goal, unknown) {
       if (!p.v && e < 0) { i--; fail('pDivZero'); }
       return [e !== 1 && p.v ? G([N(p.v)], e) : N(p.v)];
     }
+    if (p.t === 'not') { if (!peek()) fail('pMissing'); return [UNARY.not(factor())]; }
     if (p.t === 'var') { const e = power(), h = LETTERS[p.v]; if (h) { flags.add(h.flag); return h.make(e); } return [V(p.v, e)]; }
     // √12, √(x + 1): the root of what follows (a number, a letter, or a bracket)
     if (p.t === 'sqrt') {

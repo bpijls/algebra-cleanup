@@ -10,7 +10,7 @@ import { Rt } from './kinds/root.js';
 import { T, cloneF, cloneT, fkey, sumKey } from './kinds/sums.js';
 import { letters } from './balance.js';
 import { addCond, containers, eachTerm, fracTerm, isCombined, isOne, joinablePair, locate, rootBelow, primeFactors, tidy, unknownOf } from './model.js';
-import { defineExplode, defineMove } from './rules/registry.js';
+import { defineExplode, defineMove, gated } from './rules/registry.js';
 import { addTactic, defineGoal, defineHintMove } from './goals/registry.js';
 import { cancelIn, fractionPair, groups, likeTerms, merges, openBrackets, rootPairs } from './goals/simplify.js';
 import { condHTML, factorsHTML, fracHTML, fx, mx, sumHTML, termHTML } from '../render/text.js';
@@ -44,6 +44,7 @@ export function expandTarget(S, id) {
   return null;
 }
 export function opExpand(S, id, v) {
+  if (gated(S, 'expand')) return null;
   const tg = expandTarget(S, id);
   if (!tg || !v || !v.f || !v.f.length || v.f.some(f => !OK_KINDS.includes(f.k))) return null;
   if (v.neg || v.f.some(f => f.k === 'n' && f.v === 0)) return { no: 'expandZero', ids: [id] };

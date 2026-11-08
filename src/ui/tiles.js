@@ -207,7 +207,7 @@ export function render() {
     // the skill and where in it: "Powers · 3/6"
     const id = LEVELS[ui.lvl].id, K = skillOfLevel(id);
     $('lvlTitle').textContent = K ? `${K.title[lang]} · ${K.levels.indexOf(id) + 1}/${K.levels.length}` : t('level', { n: ui.lvl + 1 });
-    $('lvlBadge').hidden = !LEVELS[ui.lvl].book && !LEVELS[ui.lvl].goal && !ui.S.asPower; $('lvlBadge').textContent = LEVELS[ui.lvl].book ? t('book') : t(ui.S.asPower ? 'asPowerBadge' : ui.S.rel ? 'ineqBadge' : { solve: 'solveBadge', prove: 'proveBadge', combine: 'combineBadge' }[LEVELS[ui.lvl].goal] || 'factorBadge');
+    $('lvlBadge').hidden = !LEVELS[ui.lvl].book && !LEVELS[ui.lvl].goal && !ui.S.asPower; $('lvlBadge').textContent = LEVELS[ui.lvl].book ? t('book') : t(ui.S.asPower ? 'asPowerBadge' : ui.S.rel ? 'ineqBadge' : { solve: 'solveBadge', prove: 'proveBadge', combine: 'combineBadge', logic: 'logicBadge', evaluate: 'evaluateBadge' }[LEVELS[ui.lvl].goal] || 'factorBadge');
     $('moves').innerHTML = t('moves', { n: ui.moves }) + (ui.done[id] != null ? t('best', { n: ui.done[id] }) : '');
   }
   $('writtenLabel').textContent = t('written');

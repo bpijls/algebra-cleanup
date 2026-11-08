@@ -54,6 +54,20 @@ function valueC(S, env) {
   if (S.parts.length === 1) return a;
   return S.op === '=' ? C.sub(a, b) : S.op === '·' ? C.mul(a, b) : C.div(a, b);
 }
+// logic (goal logic): + is OR, · is AND, the bar is NOT; a state's value is its whole truth table
+function evB(f, env) {
+  if (f.k === 'n') return f.v !== 0;
+  if (f.k === 'v') return env[f.b];
+  if (f.k === 'not') return !evTermsB(f.terms, env);
+  if (f.k === 'p') return evTermsB(f.terms, env);
+  if (f.k === 'g') return f.f.every(g => evB(g, env));
+  throw new Error(`no truth value for a ${f.k} piece`);
+}
+const evTermsB = (ts, env) => ts.some(t => t.f.every(f => evB(f, env)));
+function truthTable(S) {
+  const ls = ['a', 'b', 'c', 'd', 'e'];   // the same rows for every state: a move may drop a letter (a + ¬a = 1)
+  return Array.from({ length: 2 ** ls.length }, (_, n) => { const env = Object.fromEntries(ls.map((l, k) => [l, !!(n >> k & 1)])); return +evTermsB(S.parts[0].num, env); });
+}
 function value(S, env) {
   const [a, b] = S.parts.map(P => evP(P, env));
   if (S.parts.length === 1) return a;
@@ -64,7 +78,12 @@ function value(S, env) {
 // the value at each sample point; null where a condition a move wrote down doesn't hold (a > 0 under a log):
 // a move may take its own written conditions for granted. Pass the conditions of the later state to compare.
 const holds = (conds, env) => (conds || []).every(c => { const v = evTerms(c.terms, env); return c.rel === 'gt' ? v > 0 : c.rel === 'ge' ? v >= 0 : v !== 0; });
-const values = (S, conds = S.conds) => { const set = VALS.some(env => holds(conds, env)) ? VALS : NEG; return S.complex ? set.flatMap(env => holds(conds, env) ? valueC(S, env) : [null, null]) : set.map(env => holds(conds, env) ? value(S, env) : null); };
+const values = (S, conds = S.conds) => {
+  if (S.goal === 'logic') return truthTable(S);
+  // a formula with a given value (n = 10): the letter is that value, before and after writing it in
+  const given = env => S.given ? new Proxy(env, { get: (t, k) => k in S.given ? S.given[k] : t[k] }) : env;
+  const set = (VALS.some(env => holds(conds, env)) ? VALS : NEG).map(given);
+  return S.complex ? set.flatMap(env => holds(conds, env) ? valueC(S, env) : [null, null]) : set.map(env => holds(conds, env) ? value(S, env) : null); };
 
 // an equation with parameters (ax + b = cx + d) is judged at fixed parameter values, the ones the game uses
 // too (a − c ≠ 0, b² − 4ac > 0 …); only the unknown varies

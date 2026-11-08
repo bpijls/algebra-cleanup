@@ -23,6 +23,12 @@ const CHAPTERS = {
     ['i^2', '−1'], ['i^3', '−i'], ['i^4', '1'], ['3i·2i', '−6'], ['4i·(-i)', '4'], ['(3+2i)-(1-i)', '2 + 3i'],
     ['(2+i)(3-i)', '7 + i'], ['(1+i)^2', '2i'], ['(2+3i)(2-3i)', '13'],
   ],
+  // logic: + is OR, · is AND, ¬ is NOT (typed ¬ or !)
+  'logica (Boolean algebra)': [
+    ['a·a·b', 'ab', 'logic'], ['a+a+b', 'a + b', 'logic'], ['a·¬a', '0', 'logic'], ['¬¬a', 'a', 'logic'], ['a+a·b', 'a', 'logic'],
+    ['a·(a+b)', 'a', 'logic'], ['a·b+a·¬b', 'a', 'logic'], ['¬(a·b)', '¬a + ¬b', 'logic'], ['¬(a+b)', '¬a¬b', 'logic'],
+    ['¬(¬a·¬b)', 'a + b', 'logic'], ['(a+b)·(a+¬b)', 'a', 'logic'], ['!(a+!b)', '¬ab', 'logic'],
+  ],
   'machten (powers)': [
     ['3a^2·2a^5', '6a^7'], ['a^3·a^4·a', 'a^8'], ['(a^2)^3', 'a^6'], ['(2a)^3', '8a^3'], ['(3a^2b)^2', '9a^4b^2'],
     ['-2a·5a^3', '−10a^4'], ['2a^3·(a^2)^4', '2a^11'], ['3a^4b·2ab^3', '6a^5b^4'],

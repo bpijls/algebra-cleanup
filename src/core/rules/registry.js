@@ -40,4 +40,9 @@ export const defineExplode = (k, fn) => { EXPLODE[k] = fn; };
      split (S, id, k)      a term into two (k + rest)            balance (S, op, v, bi) the same on both sides
      sweep (S, ids)        a swipe across pieces */
 export const MOVES = [];
-export const defineMove = (id, gesture, run) => { MOVES.push({ id, gesture, run }); };
+// a problem type can refuse moves that only hold for numbers (logic: a + a is a, never 2a; 1 is not 2 − 1):
+// defineGate((S, id) => true when move id makes no sense in S). A gated move answers null (nothing happens).
+const GATES = [];
+export const defineGate = g => { GATES.push(g); };
+export const gated = (S, id) => GATES.some(g => g(S, id));
+export const defineMove = (id, gesture, run) => { MOVES.push({ id, gesture, run: (S, ...a) => gated(S, id) ? null : run(S, ...a) }); };

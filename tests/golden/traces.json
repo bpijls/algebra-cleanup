@@ -1281,6 +1281,190 @@
   "hLike [nyEqAlone] → likeZero | x = 2i − 1 ∨ x = −2i − 1",
   "clean"
  ],
+ "level logic.1": [
+  "aa",
+  "hAndSame [nyAnd] → andSame | a",
+  "clean"
+ ],
+ "level logic.2": [
+  "a + ¬a",
+  "hOrNot [nyOr] → orNot | 1",
+  "clean"
+ ],
+ "level logic.3": [
+  "0a + b",
+  "hAndZero [nyAnd] → andZero | b",
+  "clean"
+ ],
+ "level logic.4": [
+  "a¬a + b",
+  "hAndNot [nyAnd] → andNot | b",
+  "clean"
+ ],
+ "level logicsimp.1": [
+  "a + ab",
+  "hAbsorb [nyAbsorb] → factorOne | a(1 + b)",
+  "hOrOne [nyOr] → orOne | a",
+  "clean"
+ ],
+ "level logicsimp.2": [
+  "ab + a¬b",
+  "hAdjacent [nyAdjacent] → factor | a(b + ¬b)",
+  "hOrNot [nyOr] → orNot | a",
+  "clean"
+ ],
+ "level logicsimp.3": [
+  "ab + abc",
+  "hAbsorb [nyAbsorb] → factor | a(b + bc)",
+  "hAbsorb [nyAbsorb] → factorOne | ab(1 + c)",
+  "hOrOne [nyOr] → orOne | ab",
+  "clean"
+ ],
+ "level logicsimp.4": [
+  "abc + ab¬c + a¬b",
+  "hAdjacent [nyAdjacent] → factor | a(bc + b¬c) + a¬b",
+  "hAdjacent [nyAdjacent] → factor | ab(c + ¬c) + a¬b",
+  "hOrNot [nyOr] → orNot | ab + a¬b",
+  "hAdjacent [nyAdjacent] → factor | a(b + ¬b)",
+  "hOrNot [nyOr] → orNot | a",
+  "clean"
+ ],
+ "level demorgan.1": [
+  "¬(ab)",
+  "hNot [nyNot] → deMorganAnd | ¬a + ¬b",
+  "clean"
+ ],
+ "level demorgan.2": [
+  "¬(a + b)",
+  "hNot [nyNot] → deMorganOr | ¬a¬b",
+  "clean"
+ ],
+ "level demorgan.3": [
+  "¬(¬a + b)",
+  "hNot [nyNot] → deMorganOr | ¬¬a¬b",
+  "hNot [nyNot] → notNot | a¬b",
+  "clean"
+ ],
+ "level demorgan.4": [
+  "¬(ab) + a",
+  "hNot [nyNot] → deMorganAnd | ¬a + ¬b + a",
+  "hOrNot [nyOr] → orNot | 1 + ¬b",
+  "hOrOne [nyOr] → orOne | 1",
+  "clean"
+ ],
+ "level sequences.1": [
+  "3 + 4(n − 1)",
+  "hSubst [nySubst] → substitute | 3 + 4(10 − 1)",
+  "hLike [nyBracket] → likeAdd | 3 + 4·9",
+  "hMerge [nyTidy] → mergeNum | 3 + 36",
+  "hLike [nyLike] → likeAdd | 39",
+  "clean"
+ ],
+ "level sequences.2": [
+  "3 + 4(n − 1) = 39",
+  "hOpen [nyEqAlone] → distribute | 3 + 4n − 4 = 39",
+  "hLike [nyEqAlone] → likeAdd | −1 + 4n = 39",
+  "hBalanceTerm [nyEqAlone] → balance | −1 + 4n + 1 = 39 + 1",
+  "hLike [nyEqAlone] → likeZero | 4n = 39 + 1",
+  "hLike [nyEqAlone] → likeAdd | 4n = 40",
+  "hBalanceDiv [nyEqAlone] → balance | [4n/4 = [40/4",
+  "hCancel [nyEqAlone] → cancelVar | n = [40/4",
+  "hExplodeCancel [nyEqTidy] → explodeNum | n = [2·2·2·5/2·2",
+  "hCancel [nyEqTidy] → cancelVar | n = [2·2·5/2",
+  "hCancel [nyEqTidy] → cancelVar | n = 2·5",
+  "hMerge [nyEqTidy] → mergeNum | n = 10",
+  "clean"
+ ],
+ "level sequences.3": [
+  "23(n − 1)",
+  "hSubst [nySubst] → substitute | 23(4 − 1)",
+  "hLike [nyTidy] → likeAdd | 23^3",
+  "hGroup [nyBracket] → explodeGroup | 2333",
+  "hGroup [nyBracket] → unwrap | 2·333",
+  "hGroup [nyBracket] → unwrap | 2·3·33",
+  "hGroup [nyBracket] → unwrap | 2·3·3·3",
+  "hMerge [nyTidy] → mergeNum | 6·3·3",
+  "hMerge [nyTidy] → mergeNum | 18·3",
+  "hMerge [nyTidy] → mergeNum | 54",
+  "clean"
+ ],
+ "level sequences.4": [
+  "52(n − 1) = 80",
+  "hExpDiv [nyEqAlone] → balance | [52(n − 1)/5 = [80/5",
+  "hCancel [nyEqAlone] → cancelVar | 2(n − 1) = [80/5",
+  "hExplodeCancel [nyEqAlone] → explodeNum | 2(n − 1) = [2·2·2·2·5/5",
+  "hCancel [nyEqAlone] → cancelVar | 2(n − 1) = 2·2·2·2",
+  "hMerge [nyEqAlone] → mergeNum | 2(n − 1) = 4·2·2",
+  "hMerge [nyEqAlone] → mergeNum | 2(n − 1) = 8·2",
+  "hMerge [nyEqAlone] → mergeNum | 2(n − 1) = 16",
+  "hAsPowerOf [nyEqAlone] → asPowerOf | 2(n − 1) = 2^4",
+  "hExpBase [nyEqAlone] → expBaseEq | n − 1 = 4",
+  "hBalanceTerm [nyEqAlone] → balance | n − 1 + 1 = 4 + 1",
+  "hLike [nyEqAlone] → likeZero | n = 4 + 1",
+  "hLike [nyEqTidy] → likeAdd | n = 5",
+  "clean"
+ ],
+ "level sums.1": [
+  "[n(n + 1)/2",
+  "hSubst [nySubst] → substitute | [100(100 + 1)/2",
+  "hExplodeCancel [nyBracket] → explodeNum | [2·2·5·5(100 + 1)/2",
+  "hCancel [nyBracket] → cancelVar | 2·5·5(100 + 1)",
+  "hMerge [nyBracket] → mergeNum | 10·5(100 + 1)",
+  "hMerge [nyBracket] → mergeNum | 50(100 + 1)",
+  "hLike [nyBracket] → likeAdd | 50·101",
+  "hMerge [nyTidy] → mergeNum | 5050",
+  "clean"
+ ],
+ "level sums.2": [
+  "[n/2(3 + 39)",
+  "hSubst [nySubst] → substitute | [10/2(3 + 39)",
+  "hExplodeCancel [nyBracket] → explodeNum | [2·5/2(3 + 39)",
+  "hCancel [nyBracket] → cancelVar | 5(3 + 39)",
+  "hLike [nyBracket] → likeAdd | 5·42",
+  "hMerge [nyTidy] → mergeNum | 210",
+  "clean"
+ ],
+ "level sums.3": [
+  "n^2",
+  "hSubst [nySubst] → substitute | 12^2",
+  "hGroup [nyBracket] → explodeGroup | 1212",
+  "hGroup [nyBracket] → unwrap | 1212",
+  "hGroup [nyBracket] → unwrap | 12·12",
+  "hMerge [nyTidy] → mergeNum | 144",
+  "clean"
+ ],
+ "level physics.1": [
+  "s = tv",
+  "hSwap [nyEqAlone] → swapSides | tv = s",
+  "hBalanceDivG [nyEqAlone] → balanceIf | [tv/v = [s/v",
+  "hCancel [nyEqAlone] → cancelVar | t = [s/v",
+  "clean"
+ ],
+ "level physics.2": [
+  "v = u + at",
+  "hSwap [nyEqAlone] → swapSides | u + at = v",
+  "hBalanceTerm [nyEqAlone] → balance | u + at − u = v − u",
+  "hLike [nyEqAlone] → likeZero | at = v − u",
+  "hBalanceDivG [nyEqAlone] → balanceIf | [at/a = [v − u/a",
+  "hCancel [nyEqAlone] → cancelVar | t = [v − u/a",
+  "clean"
+ ],
+ "level physics.3": [
+  "f = am",
+  "hSwap [nyEqAlone] → swapSides | am = f",
+  "hBalanceDivG [nyEqAlone] → balanceIf | [am/a = [f/a",
+  "hCancel [nyEqAlone] → cancelVar | m = [f/a",
+  "clean"
+ ],
+ "level physics.4": [
+  "pv = nrt",
+  "hSwap [nyEqAlone] → swapSides | nrt = pv",
+  "hBalanceDivG [nyEqAlone] → balanceIf | [nrt/n = [pv/n",
+  "hCancel [nyEqAlone] → cancelVar | rt = [pv/n",
+  "hBalanceDivG [nyEqAlone] → balanceIf | [rt/r = [pv/nr",
+  "hCancel [nyEqAlone] → cancelVar | t = [pv/nr",
+  "clean"
+ ],
  "breuken optellen (adding fractions): 1/2+1/3": [
   "[1/2 + [1/3",
   "hExpandTo [nyCombine] → expandBy | [3/2·3 + [1/3",
@@ -1718,6 +1902,82 @@
   "hMerge [nyTidy] → mergeNum | 4 − 6i + 6i + 9",
   "hLike [nyLike] → likeAdd | 13 − 6i + 6i",
   "hLike [nyLike] → likeZero | 13",
+  "clean"
+ ],
+ "logica (Boolean algebra): a·a·b": [
+  "aab",
+  "hAndSame [nyAnd] → andSame | ab",
+  "clean"
+ ],
+ "logica (Boolean algebra): a+a+b": [
+  "a + a + b",
+  "hOrSame [nyOr] → orSame | a + b",
+  "clean"
+ ],
+ "logica (Boolean algebra): a·¬a": [
+  "a¬a",
+  "hAndNot [nyAnd] → andNot | 0",
+  "clean"
+ ],
+ "logica (Boolean algebra): ¬¬a": [
+  "¬¬a",
+  "hNot [nyNot] → notNot | a",
+  "clean"
+ ],
+ "logica (Boolean algebra): a+a·b": [
+  "a + ab",
+  "hAbsorb [nyAbsorb] → factorOne | a(1 + b)",
+  "hOrOne [nyOr] → orOne | a",
+  "clean"
+ ],
+ "logica (Boolean algebra): a·(a+b)": [
+  "a(a + b)",
+  "hOpen [nyLogicBracket] → distribute | aa + ab",
+  "hAndSame [nyAnd] → andSame | a + ab",
+  "hAbsorb [nyAbsorb] → factorOne | a(1 + b)",
+  "hOrOne [nyOr] → orOne | a",
+  "clean"
+ ],
+ "logica (Boolean algebra): a·b+a·¬b": [
+  "ab + a¬b",
+  "hAdjacent [nyAdjacent] → factor | a(b + ¬b)",
+  "hOrNot [nyOr] → orNot | a",
+  "clean"
+ ],
+ "logica (Boolean algebra): ¬(a·b)": [
+  "¬(ab)",
+  "hNot [nyNot] → deMorganAnd | ¬a + ¬b",
+  "clean"
+ ],
+ "logica (Boolean algebra): ¬(a+b)": [
+  "¬(a + b)",
+  "hNot [nyNot] → deMorganOr | ¬a¬b",
+  "clean"
+ ],
+ "logica (Boolean algebra): ¬(¬a·¬b)": [
+  "¬(¬a¬b)",
+  "hNot [nyNot] → deMorganAnd | ¬¬a + ¬¬b",
+  "hNot [nyNot] → notNot | a + ¬¬b",
+  "hNot [nyNot] → notNot | a + b",
+  "clean"
+ ],
+ "logica (Boolean algebra): (a+b)·(a+¬b)": [
+  "(a + b)(a + ¬b)",
+  "hOpen [nyLogicBracket] → distribute | a(a + ¬b) + b(a + ¬b)",
+  "hOpen [nyLogicBracket] → distribute | aa + a¬b + b(a + ¬b)",
+  "hAndSame [nyAnd] → andSame | a + a¬b + b(a + ¬b)",
+  "hAbsorb [nyAbsorb] → factorOne | a(1 + ¬b) + b(a + ¬b)",
+  "hOrOne [nyOr] → orOne | a + b(a + ¬b)",
+  "hOpen [nyLogicBracket] → distribute | a + ab + b¬b",
+  "hAndNot [nyAnd] → andNot | a + ab",
+  "hAbsorb [nyAbsorb] → factorOne | a(1 + b)",
+  "hOrOne [nyOr] → orOne | a",
+  "clean"
+ ],
+ "logica (Boolean algebra): !(a+!b)": [
+  "¬(a + ¬b)",
+  "hNot [nyNot] → deMorganOr | ¬a¬¬b",
+  "hNot [nyNot] → notNot | ¬ab",
   "clean"
  ],
  "machten (powers): 3a^2·2a^5": [

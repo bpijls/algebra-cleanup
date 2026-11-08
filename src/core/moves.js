@@ -8,7 +8,7 @@ import { F, T, cloneF, cloneT, fkey, sumKey } from './kinds/sums.js';
 import { canMerge, cleanTerm, coef, eachFactor, eachTerm, gcd, isOne, isUnit, locate, mergeF, negate, sig, tidy, varPart } from './model.js';
 import { isEquation, isFractionPair } from './problem.js';
 import { pairCheck } from './rules/engine.js';
-import { defineMove } from './rules/registry.js';
+import { defineMove, gated } from './rules/registry.js';
 import { blockHTML, factorsHTML, fx, mx, sumHTML, termHTML } from '../render/text.js';
 
 export function related(x, y) { return canMerge(x, y) || (x.k === 'v' && y.k === 'v' && x.b === y.b); }
@@ -87,6 +87,7 @@ export const sgn = n => String(n).replace('-', '−');
 
 /* Write a·x as p·x + q·x with p + q = a (the step behind the sum-product method). */
 export function opSplitTwo(S, tid, p) {
+  if (gated(S, 'splitTwo')) return null;
   const L = locate(S, tid);
   if (!L || L.kind !== 't') return null;
   const t = L.term, c = coef(t), vp = varPart(t);
@@ -101,6 +102,7 @@ export function opSplitTwo(S, tid, p) {
 }
 
 export function opGather(S, id) {
+  if (gated(S, 'gather')) return null;
   const L = locate(S, id), arr = L.term.f;
   const same = arr.filter(f => canMerge(L.f, f));
   if (same.length < 2) return { no: 'nothingGather', p: { x: mx(fx(L.f)) }, ids: [id] };
@@ -136,6 +138,7 @@ export function addTermsIn(terms, list) {
 /* A sweep is accepted only as ONE valid move: group matching pieces inside one term,
    or add like terms by sweeping one matching piece in each. Otherwise nothing happens. */
 export function opSweep(S, ids) {
+  if (gated(S, 'sweep')) return null;
   const locs = ids.map(id => locate(S, id)).filter(L => L && L.kind === 'f' && L.f.k !== 'p');
   if (locs.length < 2) return null;
   const all = locs.map(L => L.f.id);
@@ -164,6 +167,7 @@ export function opSweep(S, ids) {
 }
 
 export function termPair(S, aId, bId) {
+  if (gated(S, 'termPair')) return null;
   const A = locate(S, aId), B = locate(S, bId);
   if (A.p !== B.p) return { no: isEquation(S) ? 'diffSides' : 'diffFrac', ids: [aId, bId] };
   if (A.terms !== B.terms) return { no: A.side !== B.side ? 'termSide' : 'bracketWall', ids: [aId, bId] };

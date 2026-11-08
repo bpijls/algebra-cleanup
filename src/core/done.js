@@ -8,8 +8,12 @@ import { branchCount, eqView, isBranched } from './problem.js';
 import { bx, fx, mx, sumHTML, termHTML } from '../render/text.js';
 
 /* "Done?" pressed too early: say what is still left, without giving the move away */
+// a goal of a topic says itself what is left: defineWhy('logic', S => ({ k: … }))
+const WHY = {};
+export const defineWhy = (goal, fn) => { WHY[goal] = fn; };
 export function whyNotDone(S) {
   if (isClean(S)) return null;
+  if (WHY[S.goal]) return WHY[S.goal](S);
   const th = t => mx(termHTML(t));
   // an identity: first what is left on each side, then that the two sides don't read the same yet
   if (S.goal === 'prove') {

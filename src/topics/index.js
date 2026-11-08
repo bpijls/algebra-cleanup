@@ -13,3 +13,8 @@ import './exp/levels.js';
 import './complex/kind.js';
 import './complex/rules.js';
 import './complex/levels.js';
+import './logic/kind.js';
+import './logic/rules.js';
+import './logic/levels.js';
+import './formulas/rules.js';
+import './formulas/levels.js';

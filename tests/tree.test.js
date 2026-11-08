@@ -20,7 +20,7 @@ test('skill tree: prerequisites exist, no cycles, every level in exactly one ski
   // the rows: a skill sits below every skill it needs
   const row = {}; G.tiers().forEach((r, i) => r.forEach(K => { row[K.id] = i; }));
   for (const K of G.SKILL_LIST) for (const r of K.requires) assert.ok(row[r] < row[K.id], `${r} above ${K.id}`);
-  assert.deepEqual(G.tiers()[0].map(K => K.id).sort(), ['numfrac', 'powers']);   // two roots: powers, and number fractions
+  assert.deepEqual(G.tiers()[0].map(K => K.id).sort(), ['logic', 'numfrac', 'powers']);   // three roots: powers, number fractions, logic
 });
 
 test('skill tree: soft lock, next level, newly opened skills', () => {

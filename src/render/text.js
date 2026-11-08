@@ -12,7 +12,9 @@ export const sqHTML = inner => `<span class="sq"><svg class="rs-svg" viewBox="0 
 
 // how each kind of node is written; rank orders the factors of a tidy term (numbers, letters, roots, brackets)
 const HTML = {};
-export const defineHTML = (k, rank, html) => { HTML[k] = { rank, html }; };
+// sortKey: where a piece goes among the letters of its rank when a term is written (¬b after a: a¬b)
+export const defineHTML = (k, rank, html, sortKey) => { HTML[k] = { rank, html, sortKey }; };
+const sortKeyOf = f => String(HTML[f.k].sortKey ? HTML[f.k].sortKey(f) : f.b || '');
 const sup = e => showsExp(e) ? `<sup>${expText(e)}</sup>` : '';
 defineHTML('n', 0, f => `<span class="mn">${f.v}</span>`);
 defineHTML('v', 1, f => `<i class="mv">${f.b}</i>${sup(f.e)}`);
@@ -28,7 +30,7 @@ export const relHTML = r => r === '<' ? '&lt;' : r === '>' ? '&gt;' : r;
 
 export function factorsHTML(fs, sort) {
   let list = fs;
-  if (sort) list = [...fs].sort((a, b) => HTML[a.k].rank - HTML[b.k].rank || String(a.b || '').localeCompare(String(b.b || '')));
+  if (sort) list = [...fs].sort((a, b) => HTML[a.k].rank - HTML[b.k].rank || sortKeyOf(a).localeCompare(sortKeyOf(b)));
   return list.map((f, i) => (i > 0 && f.k === 'n' ? '·' : '') + fx(f)).join('');
 }
 
