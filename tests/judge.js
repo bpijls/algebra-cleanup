@@ -25,13 +25,18 @@ function value(S, env) {
 }
 const values = S => VALS.map(env => value(S, env));
 
-// the real solutions of an equation in one letter (degree ≤ 2 per branch): 'all', or a sorted list
+// an equation with parameters (ax + b = cx + d) is judged at fixed parameter values, the ones the game uses
+// too (a − c ≠ 0, b² − 4ac > 0 …); only the unknown varies
+const envOf = (S, x) => { const e = {}; G.letters(S).forEach(l => { e[l] = G.PVAL[l] ?? 1.1 + l.charCodeAt(0) % 5 * 0.37; }); e[G.unknownOf(S) || 'x'] = x; return e; };
+// the real solutions of an equation (degree ≤ 2 per branch in the unknown): 'all', or a sorted list.
+// A branch under the root of a negative number (√q with q < 0 here) has none.
 function solutions(S) {
-  const letter = G.letters(S)[0] || 'x', out = [];
+  const out = [];
   for (let b = 0; b < S.parts.length / 2; b++) {
     const [L, R] = S.parts.slice(2 * b, 2 * b + 2);
-    const f = x => evP(L, { [letter]: x }) - evP(R, { [letter]: x });
+    const f = x => evP(L, envOf(S, x)) - evP(R, envOf(S, x));
     const [f0, f1, f2, f3, f4] = [0, 1, 2, 3, 4].map(f);
+    if ([f0, f1, f2, f3, f4].some(Number.isNaN)) continue;
     const a = (f2 - 2 * f1 + f0) / 2, bb = f1 - f0 - a, c = f0;
     const tol = 1e-7 * Math.max(1, Math.abs(f3), Math.abs(f4));
     assert.ok(Math.abs(9 * a + 3 * bb + c - f3) < tol && Math.abs(16 * a + 4 * bb + c - f4) < tol, `branch is not of degree ≤ 2: ${G.stateHTML(S)}`);
@@ -46,8 +51,11 @@ function solutions(S) {
 }
 const sameSolutions = (u, v) => u === 'all' || v === 'all' ? u === v
   : u.length === v.length && u.every((x, i) => Math.abs(x - v[i]) <= 1e-6 * Math.max(1, Math.abs(x)));
-// an equation keeps its solutions when L − R changes by the same nonzero constant everywhere
+// an equation keeps its solutions when L − R changes by the same nonzero constant for every value of the unknown
+const XS = [0.61, 2.2, -1.6, 3.3];
+const eqValues = (S, ref) => XS.map(x => { const [L, R] = S.parts; return evP(L, envOf(ref, x)) - evP(R, envOf(ref, x)); });
 function equivalent(u, v) {
+  if (u.every(Number.isNaN) && v.every(Number.isNaN)) return true;   // both under the root of a negative number
   const r = u.map((x, i) => v[i] / x);
   return r.every(k => isFinite(k) && Math.abs(k) > 1e-9 && Math.abs(k - r[0]) <= 1e-7 * Math.max(1, Math.abs(r[0])));
 }
@@ -74,6 +82,9 @@ function candidates(S) {
     for (let b = 0; b < S.parts.length / 2; b++)   // per branch: swap, root of both sides, product = 0, typed + and ·
       out.push(s => G.opSwap(s, b), s => G.opRoot(s, b), s => G.opZero(s, b), s => G.opBalance(s, '+', G.T([G.N(9)]), b), s => G.opBalance(s, '·', G.T([G.N(4)]), b));
     out.push(s => G.opBalance(s, '·', G.T([G.V('x')])), s => G.opBalance(s, ':', G.T([G.N(0)])), s => G.opBalance(s, '·', G.T([G.N(1)])));
+    // by the parameters: · a, : a, + b², · 4a, and a letter that isn't in the equation (refused)
+    G.params(S).forEach(l => out.push(s => G.opBalance(s, '·', G.T([G.V(l)])), s => G.opBalance(s, ':', G.T([G.V(l)], true)), s => G.opBalance(s, '+', G.T([G.V(l, 2)])), s => G.opBalance(s, '·', G.T([G.N(4), G.V(l)]))));
+    out.push(s => G.opBalance(s, ':', G.T([G.V('z')])));
   }
   return out;
 }
@@ -99,7 +110,7 @@ function fuzz(start, steps, label) {
       const branching = S.op === '=' && (trial.parts.length !== old.parts.length || ['rootBoth', 'rootZero', 'zeroProduct'].includes(r.ok));
       const pair = (X, b) => ({ parts: X.parts.slice(2 * b, 2 * b + 2), op: '=' });
       const kept = branching ? sameSolutions(solutions(old), solutions(trial))
-        : S.op === '=' ? old.parts.every((_, i) => i % 2 || equivalent(values(pair(old, i / 2)), values(pair(trial, i / 2))))
+        : S.op === '=' ? old.parts.every((_, i) => i % 2 || equivalent(eqValues(pair(old, i / 2), old), eqValues(pair(trial, i / 2), old)))
         : same(before, values(trial));
       assert.ok(kept, `${label}: move ${r.ok} changed the ${S.op === '=' ? 'solutions' : 'value'}\nbefore ${G.stateHTML(JSON.parse(snap))}\nafter  ${G.stateHTML(trial)}`);
       S = trial; moved = true; break;

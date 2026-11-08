@@ -353,6 +353,14 @@ button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 .balgo.hint { box-shadow: 0 0 0 4px var(--hl); }
 .balnum { flex: 1 1 100%; display: flex; align-items: center; gap: 8px; }
 .balnum .slider { flex: 1; margin: 0; }
+.ballets { display: flex; gap: 4px; flex: none; }
+.ballets[hidden] { display: none; }
+.ballet { min-width: 38px; height: 40px; border-radius: 12px; border: 2px solid var(--line); background: var(--card); font-family: var(--f-math); font-size: 1.25rem; cursor: pointer; color: var(--ink); padding: 0 6px; }
+.ballet sup { font-size: .6em; }
+.ballet.on { background: var(--accent); border-color: var(--accent); color: var(--paper); }
+.conds { color: var(--ink) !important; font-size: 1.05rem; margin-top: 2px !important; }
+.ownu { display: flex; align-items: center; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+.ownu .plabel { margin: 0; }
 .balstep { flex: none; width: 40px; height: 40px; border-radius: 12px; border: 2px solid var(--line); background: var(--card); font-size: 1.3rem; font-weight: 800; cursor: pointer; color: var(--ink); }
 @media (max-width: 420px) {
   .balop { width: 42px; }
@@ -362,8 +370,8 @@ button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 /* on its side: the panel is one row of its own above the note and the tool bar */
 @media (orientation: landscape) and (max-height: 500px) {
   .hudbottom { flex-wrap: wrap; }
-  .balpanel { order: -1; flex: 1 0 100%; max-width: none; flex-wrap: nowrap; gap: 6px; }
-  .balnum { flex: 0 1 260px; min-width: 140px; }
+  .balpanel { order: -1; flex: 1 0 100%; max-width: none; flex-wrap: wrap; gap: 6px; }
+  .balnum { flex: 0 1 300px; min-width: 200px; }
   .balop { width: 40px; min-height: 40px; }
   .balstep { width: 36px; height: 36px; }
   .balpanel .tool { min-height: 44px; }

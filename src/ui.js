@@ -23,7 +23,7 @@ function sayIntro() {
   if (mode === 'practice') return say('ti_' + S.topic, {}, 'info');
   say(null, null, 'info', { en: LEVELS[lvl].en, nl: LEVELS[lvl].nl });
 }
-const TOPICS = ['powers', 'like', 'frac', 'open', 'double', 'square', 'factor', 'trinomial', 'equations', 'quadratic', 'mixed'];
+const TOPICS = ['powers', 'like', 'frac', 'open', 'double', 'square', 'factor', 'trinomial', 'equations', 'quadratic', 'generic', 'mixed'];
 let mode = 'levels', initial = null, sheetFn = null;
 let prac = store.get('practice', { topics: ['powers', 'like', 'frac'], d: 1 });
 let session = { solved: 0, streak: 0 };
@@ -67,7 +67,7 @@ function showPractice() {
 }
 
 /* ---- your own problem: typed from the book ---- */
-const OWN_EXAMPLES = ['(x+3)(x-2)', '(a+b)^2', '-2(x+4)-3(x-1)', '12a^5/4a^2', 'x^2+5x+6', '4a^2b+6ab^2', '5x+3=2x+12', '2(x+3)=4x-2'];
+const OWN_EXAMPLES = ['(x+3)(x-2)', '(a+b)^2', '-2(x+4)-3(x-1)', '12a^5/4a^2', 'x^2+5x+6', '4a^2b+6ab^2', '5x+3=2x+12', '2(x+3)=4x-2', 'ax+b=cx+d', 'ax^2+bx+c=0'];
 let own = store.get('own', { src: '', goal: null });
 function showOwn() {
   sheetFn = showOwn;
@@ -81,13 +81,24 @@ function showOwn() {
         <button type="button" class="pchip seg" data-g="factor">${t('ownFactor')}</button>
         <button type="button" class="pchip seg" data-g="solve" hidden>${t('ownSolve')}</button>
       </div>
+      <div class="ownu" id="ownU" hidden><span class="plabel">${t('ownUnknown')}</span><span class="pchips" id="ownUs"></span></div>
       <div class="row" style="margin-top:16px"><button class="tool main" type="submit">${t('ownGo')} →</button></div>
     </form>
     <div class="plabel">${t('ownExamples')}</div>
     <div class="pchips">${OWN_EXAMPLES.map(e => `<button type="button" class="pchip ex" data-ex="${e}">${e}</button>`).join('')}</div>`);
   const input = host.querySelector('#ownIn'), prev = host.querySelector('#ownPrev'), errEl = host.querySelector('#ownErr');
-  let goal = own.goal, touched = !!own.goal;
+  let goal = own.goal, touched = !!own.goal, unknown = own.unknown || null;
   input.value = own.src;
+  // an equation with several letters: which one is the unknown (x when there is one)
+  const unknownChips = () => {
+    const r = input.value.includes('=') ? parseProblem(input.value, 'solve', unknown) : null;
+    const ls = r && r.S ? letters(r.S).sort() : r && (r.err === 'pEqWhich' || r.err === 'pEqUnknown') ? letters(parseProblem(input.value.split('=').join('+'), 'simplify').S || { parts: [] }).sort() : [];
+    if (unknown && !ls.includes(unknown)) unknown = null;
+    host.querySelector('#ownU').hidden = ls.length < 2;
+    const cur = unknown || (r && r.S ? unknownOf(r.S) : null);
+    host.querySelector('#ownUs').innerHTML = ls.map(b => `<button type="button" class="pchip seg${b === cur ? ' on' : ''}" data-u="${b}" aria-pressed="${b === cur}">${bx(b)}</button>`).join('');
+    host.querySelectorAll('[data-u]').forEach(b => b.addEventListener('click', () => { unknown = b.dataset.u; update(); }));
+  };
   const update = () => {
     const eq = input.value.includes('=');   // an equation is always solved; the other two goals don't apply
     if (eq) goal = 'solve'; else if (!touched || goal === 'solve') goal = guessGoal(input.value);
@@ -95,9 +106,10 @@ function showOwn() {
       const on = b.dataset.g === goal; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on));
       b.hidden = eq ? b.dataset.g !== 'solve' : b.dataset.g === 'solve';
     });
-    const r = input.value.trim() ? parseProblem(input.value, goal) : null;
+    const r = input.value.trim() ? parseProblem(input.value, goal, eq ? unknown : undefined) : null;
     prev.innerHTML = r && !r.err ? stateHTML(r.S) : '';
     errEl.hidden = true;
+    unknownChips();
     return r;
   };
   host.querySelectorAll('[data-g]').forEach(b => b.addEventListener('click', () => { goal = b.dataset.g; touched = true; update(); }));
@@ -105,11 +117,11 @@ function showOwn() {
   input.addEventListener('input', update);
   host.querySelector('#ownForm').addEventListener('submit', e => {
     e.preventDefault();
-    const r = parseProblem(input.value, goal);
+    const r = parseProblem(input.value, goal, goal === 'solve' ? unknown : undefined);
     const fail = (k, p) => { errEl.innerHTML = t(k, p); errEl.hidden = false; input.focus(); };
-    if (r.err) { fail(r.err, { ch: r.ch }); if (r.at != null) input.setSelectionRange(r.at, r.at + 1); return; }
+    if (r.err) { fail(r.err, { ch: r.ch, ...(r.p || {}) }); if (r.at != null) input.setSelectionRange(r.at, r.at + 1); return; }
     if (isClean(r.S)) return fail('ownClean');
-    own = { src: input.value, goal: touched ? goal : null }; store.set('own', own);
+    own = { src: input.value, goal: touched ? goal : null, unknown }; store.set('own', own);
     S = r.S;
     S.unsure = autoSolve(JSON.parse(JSON.stringify(S))) == null;
     closeSheet(); mode = 'custom'; session = { solved: 0, streak: 0 }; startBoard();
@@ -126,7 +138,16 @@ function termText(t) {
 }
 /* ---- the balance panel: + − · : and a number on a slider, done to both sides (no typing) ---- */
 // + and − take a positive number (the sign is the operation); · and : can be negative (· −1 flips both sides)
-const bal = { op: '+', v: 1 };
+// with parameters there are letter chips too: each one cycles off → a → a² → off, so · 4a and + b² can be made
+const bal = { op: '+', v: 1, lets: {} };
+const balLetters = () => S.op === '=' ? params(S).sort() : [];
+// the value as a term: 4a is the number 4 with the letter a on
+function balTerm() {
+  const vs = balLetters().filter(b => bal.lets[b]).map(b => V(b, bal.lets[b]));
+  const n = Math.abs(bal.v);
+  return T([...(n !== 1 || !vs.length ? [N(n)] : []), ...vs], bal.v < 0);
+}
+const balText = () => { const t0 = balTerm(); return (t0.neg ? '−' : '') + t0.f.map(f => f.k === 'n' ? f.v : f.b + (f.e > 1 ? '²' : '')).join(''); };
 let lastHint = null;
 function balBounds() {
   let big = 1;
@@ -134,10 +155,10 @@ function balBounds() {
   const R = Math.min(200, Math.max(20, 2 * big, Math.abs(bal.v)));
   return bal.op === '+' || bal.op === '-' ? [1, R] : [-R, R];
 }
-const balShown = () => bal.v < 0 ? '−' + -bal.v : String(bal.v);
+const balShown = balText;
 // what the panel would do, from a dry run on a copy
 function balTry() {
-  return { r: opBalance(JSON.parse(JSON.stringify(S)), bal.op, T([N(Math.abs(bal.v))], bal.v < 0), balBranch) };
+  return { r: opBalance(JSON.parse(JSON.stringify(S)), bal.op, balTerm(), balBranch) };
 }
 function balSync(preview) {
   const [lo, hi] = balBounds(), range = $('balRange');
@@ -145,6 +166,11 @@ function balSync(preview) {
   range.min = lo; range.max = hi; range.value = bal.v;
   range.setAttribute('aria-valuetext', BOPS[bal.op] + ' ' + balShown());
   document.querySelectorAll('#balOps [data-bop]').forEach(b => { const on = b.dataset.bop === bal.op; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
+  const ls = balLetters();
+  Object.keys(bal.lets).forEach(b => { if (!ls.includes(b)) delete bal.lets[b]; });
+  $('balLets').hidden = !ls.length;
+  $('balLets').setAttribute('aria-label', t('balLetters'));
+  $('balLets').innerHTML = ls.map(b => { const e = bal.lets[b] || 0; return `<button type="button" class="ballet${e ? ' on' : ''}" data-let="${b}" aria-pressed="${!!e}"><i>${b}</i>${e > 1 ? '<sup>2</sup>' : ''}</button>`; }).join('');
   $('balGo').querySelector('span').textContent = `${BOPS[bal.op]} ${bal.v < 0 ? '(' + balShown() + ')' : balShown()}`;
   $('balGo').setAttribute('aria-label', t('balGoAria', { op: BOPS[bal.op], v: balShown() }));
   if (!preview) return;
@@ -165,7 +191,8 @@ function balFromHint() {
   const h = lastHint;
   if (!h || !h.balance || h.drag != null) return;
   const v = h.balance.value, n = v.f.filter(f => f.k === 'n').reduce((a, f) => a * f.v, 1);
-  if (v.f.some(f => f.k !== 'n')) return;
+  if (v.f.some(f => f.k !== 'n' && f.k !== 'v')) return;
+  bal.lets = Object.fromEntries(v.f.filter(f => f.k === 'v').map(f => [f.b, f.e]));
   bal.op = h.balance.op; bal.v = v.neg && (bal.op === '·' || bal.op === ':') ? -n : n;
   if (bal.op === '+' && v.neg) bal.op = '-';
   balBranch = h.bi || 0;
@@ -420,7 +447,7 @@ function render() {
   $('btnGather').hidden = !gatherable;
   if (gatherable) $('btnGather').querySelector('span').innerHTML = previewOf(s => opGather(s, sel.id));
   // from a piece only when factoring (a lone −x is hard to hit as a term); elsewhere it would just be noise
-  const twoId = tSel || (fSel && S.goal === 'factor') ? splitTermOf(sel.id) : null;
+  const twoId = tSel || (fSel && (S.goal === 'factor' || S.goal === 'solve')) ? splitTermOf(sel.id) : null;
   $('btnSplitTwo').hidden = !twoId;
   if (twoId) $('btnSplitTwo').querySelector('span').innerHTML = mx(sumHTML([locate(S, twoId).term]) + ' = … + …');
   document.documentElement.lang = lang;
@@ -633,7 +660,7 @@ function select(s) {
 /* ---- balance mode: tap =, then drag a piece across it; it is undone on both sides ---- */
 function setBalancing(on) {
   balancing = on && S.op === '=';
-  if (balancing) balFromHint();
+  if (balancing) { bal.lets = {}; balFromHint(); }
   sel = null; born = new Set();
   if (!balancing || !(lastHint && lastHint.balance && lastHint.drag == null)) hintIds = new Set();
   render(); say(balancing ? 'balanceMode' : 'balanceOff', {}, 'info');
@@ -790,12 +817,13 @@ $('btnExplode').onclick = () => sel && run(s => opExplode(s, sel.id));
 $('btnGather').onclick = () => sel && run(s => opGather(s, sel.id));
 $('btnSwap').onclick = () => { if (busy || won) return; balancing = false; run(s => opSwap(s, balBranch)); };
 document.querySelectorAll('#balOps [data-bop]').forEach(b => { b.onclick = () => balSet(b.dataset.bop, null); });
+$('balLets').addEventListener('click', e => { const b = e.target.closest('[data-let]'); if (!b) return; bal.lets[b.dataset.let] = ((bal.lets[b.dataset.let] || 0) + 1) % 3; balSync(true); });
 $('balRange').addEventListener('input', e => balSet(null, +e.target.value));
 $('balLess').onclick = () => { const [lo] = balBounds(); balSet(null, Math.max(lo, bal.v - 1)); };
 $('balMore').onclick = () => { const [, hi] = balBounds(); balSet(null, Math.min(hi, bal.v + 1)); };
 $('balGo').onclick = () => {
   if (busy || won || !balancing) return;
-  const v = T([N(Math.abs(bal.v))], bal.v < 0);
+  const v = balTerm();
   run(s => { const r = opBalance(s, bal.op, v, balBranch); if (r && !r.no) balancing = false; return r; });
 };
 $('btnSplitTwo').onclick = () => sel && !busy && !won && showSplit(splitTermOf(sel.id));
@@ -881,7 +909,7 @@ function win(refresh) {
       const host = openSheet(`
         <h2>${t('win')}</h2>
         <p style="margin-bottom:0">${t(S.goal === 'factor' ? 'winSubF' : S.goal === 'solve' ? 'winSubS' : 'winSub')}</p>
-        <div class="result expr-n">${stateHTML(S)}</div>
+        <div class="result expr-n">${stateHTML(S)}</div>${condsHTML()}
         <p>${t('winMoves', { n: moves })} ${t('winPractice', { n: session.solved })}</p>
         <div class="row">
           <button class="tool main" type="button" id="wNext">${t(custom ? 'ownAnother' : 'nextProblem')} →</button>
@@ -903,7 +931,7 @@ function win(refresh) {
     const host = openSheet(`
       <h2>${t('win')}</h2>
       <p style="margin-bottom:0">${t(S.goal === 'factor' ? 'winSubF' : S.goal === 'solve' ? 'winSubS' : 'winSub')}</p>
-      <div class="result expr-n">${stateHTML(S)}</div>
+      <div class="result expr-n">${stateHTML(S)}</div>${condsHTML()}
       <p>${t('winMoves', { n: moves })}${t('winBest', { n: best[lvl] })}${last ? ' ' + t('allDone') : ''}</p>
       ${LEVELS[lvl].abc ? `<div class="abc">${abcHTML(LEVELS[lvl].abc)}</div>` : ''}
       <div class="row">
@@ -919,8 +947,15 @@ function win(refresh) {
   refresh ? show() : setTimeout(show, 650);
 }
 
+// a − c ≠ 0, b² − 4ac ≥ 0: what dividing by letters and taking roots of them took for granted
+const condsHTML = () => S.conds && S.conds.length ? `<p class="conds">${t('condsLine', { c: S.conds.map(c => c.html).join(lang === 'nl' ? ' en ' : ' and ') })}</p>` : '';
 // the last quadratic level: what the player did, written for every a, b, c, is the abc-formula
-function abcHTML({ a, b, c }) {
+function abcHTML(abc) {
+  if (abc === 'generic') {
+    const fr = (top, bot) => `<span class="nfrac"><span class="nn">${top}</span><span class="nd">${bot}</span></span>`;
+    return t('abcRevealG', { f: mx(`<i class="mv">x</i> = ${fr(`−<i class="mv">b</i> ± ${sqHTML('<i class="mv">b</i><sup>2</sup> − 4<i class="mv">a</i><i class="mv">c</i>')}`, `2<i class="mv">a</i>`)}`) });
+  }
+  const { a, b, c } = abc;
   const v = n => n < 0 ? '−' + -n : String(n), d = b * b - 4 * a * c;
   const fr = (top, bot) => `<span class="nfrac"><span class="nn">${top}</span><span class="nd">${bot}</span></span>`;
   const f = mx(`<i class="mv">x</i> = ${fr(`−<i class="mv">b</i> ± ${sqHTML('<i class="mv">b</i><sup>2</sup> − 4<i class="mv">a</i><i class="mv">c</i>')}`, `2<i class="mv">a</i>`)}`);

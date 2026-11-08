@@ -37,8 +37,15 @@ function mergeF(x, y) {
 const varPart = t => t.f.filter(f => f.k === 'v');
 const sig = t => t.f.filter(f => f.k === 'v' || f.k === 'p' || f.k === 'r').map(f => f.k === 'v' ? f.b + f.e : fkey(f)).sort().join('.');
 // a root is tidy when it holds one whole number with no pair left inside: √5, √12 is not (12 = 2·2·3)
-const rootClean = f => f.terms.length === 1 && !f.terms[0].neg && f.terms[0].f.length === 1 && f.terms[0].f[0].k === 'n'
-  && f.terms[0].f[0].v > 1 && !squareFactor(f.terms[0].f[0].v);
+// with letters: a clean sum (√(b² − 4ac)) or one tidy term without a square in it (√a, √(3ab))
+const rootClean = f => {
+  if (f.terms.length > 1) return sumClean(f.terms);
+  const t = f.terms[0];
+  if (t.neg || !tidy(t) || t.f.some(g => g.k !== 'n' && g.k !== 'v')) return false;
+  const n = t.f.find(g => g.k === 'n'), vs = t.f.filter(g => g.k === 'v');
+  if (!vs.length) return t.f.length === 1 && n.v > 1 && !squareFactor(n.v);
+  return (!n || (n.v > 1 && !squareFactor(n.v))) && vs.every(v => v.e === 1);
+};
 function squareFactor(n) { for (let d = 2; d * d <= n; d++) if (n % (d * d) === 0) return d; return 0; }
 const coefAbs = t => { const n = t.f.find(f => f.k === 'n'); return n ? n.v : 1; };
 const coef = t => coefAbs(t) * (t.neg ? -1 : 1);
@@ -205,13 +212,32 @@ function sumHTML(terms) {
 }
 function fracHTML(P, showOne) {
   if (isOne(P.den) && !showOne) return sumHTML(P.num);
-  return `<span class="nfrac"><span class="nn">${sumHTML(P.num)}</span><span class="nd">${sumHTML(P.den)}</span></span>`;
+  // a bracket that is the whole top or bottom is written without it: (d − b)/(a − c) reads d − b over a − c
+  return `<span class="nfrac"><span class="nn">${sumHTML(unbare(P.num))}</span><span class="nd">${sumHTML(unbare(P.den))}</span></span>`;
 }
 // "or" between the branches of an equation: x = 3 ∨ x = −3 (Dutch textbooks write ∨)
 const orWord = () => (typeof I18N !== 'undefined' && typeof lang !== 'undefined' && I18N[lang] && I18N[lang].orWord) || '∨';
 const branchCount = S => S.op === '=' ? S.parts.length >> 1 : 1;
 const pairOf = (S, bi) => S.parts.slice(2 * bi, 2 * bi + 2);
-const eqView = (S, bi) => ({ parts: pairOf(S, bi), op: '=', goal: 'solve' });   // shares the tiles with S
+const eqView = (S, bi) => ({ parts: pairOf(S, bi), op: '=', goal: 'solve', unknown: unknownOf(S) });   // shares the tiles with S
+// the letter an equation is solved for; the other letters are parameters (a, b, c in ax² + bx + c = 0)
+function unknownOf(S) {
+  if (S.unknown) return S.unknown;
+  const ls = letters(S);
+  return ls.includes('x') ? 'x' : ls.sort()[0];
+}
+const fHasU = (f, u) => f.k === 'v' ? f.b === u : f.k === 'n' ? false : f.k === 'g' ? f.f.some(g => fHasU(g, u)) : f.terms.some(t => tHasU(t, u));
+const tHasU = (t, u) => t.f.some(f => fHasU(f, u));
+const hasU = (side, u) => side.some(t => tHasU(t, u));
+const params = S => { const u = unknownOf(S); return letters(S).filter(b => b !== u); };
+// what a move by a letter or a bracket takes for granted: dividing by a − c needs a − c ≠ 0, √D needs D ≥ 0
+function addCond(S, terms, rel) {
+  const key = sumKey(terms) + rel;
+  S.conds = S.conds || [];
+  const html = mx(sumHTML(terms) + (rel === 'ge' ? ' ≥ 0' : ' ≠ 0'));
+  if (!S.conds.some(c => c.key === key)) S.conds.push({ key, html });
+  return html;
+}
 function stateHTML(S) {
   if (S.op === '=' && S.parts.length > 2)
     return Array.from({ length: branchCount(S) }, (_, b) => `<span class="branch">${stateHTML(eqView(S, b))}</span>`).join(` <span class="nop or">${orWord()}</span> `);
@@ -402,7 +428,9 @@ function opSplitTwo(S, tid, p) {
   const t = L.term, c = coef(t), vp = varPart(t);
   if (!tidy(t) || !vp.length || !Number.isInteger(p) || p === 0 || p === c) return { no: 'splitTwoNo', ids: [tid] };
   const q = c - p;
-  const mk = k => T([...(Math.abs(k) !== 1 ? [N(Math.abs(k))] : []), ...vp.map(cloneF)], k < 0);
+  // everything but the number goes into both halves: letters, and a root (−p√q = p√q − 2p√q)
+  const rest = t.f.filter(f => f.k !== 'n');
+  const mk = k => T([...(Math.abs(k) !== 1 ? [N(Math.abs(k))] : []), ...rest.map(cloneF)], k < 0);
   const nts = [mk(p), mk(q)];
   L.terms.splice(L.t, 1, ...nts);
   return { ok: 'splitTwo', p: { x: mx(sumHTML([t])), ex: mx(sumHTML(nts)), a: sgn(p), b: q < 0 ? `(${sgn(q)})` : q, c: sgn(c) }, born: nts.flatMap(n => n.f.map(f => f.id)) };
@@ -779,36 +807,55 @@ const isZeroSide = side => side.length === 1 && side[0].f.length === 1 && side[0
 // v: a monomial Term (its sign counts). op: '+', '-', '·', ':'
 function opBalance(S, op, v, bi = 0) {
   if (S.op !== '=' || !v || !v.f || !v.f.length || bi >= branchCount(S)) return null;
+  const u = unknownOf(S), ps = params(S);
   const vNum = v.f.filter(f => f.k === 'n').reduce((a, f) => a * f.v, 1);
   const shown = mx((v.neg ? '−' : '') + factorsHTML(v.f, true));
-  if (v.f.some(f => f.k === 'p' || f.k === 'g' || (f.k === 'r' && (op === '·' || op === ':')))) return { no: 'balanceShape', ids: ['op'] };
+  const mul = op === '·' || op === ':';
+  // a bracket only to multiply or divide by (a − c), and never one with the unknown in it
+  if (v.f.some(f => f.k === 'g' || (f.k === 'r' && mul) || (f.k === 'p' && (!mul || f.e !== 1 || fHasU(f, u) || !hasLetter(f.terms))))) return { no: 'balanceShape', ids: ['op'] };
   const parts = pairOf(S, bi);
   if (vNum === 0) return { no: op === ':' ? 'balanceDivZero' : op === '·' ? 'balanceMulZero' : 'balanceNothing', ids: ['op'] };
   const born = [];
-  if (op === '+' || op === '-') {
+  let cond = null;
+  if (!mul) {
     if (parts.some(P => !isOne(P.den))) return { no: 'balanceFrac', ids: ['op'] };
     for (const P of parts) {
       const t = cloneT(v); if (op === '-') t.neg = !t.neg;
       born.push(...t.f.map(f => f.id));
-      if (isZeroSide(P.num)) P.num = [t]; else P.num.push(t);
+      // b² added to −4ac reads b² − 4ac
+      if (isZeroSide(P.num)) P.num = [t];
+      else if (!t.neg && P.num.length === 1 && P.num[0].neg && t.f.some(f => f.k === 'v')) P.num.unshift(t);
+      else P.num.push(t);
     }
   } else {
-    if (v.f.some(f => f.k === 'v')) return { no: 'balanceLetter', p: { v: shown }, ids: ['op'] };
-    if (vNum === 1 && !v.neg) return { no: 'balanceOne', ids: ['op'] };
+    // the unknown could be 0, and a letter that isn't in the equation means nothing here
+    if (v.f.some(f => (f.k === 'v' && (f.b === u || !ps.includes(f.b))) || (f.k === 'p' && f.terms.some(t => t.f.some(g => g.k === 'v' && !ps.includes(g.b))))))
+      return { no: 'balanceLetter', p: { v: shown }, ids: ['op'] };
+    const sym = v.f.filter(f => f.k !== 'n');
+    if (!sym.length && vNum === 1 && !v.neg) return { no: 'balanceOne', ids: ['op'] };
     // numbers past exact arithmetic (only random play gets there)
     let big = 1; parts.forEach(P => walkTerms([...P.num, ...P.den], { depth: 0 }, M => { if (M.kind === 't') big = Math.max(big, numProd(M.term)); }));
     if (big * vNum > 1e12) return { no: 'tooBig', ids: ['op'] };
     for (const P of parts) {
       const side = op === '·' ? 'num' : 'den';
-      const c = N(vNum); born.push(c.id);
+      const fs = [...(vNum !== 1 || !sym.length ? [N(vNum)] : []), ...sym.map(cloneF)]; born.push(...fs.map(f => f.id));
       const ts = P[side];
-      if (op === ':' && isOne(ts)) P[side] = [T([c], v.neg)];
-      else if (ts.length === 1) { ts[0].f.unshift(c); if (v.neg) ts[0].neg = !ts[0].neg; }
-      else P[side] = [T([c, Pr(ts)], v.neg)];   // a sum gets multiplied as a whole: 2(x + 1)
+      if (op === ':' && isOne(ts)) P[side] = [T(fs, v.neg)];
+      else if (ts.length === 1) {
+        // numbers in front, letters after the term's own number, brackets at the back: 2a, 4a·b, x(a − c)
+        const old = ts[0].f, at = old.findIndex(f => f.k !== 'n');
+        const lets = fs.filter(f => f.k === 'v'), rest = old.slice();
+        rest.splice(at < 0 ? rest.length : at, 0, ...lets);
+        ts[0].f = [...fs.filter(f => f.k === 'n'), ...rest, ...fs.filter(f => f.k === 'p')];
+        if (v.neg) ts[0].neg = !ts[0].neg;
+      }
+      else P[side] = [T([...fs, Pr(ts)], v.neg)];   // a sum gets multiplied as a whole: 2(x + 1)
     }
+    // each letter or bracket must not be 0
+    if (sym.length) cond = sym.map(f => addCond(S, f.k === 'p' ? f.terms : [T([V(f.b, 1)])], 'ne')).join(', ');
   }
   const sides = parts.map(P => fracHTML(P));
-  return { ok: 'balance', p: { op: BOPS[op], v: shown, ex: mx(sides.join(' = ')) }, born };
+  return { ok: cond ? 'balanceIf' : 'balance', p: { op: BOPS[op], v: shown, ex: mx(sides.join(' = ')), c: cond }, born };
 }
 function opSwap(S, bi = 0) {
   if (S.op !== '=' || bi >= branchCount(S)) return null;
@@ -831,7 +878,7 @@ function loneSquare(P) {
 function dragBalance(S, id) {
   if (S.op !== '=') return null;
   if (id < 0) {
-    const pi = S.parts.findIndex(P => loneSquare(P)?.id === -id);
+    const pi = S.parts.findIndex(P => loneSquare(P)?.id === -id && hasU(P.num, unknownOf(S)));
     return pi < 0 ? null : { root: true, bi: pi >> 1 };
   }
   for (const [pi, P] of S.parts.entries()) for (const side of SIDES) for (const top of P[side]) {
@@ -843,8 +890,12 @@ function dragBalance(S, id) {
     if (side === 'den') return ts.length === 1 ? { op: '·', value: T(top.f.map(cloneF), top.neg), bi } : { no: 'dragDenSum' };
     const whole = { op: top.neg ? '+' : '-', value: T(top.f.map(cloneF)), bi };
     if (ts.length > 1 || L.kind === 't') return whole;
-    // the only term on its side: a number in front divides, a lone minus divides by −1, anything else takes the term away
+    // the only term on its side: a number in front divides, and so does a letter or bracket in a term with the
+    // unknown (ax: drag a → : a). A lone minus divides by −1; anything else takes the term away
+    const u = unknownOf(S);
     if (L.depth === 0 && L.f.k === 'n' && top.f.length > 1) return { op: ':', value: T([N(L.f.v)], top.neg), bi };
+    if (L.depth === 0 && top.f.length > 1 && tHasU(top, u) && !fHasU(L.f, u) && (L.f.k === 'v' || (L.f.k === 'p' && L.f.e === 1)))
+      return { op: ':', value: T([cloneF(L.f)], top.neg), bi };
     if (top.neg && !top.f.some(f => f.k === 'n')) return { op: ':', value: T([N(1)], true), bi };
     return whole;
   }
@@ -870,7 +921,7 @@ function isSolved(S) {
   if (S.parts.length > 2) return Array.from({ length: branchCount(S) }, (_, b) => isSolved(eqView(S, b))).every(Boolean);
   return S.parts.some((P, i) => {
     const t = P.num[0];
-    if (P.num.length !== 1 || !isOne(P.den) || t.neg || t.f.length !== 1 || t.f[0].k !== 'v' || t.f[0].e !== 1) return false;
+    if (P.num.length !== 1 || !isOne(P.den) || t.neg || t.f.length !== 1 || t.f[0].k !== 'v' || t.f[0].e !== 1 || t.f[0].b !== unknownOf(S)) return false;
     const other = S.parts[1 - i], b = t.f[0].b;
     let has = false; walkTerms([...other.num, ...other.den], { depth: 0 }, L => { if (L.kind === 'f' && L.f.k === 'v' && L.f.b === b) has = true; });
     return !has && isClean({ parts: [other], op: null, goal: 'simplify' });
@@ -885,7 +936,7 @@ function whyNotDone(S) {
     return null;
   }
   if (S.goal === 'solve') {
-    const has = P => { let h = false; walkTerms([...P.num, ...P.den], { depth: 0 }, L => { if (L.kind === 'f' && L.f.k === 'v') h = true; }); return h; };
+    const u = unknownOf(S), has = P => hasU([...P.num, ...P.den], u);
     const [l, r] = S.parts.map(has);
     if (l && r) return { k: 'nyEqBoth' };
     const P = S.parts[l ? 0 : 1], t = P.num[0];
@@ -942,10 +993,13 @@ function evalF(f, env) {
 }
 const evalTerms = (ts, env) => ts.reduce((s, t) => s + (t.neg ? -1 : 1) * t.f.reduce((p, f) => p * evalF(f, env), 1), 0);
 // L − R as a·x² + b·x + c, read off from its values at x = 0, 1, 2 (null when it isn't one)
+// parameters get fixed values that are unlikely to cancel anything (a − c ≠ 0, b² − 4ac > 0)
+const PVAL = { a: 1.7, b: -2.3, c: 0.73, d: -1.9, p: 2.9, q: 0.57, r: 1.3, s: -0.6, k: 2.1, m: -1.2, n: 0.9 };
 function quadOf(S) {
-  const b = letters(S)[0];
+  const b = unknownOf(S);
   if (!b) return null;
-  const f = x => S.parts[0] && evalTerms(S.parts[0].num, { [b]: x }) / evalTerms(S.parts[0].den, { [b]: x }) - evalTerms(S.parts[1].num, { [b]: x }) / evalTerms(S.parts[1].den, { [b]: x });
+  const env = x => { const e = {}; letters(S).forEach(l => { e[l] = PVAL[l] ?? 1.1 + l.charCodeAt(0) % 5 * 0.37; }); e[b] = x; return e; };
+  const f = x => S.parts[0] && evalTerms(S.parts[0].num, env(x)) / evalTerms(S.parts[0].den, env(x)) - evalTerms(S.parts[1].num, env(x)) / evalTerms(S.parts[1].den, env(x));
   const [f0, f1, f2, f3] = [0, 1, 2, 3].map(f);
   const a = (f2 - 2 * f1 + f0) / 2, bb = f1 - f0 - a, c = f0;
   if (![f0, f1, f2, f3].every(isFinite) || Math.abs(a * 9 + bb * 3 + c - f3) > 1e-6 * Math.max(1, Math.abs(f3))) return null;
@@ -956,24 +1010,26 @@ function quadOf(S) {
 function opRoot(S, bi = 0) {
   if (S.op !== '=' || bi >= branchCount(S)) return null;
   const parts = pairOf(S, bi);
-  const qi = parts.findIndex(P => hasLetter(P.num) || hasLetter(P.den));
+  const u = unknownOf(S);
+  const qi = parts.findIndex(P => hasU(P.num, u) || hasU(P.den, u));
   if (qi < 0) return null;
   const Q = parts[qi], O = parts[1 - qi], t = Q.num[0];
   const sq = Q.num.length === 1 && isOne(Q.den) && t.f.find(f => f.e === 2 && f.k !== 'n');
   if (!sq) return { no: 'rootNoSquare', ids: ['op'] };
   if (t.f.length > 1 || t.neg) return { no: 'rootCoef', p: { x: mx(sumHTML([t])), s: mx(fx(sq)) }, ids: [t.id] };
-  if (hasLetter(O.num) || hasLetter(O.den)) return { no: 'rootLetter', ids: [sq.id] };
+  if (hasU(O.num, u) || hasU(O.den, u)) return { no: 'rootLetter', ids: [sq.id] };
   if (!isOne(O.den)) return { no: 'rootFrac', ids: [sq.id] };
-  const v = constVal(O);
-  if (v < -1e-12) return { no: 'rootNeg', p: { s: mx(fx(sq)), v: mx(sumHTML(O.num)) }, ids: [sq.id] };
+  const v = constVal(O);   // null with letters in it: then it has to be ≥ 0, and the answer says so
+  if (v != null && v < -1e-12) return { no: 'rootNeg', p: { s: mx(fx(sq)), v: mx(sumHTML(O.num)) }, ids: [sq.id] };
   const base = () => sq.k === 'v' ? V(sq.b, 1) : sq.k === 'g' ? G(sq.f.map(cloneF), 1) : Pr(sq.terms.map(cloneT), 1);
   const side = (neg) => F([T([Rt(O.num.map(cloneT))], neg)]);
   const branch = neg => { const pair = [F([T([base()])]), side(neg)]; return qi ? pair.reverse() : pair; };
-  const add = Math.abs(v) < 1e-12 ? [...branch(false)] : [...branch(false), ...branch(true)];
+  const add = v != null && Math.abs(v) < 1e-12 ? [...branch(false)] : [...branch(false), ...branch(true)];
   const before = mx(fracHTML(parts[0]) + ' = ' + fracHTML(parts[1]));
+  const cond = v == null ? addCond(S, O.num, 'ge') : null;
   S.parts.splice(2 * bi, 2, ...add);
   const ex = Array.from({ length: add.length / 2 }, (_, k) => fracHTML(add[2 * k]) + ' = ' + fracHTML(add[2 * k + 1])).join(` ${orWord()} `);
-  return { ok: add.length > 2 ? 'rootBoth' : 'rootZero', p: { x: before, ex: mx(ex), s: mx(fx(sq)) }, born: add.flatMap(P => P.num.flatMap(t => t.f.map(f => f.id))) };
+  return { ok: cond ? 'rootBothIf' : add.length > 2 ? 'rootBoth' : 'rootZero', p: { x: before, ex: mx(ex), s: mx(fx(sq)), c: cond }, born: add.flatMap(P => P.num.flatMap(t => t.f.map(f => f.id))) };
 }
 // a product that is 0: one of its factors is 0 → a branch for each factor with a letter in it
 function opZero(S, bi = 0) {
@@ -983,7 +1039,7 @@ function opZero(S, bi = 0) {
   if (zi < 0) return null;
   const Q = parts[1 - zi], t = Q.num[0];
   if (Q.num.length !== 1 || !isOne(Q.den)) return { no: 'zeroSum', ids: ['op'] };
-  const fs = t.f.filter(f => f.k !== 'n' && (f.k === 'v' || hasLetter(f.terms || [T(f.f || [])])));
+  const u = unknownOf(S), fs = t.f.filter(f => fHasU(f, u));
   const seen = new Set(), bases = [];
   for (const f of fs) {
     const b = f.k === 'v' ? V(f.b, 1) : f.k === 'g' ? G(f.f.map(cloneF), 1) : Pr(f.terms.map(cloneT), 1);
@@ -1004,7 +1060,7 @@ function eqHint(S) {
     const E = eqView(S, b);
     if (isSolved(E)) continue;
     const q = quadOf(E);
-    const h = q && Math.abs(q.a) > 1e-9 ? quadHint(E, q) : pairHint(E);
+    const h = params(E).length ? genHint(E, unknownOf(E)) : q && Math.abs(q.a) > 1e-9 ? quadHint(E, q) : pairHint(E);
     return { ...h, bi: b };
   }
   return { k: 'hDone', ids: [] };
@@ -1082,6 +1138,120 @@ function quadHint(S, q) {
     return { k: 'hComplete', p: { x: mx(sumHTML(L.num)), half: mx(termHTML(T([N(Math.abs(k))]))), sq: k * k, br: mx(`(${s > 1 ? s : ''}${b} ${k < 0 ? '−' : '+'} ${Math.abs(k)})²`) }, ids: ['op'], balance: { op: '+', value: T([N(k * k)]) } };
   }
   return { k: 'hMul4a', p: { a: A, v: 4 * A }, ids: ['op'], balance: { op: '·', value: T([N(Math.abs(4 * A))], A < 0) } };
+}
+
+/* ---- generic equations: letters for numbers (ax + b = cx + d, ax² + bx + c = 0) ----
+   Solved for the unknown with the same moves; the other letters are treated like numbers that could be anything. */
+// a term of numbers and letters as { n, neg, vars }, or null
+function monoOf(t) {
+  if (t.f.some(f => f.k !== 'n' && f.k !== 'v')) return null;
+  const vars = {};
+  t.f.forEach(f => { if (f.k === 'v') vars[f.b] = (vars[f.b] || 0) + f.e; });
+  return { n: t.f.filter(f => f.k === 'n').reduce((a, f) => a * f.v, 1), neg: t.neg, vars };
+}
+const monoTerm = m => { const vs = Object.keys(m.vars).sort().filter(b => m.vars[b]).map(b => V(b, m.vars[b])); return T(m.n !== 1 || !vs.length ? [N(m.n), ...vs] : vs, m.neg); };
+const monoKey = m => m.n + ':' + Object.keys(m.vars).sort().filter(b => m.vars[b]).map(b => b + m.vars[b]).join('');
+function monoSqrt(m) {
+  const r = Math.round(Math.sqrt(m.n));
+  if (m.neg || r * r !== m.n || Object.values(m.vars).some(e => e % 2)) return null;
+  return { n: r, neg: false, vars: Object.fromEntries(Object.entries(m.vars).map(([b, e]) => [b, e / 2])) };
+}
+const monoMul = (a, b) => { const vars = { ...a.vars }; for (const [l, e] of Object.entries(b.vars)) vars[l] = (vars[l] || 0) + e; return { n: a.n * b.n, neg: a.neg !== b.neg, vars }; };
+function monoDiv(a, b) {
+  if (a.n % b.n) return null;
+  const vars = { ...a.vars };
+  for (const [l, e] of Object.entries(b.vars)) { if ((vars[l] || 0) < e) return null; vars[l] -= e; }
+  return { n: a.n / b.n, neg: a.neg !== b.neg, vars };
+}
+// the power of the unknown in a term: 0, 1, 2 … or −1 when it sits inside a bracket or root
+function uDeg(t, u) {
+  let d = 0;
+  for (const f of t.f) { if (f.k === 'v' && f.b === u) d += f.e; else if (fHasU(f, u)) return -1; }
+  return d;
+}
+const coefOf = (t, u) => monoOf(T(t.f.filter(f => !(f.k === 'v' && f.b === u)), t.neg));
+function genHint(S, u) {
+  const [L, R] = S.parts;
+  const dry = fn => fn(JSON.parse(JSON.stringify(S)));
+  const inL = hasU(L.num, u) || hasU(L.den, u), inR = hasU(R.num, u) || hasU(R.den, u);
+  if (!inL && inR) return { k: 'hSwap', p: { b: bx(u) }, ids: ['op'] };
+  const z = dry(c => opZero(c));
+  if (z && z.ok) { const zid = S.parts.find(P => isZeroSide(P.num)).num[0].f[0].id; return { k: 'hZero', p: { x: z.p.x }, ids: [zid, 'op'], drag: zid }; }
+  const t = L.num[0];
+  if (L.num.length === 1 && isOne(L.den) && !inR) {
+    const ps = t.f.filter(f => f.k === 'p');
+    if (ps.length === 2 && canMerge(ps[0], ps[1])) return { k: 'hMerge', p: { x: mx(fx(ps[0])), y: mx(fx(ps[1])) }, ids: [ps[0].id, ps[1].id] };
+    const r = dry(c => opRoot(c));
+    if (r && (r.ok || r.no === 'rootNeg')) {
+      const h = hint(sideView(R)); if (h.k !== 'hDone') return h;
+      if (r.no) return { k: 'hNoReal', p: r.p, ids: [] };
+      const pid = -loneSquare(L).id;
+      return { k: 'hRoot', p: { s: r.p.s }, ids: [pid, 'op'], drag: pid };
+    }
+  }
+  const take = (t, side, terms) => {
+    const id = terms.length > 1 ? t.id : (t.f.find(f => fHasU(f, u)) || t.f[0]).id;
+    return { k: 'hBalanceTerm', p: { x: mx(sumHTML([t])), op: t.neg ? '+' : '−', v: mx(termHTML(t)), side }, ids: [id, 'op'], drag: id, balance: { op: t.neg ? '+' : '-', value: T(t.f.map(cloneF)) } };
+  };
+  const deg = Math.max(...L.num.map(t => uDeg(t, u)));
+  // a square on its way: put things outside brackets until it is one
+  // ax² + bx = 0: x goes outside brackets, then the product is 0 (before tidying, which would undo x·x)
+  if (!inR && deg === 2 && isZeroSide(R.num) && L.num.length > 1 && L.num.every(t => uDeg(t, u) > 0)) { const h = hint({ parts: [L], op: null, goal: 'factor' }); if (h.k !== 'hDone') return h; }
+  // (a split square has one term without the unknown; q − q is just untidy)
+  if (!inR && deg === 2 && L.num.length >= 4 && L.num.filter(t => uDeg(t, u) === 0).length <= 1) { const h = hint({ parts: [L], op: null, goal: 'factor' }); if (h.k !== 'hDone') return h; }
+  if (!inR && L.num.length > 1 && L.num.some(t => t.f.some(f => f.k === 'p' && fHasU(f, u)))) { const h = hint({ parts: [L], op: null, goal: 'factor' }); if (h.k !== 'hDone') return h; }
+  // tidy each side, but x(a − c) stays: that bracket is what x is multiplied by, and it comes next
+  const keeps = h => {
+    if (h.k !== 'hOpen') return false;
+    const Lc = locate(S, h.ids[0]);
+    return Lc && Lc.kind === 'f' && Lc.f.k === 'p' && !fHasU(Lc.f, u) && tHasU(Lc.term, u) && Lc.terms.length === 1 && !Lc.depth;
+  };
+  for (const P of S.parts) { const h = hint(sideView(P)); if (h.k !== 'hDone' && !keeps(h)) return h; }
+  // the unknown below a bar: multiply both sides by the bottom
+  for (const P of S.parts) if ((hasU(P.num, u) || hasU(P.den, u)) && !isOne(P.den)) {
+    if (P.den.length !== 1) return { k: 'hDone', ids: [] };
+    const d = P.den[0];
+    return { k: 'hBalanceMul', p: { v: mx(termHTML(d)) }, ids: [d.f[0].id, 'op'], drag: d.f[0].id, balance: { op: '·', value: T(d.f.map(cloneF), d.neg) } };
+  }
+  const xR = R.num.find(t => tHasU(t, u));
+  if (xR) return take(xR, 'right', R.num);
+  if (L.num.some(t => uDeg(t, u) < 0)) return { k: 'hDone', ids: [] };
+  const t2 = L.num.filter(t => uDeg(t, u) === 2), t1 = L.num.filter(t => uDeg(t, u) === 1), t0 = L.num.filter(t => uDeg(t, u) === 0);
+  if (deg === 2) {
+    if (t2.length !== 1 || t1.length > 1 || t0.length > 1) return { k: 'hDone', ids: [] };
+    if (t1.length && isZeroSide(R.num) && !t0.length) { const h = hint({ parts: [L], op: null, goal: 'factor' }); return h.k !== 'hDone' ? h : { k: 'hDone', ids: [] }; }
+    if (!t1.length) return t0.length ? take(t0[0], 'left', L.num) : { k: 'hDone', ids: [] };
+    const A = coefOf(t2[0], u), B = coefOf(t1[0], u);
+    if (!A || !B) return { k: 'hDone', ids: [] };
+    const s = monoSqrt(A);
+    if (t0.length) {
+      // s²x² ± 2skx + k²: a complete square. Split the middle term in two halves, then factor in pairs
+      const k = monoOf(t0[0]), kr = k && monoSqrt(k);
+      if (s && kr && monoKey({ ...monoMul(monoMul({ n: 2, neg: false, vars: {} }, s), kr), neg: false }) === monoKey({ ...B, neg: false }) && B.n % 2 === 0) {
+        const half = { ...B, n: B.n / 2 };
+        return { k: 'hSplitSquare', p: { x: mx(termHTML(t1[0])), h: mx(termHTML(T([...monoTerm(half).f, V(u)], B.neg))), s: mx(`(${termHTML(monoTerm(s))}${bx(u)} ${B.neg ? '−' : '+'} ${termHTML(monoTerm(kr))})²`) }, ids: [t1[0].id], split: (B.neg ? -1 : 1) * B.n / 2 };
+      }
+      return take(t0[0], 'left', L.num);   // completing the square: the rest goes to the right
+    }
+    const two = { n: 2, neg: false, vars: {} };
+    const k = s && monoDiv({ ...B, neg: false }, monoMul(two, s));
+    if (k) {
+      const sq = monoMul(k, k), kt = monoTerm(k);
+      return { k: 'hCompleteG', p: { x: mx(sumHTML(L.num)), sq: mx(termHTML(monoTerm(sq))), br: mx(`(${termHTML(monoTerm(s))}${bx(u)} ${B.neg ? '−' : '+'} ${termHTML(kt)})²`) }, ids: ['op'], balance: { op: '+', value: monoTerm(sq) } };
+    }
+    const four = monoMul({ n: 4, neg: false, vars: {} }, A), ft = monoTerm(four);
+    return { k: 'hMul4aG', p: { v: mx((four.neg ? '−' : '') + termHTML(T(ft.f))), u: bx(u) }, ids: ['op'], balance: { op: '·', value: ft } };
+  }
+  // linear: the rest to the right, the unknown outside brackets, then divide by what is left with it
+  if (t0.length && !isZeroSide(t0)) return take(t0[0], 'left', L.num);
+  if (L.num.length > 1) {
+    const pick = t => t.f.find(f => f.k === 'v' && f.b === u);
+    return { k: 'hFactorU', p: { x: bx(u), ex: mx(sumHTML(L.num)) }, ids: [pick(L.num[0]).id, pick(L.num[1]).id] };
+  }
+  const f = t.f.find(g => !fHasU(g, u));
+  if (f) return { k: 'hBalanceDivG', p: { x: mx(sumHTML([t])), v: mx((t.neg ? '−' : '') + fx(f)) }, ids: [f.id, 'op'], drag: f.id, balance: { op: ':', value: T([cloneF(f)], t.neg) } };
+  if (t.neg) { const x = t.f.find(g => fHasU(g, u)); return { k: 'hBalanceDiv', p: { x: mx(sumHTML([t])), v: '−1' }, ids: [x.id, 'op'], drag: x.id, balance: { op: ':', value: T([N(1)], true) } }; }
+  return { k: 'hDone', ids: [] };
 }
 function pairHint(S) {
   // first tidy each side with the usual moves
@@ -1246,6 +1416,28 @@ const LEVELS = [
   { goal: 'solve', book: true, abc: { a: 2, b: 3, c: -1 }, s: () => parseProblem('2x^2+3x-1=0').S,
     en: 'The last one. Now 2<i>x</i><sup>2</sup> is not a square. Multiply both sides by 4 · 2 = 8, complete the square, take the root. Then look closely at your answer.',
     nl: 'De laatste. Nu is 2<i>x</i><sup>2</sup> geen kwadraat. Vermenigvuldig beide kanten met 4 · 2 = 8, maak een volledig kwadraat en trek de wortel. Kijk daarna goed naar je antwoord.' },
+  // letters for numbers: the general solution, and in the end the abc-formula itself
+  { goal: 'solve', s: () => parseProblem('ax=b').S,
+    en: 'Letters for numbers. Solve for <i>x</i>; <i>a</i> and <i>b</i> are numbers you don’t know. Treat <i>a</i> like you treated the 3 in 3<i>x</i> = 12.',
+    nl: 'Letters in plaats van getallen. Los op naar <i>x</i>; <i>a</i> en <i>b</i> zijn getallen die je niet kent. Doe met <i>a</i> wat je met de 3 in 3<i>x</i> = 12 deed.' },
+  { goal: 'solve', s: () => parseProblem('ax+b=c').S,
+    en: 'The same steps as 3<i>x</i> + 5 = 20. You can’t add <i>c</i> and <i>b</i> together, so <i>c</i> − <i>b</i> stays a sum.',
+    nl: 'Dezelfde stappen als bij 3<i>x</i> + 5 = 20. Je kunt <i>c</i> en <i>b</i> niet optellen, dus <i>c</i> − <i>b</i> blijft een som.' },
+  { goal: 'solve', s: () => parseProblem('ax+b=cx+d').S,
+    en: 'Where do the lines <i>y</i> = <i>a</i><i>x</i> + <i>b</i> and <i>y</i> = <i>c</i><i>x</i> + <i>d</i> cross? Where both give the same <i>y</i>. <i>a</i><i>x</i> and <i>c</i><i>x</i> aren’t like terms: put <i>x</i> outside brackets.',
+    nl: 'Waar snijden de lijnen <i>y</i> = <i>a</i><i>x</i> + <i>b</i> en <i>y</i> = <i>c</i><i>x</i> + <i>d</i>? Waar ze dezelfde <i>y</i> geven. <i>a</i><i>x</i> en <i>c</i><i>x</i> zijn geen gelijksoortige termen: breng <i>x</i> buiten haakjes.' },
+  { goal: 'solve', s: () => parseProblem('x^2=a').S,
+    en: 'A square again, now equal to a letter. Take the root of both sides. When does that work?',
+    nl: 'Weer een kwadraat, nu gelijk aan een letter. Trek aan beide kanten de wortel. Wanneer kan dat?' },
+  { goal: 'solve', s: () => parseProblem('(x+p)^2=q').S,
+    en: 'Like (<i>x</i> + 3)² = 5, with letters.',
+    nl: 'Zoals (<i>x</i> + 3)² = 5, met letters.' },
+  { goal: 'solve', s: () => parseProblem('x^2+2px+q=0').S,
+    en: 'Complete the square: (<i>x</i> + <i>p</i>)² = <i>x</i>² + 2<i>p</i><i>x</i> + <i>p</i>². What is missing?',
+    nl: 'Maak een volledig kwadraat: (<i>x</i> + <i>p</i>)² = <i>x</i>² + 2<i>p</i><i>x</i> + <i>p</i>². Wat mist er?' },
+  { goal: 'solve', abc: 'generic', s: () => parseProblem('ax^2+bx+c=0').S,
+    en: 'The big one: <i>a</i><i>x</i>² + <i>b</i><i>x</i> + <i>c</i> = 0, for every <i>a</i>, <i>b</i> and <i>c</i> at once. Same plan as 2<i>x</i>² + 3<i>x</i> − 1 = 0: multiply by 4<i>a</i>, complete the square, take the root.',
+    nl: 'De grote: <i>a</i><i>x</i>² + <i>b</i><i>x</i> + <i>c</i> = 0, voor alle <i>a</i>, <i>b</i> en <i>c</i> tegelijk. Hetzelfde plan als bij 2<i>x</i>² + 3<i>x</i> − 1 = 0: keer 4<i>a</i>, volledig kwadraat, wortel trekken.' },
 ];
 function buildLevel(i) { const S = LEVELS[i].s(); S.op = S.op || null; S.goal = LEVELS[i].goal || 'simplify'; return S; }
 /* ===== END CORE ===== */

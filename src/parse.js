@@ -23,7 +23,7 @@ function tokenize(src) {
   return { toks: out };
 }
 
-function parseProblem(src, goal) {
+function parseProblem(src, goal, unknown) {
   const tk = tokenize(src || '');
   if (tk.err) return tk;
   const toks = tk.toks;
@@ -115,8 +115,13 @@ function parseProblem(src, goal) {
       if (peek()) fail(peek().t === '=' ? 'pTwoEq' : peek().t === ')' ? 'pParen' : 'pMissing');
       S = { parts: [A, B], op: '=', goal: 'solve' };
       normalize(S);
+      // the unknown: the one asked for, else x, else the only letter (a, b, p … are then parameters)
       const bs = letters(S);
-      if (bs.length !== 1) return { err: bs.length ? 'pEqLetters' : 'pEqNoLetter', at: 0 };
+      if (!bs.length) return { err: 'pEqNoLetter', at: 0 };
+      if (unknown && !bs.includes(unknown)) return { err: 'pEqUnknown', at: 0, p: { b: unknown } };
+      const u = unknown || (bs.includes('x') ? 'x' : bs.length === 1 ? bs[0] : null);
+      if (!u) return { err: 'pEqWhich', at: 0 };
+      if (bs.length > 1) S.unknown = u;
       return { S };
     }
     if (peek() && (peek().t === ':' || peek().t === '·')) {

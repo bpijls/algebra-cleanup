@@ -205,6 +205,16 @@ const GEN = {
     return r.err ? GEN.quadratic(d) : r.S;
   },
 
+  // letters for numbers: solve for x, the other letters are parameters (the letters keep their textbook roles,
+  // and the ones under a root are positive at the judge's values)
+  generic(d) {
+    const k = R(2, 5);
+    const src = pick(d === 1 ? ['ax=b', 'x+a=b', 'ax+b=c', 'x/a=b', `${k}x+a=b`, 'a(x+b)=c', 'ax-b=c']
+      : d === 2 ? ['ax+b=cx+d', 'ax-b=cx', `${k}x+a=x+b`, 'a(x-b)=cx', 'x^2=a', '(x+p)^2=q', '(x-p)^2=q', '(x-a)(x-b)=0']
+        : ['x^2+px+q=0', 'x^2+2px+q=0', 'x^2-2ax+b=0', 'ax^2+bx+c=0', 'ax^2-bx+c=0', 'px^2+qx=0']);
+    return parseProblem(src, 'solve').S;
+  },
+
   mixed(d) {
     const v = pick(VARS);
     const E = pick([6, 8, 12]);
@@ -227,7 +237,7 @@ function autoSolveStep(S) {
   if (h.k === 'hDiv' || h.k === 'hBar' || h.k === 'hJoin') r = opOp(S);
   else if (h.k === 'hGroup' || h.k === 'hOpen' || h.k === 'hExplodeVar') r = opExplode(S, h.ids[0]);
   else if (h.k === 'hExplodeCancel' || h.k === 'hExplodeNums' || h.k === 'hExplodeFor' || h.k === 'hExplodeRoot') { for (const id of h.ids) { r = opExplode(S, id); normalize(S); if (r && r.no) break; } }
-  else if (h.k === 'hSumProduct') r = opSplitTwo(S, h.ids[0], h.split);
+  else if (h.k === 'hSumProduct' || h.k === 'hSplitSquare') r = opSplitTwo(S, h.ids[0], h.split);
   else if (h.drag != null) r = opDrag(S, h.drag);   // the hinted piece, dragged across the =
   else if (h.k === 'hSwap') r = opSwap(S, h.bi || 0);
   else if (h.balance) r = opBalance(S, h.balance.op, h.balance.value, h.bi || 0);   // typed: + 9, · 8
