@@ -22,5 +22,9 @@ export const runTactics = (tactics, S) => { for (const t of tactics) { const h =
 export const BRANCH_STRATEGIES = [];
 export const defineBranchStrategy = (id, applies, hint) => { BRANCH_STRATEGIES.push({ id, applies, hint }); };
 
+// a fallback (matches everything) stays behind the moves registered later, so a topic's hint move is reached
 export const HINT_MOVES = [];
-export const defineHintMove = (matches, play) => { HINT_MOVES.push({ matches, play }); };
+export const defineHintMove = (matches, play, { fallback = false } = {}) => {
+  const at = HINT_MOVES.findIndex(m => m.fallback);
+  HINT_MOVES.splice(fallback || at < 0 ? HINT_MOVES.length : at, 0, { matches, play, fallback });
+};

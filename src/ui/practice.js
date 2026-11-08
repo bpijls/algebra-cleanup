@@ -5,7 +5,7 @@ import { showOwn } from './own.js';
 import { closeSheet, openSheet } from './sheets.js';
 import { store, ui } from './state.js';
 
-const TOPICS = ['powers', 'like', 'frac', 'open', 'double', 'square', 'factor', 'trinomial', 'equations', 'quadratic', 'generic', 'mixed'];
+const TOPICS = ['powers', 'like', 'frac', 'open', 'double', 'square', 'factor', 'trinomial', 'equations', 'quadratic', 'generic', 'logs', 'mixed'];
 export function showPractice() {
   ui.sheetFn = showPractice;
   const chips = TOPICS.map(tp => `<button type="button" class="pchip${ui.prac.topics.includes(tp) ? ' on' : ''}" data-tp="${tp}" aria-pressed="${ui.prac.topics.includes(tp)}">${t('tp_' + tp)}</button>`).join('');

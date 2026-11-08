@@ -170,3 +170,38 @@ The outside judge stays the arbiter at every step: `npm test`, which runs the fu
   - `npm run build` still produces a working `dist/algebra-cleanup.html`.
 - After steps 1, 5 and 7, do a browser playthrough (Playwright from the scratchpad, as before) of levels 1, 27–33, 34–41 and 42–48 in portrait and landscape, including the balance panel, dragging the ² and undo.
 - Step 8 is the extensibility measurement: count the existing files touched (`git diff --stat`) against the pass criterion above.
+
+## Outcome (branch `refactor`, Nov 2026)
+
+Every step kept `npm test` green, with the golden hint traces and messages byte-for-byte unchanged. Step 8 added three levels and changed nothing else in the goldens. All 48 original levels were played through in the browser after the steps that touched the UI.
+
+| Step | Done | Where it differs from the plan |
+|---|---|---|
+| 0 | Golden traces (`tests/golden/traces.json`), and from step 2 on also every hint, Done? reason and move message along them (`messages.json`). Practice problems use a seeded `Math.random`. | — |
+| 1 | ES modules; `core.js` split along its sections, with imports generated from a free-variable analysis. esbuild bundles the Artifact build. | — |
+| 2 | `render/text.js`. Conditions are stored as terms plus a relation, so the state holds no HTML and `core/model.js` doesn't import the renderer. `t()` moved to i18n. | Message params are still HTML fragments, built by calling `render/text.js` from the moves and hints. Structured params would have touched ~130 call sites for little gain, now that per-kind rendering is a registry. |
+| 3 | `core/kinds/`: one file per kind, `defineKind`, and the generic operations dispatch through it. `defineHTML` per kind in the renderer. The judge evaluates unknown kinds through the registry. | `Pow` (exponents as a wrapper) and a `Num` domain were not done. Both touch nearly every move, and nothing needs symbolic exponents yet. `Rt` stays its own kind; it is the pattern for function kinds (`log` followed it). |
+| 4 | `core/problem.js` answers every question about a problem's shape; nothing else reads the flat branch layout. | The flat `S.parts` storage stays (it serialises well, and the UI indexes it). Conditions stay per state, not per branch. |
+| 5 | `core/rules/`: pair rules per scope give verdicts, actions carry them out, explode is one handler per kind, and `play()` runs a move on a copy. Every move is registered by gesture, and the judge fuzzes the registry (it now covers sweeps and gather too). | — |
+| 6 | `core/goals/`: goals are tactic lists, the solve goal uses branch strategies (generic, quadratic, linear), and the hint→move mapping is a registered table. | `quadHint` and `genHint` are still one function each inside their strategies. Cutting them into tactics would mean untangling their shared locals; that is the next refactor if a new equation type needs to reuse parts of them. |
+| 7 | `src/ui/` (14 modules). The UI state is one shared `ui` object, rewritten scope-aware. `src/ui.js` is the entry. | — |
+| 8 | Logarithms as `src/topics/log/` (kind, product rule with `a > 0` conditions, tactic, tile, practice generator, 3 levels). | See below. |
+
+### Step 8: did adding a topic touch only new files and registrations?
+
+No, not entirely, and the misses are the useful result.
+
+- **New files (the topic):** `src/topics/log/{kind,rules,tile}.js`, plus `src/topics/index.js` and `src/topics/tiles.js`.
+- **Registrations, as expected:** the level list, i18n strings, the practice topic list, two imports in `src/ui.js`, `tests/load.js`, the SW shell. The goldens only gained three levels.
+- **Seams found before writing the topic (step 8a):**
+  - `tidy`/`sig` assumed the five built-in kinds; they now ask the kind's `tidyIn` and `symbolic`;
+  - the UI had no tile registry (`defineTile`);
+  - goals couldn't take a tactic from outside (`addTactic`).
+- **Assumptions found while adding it (step 8b), each now fixed generically:**
+  - the hint-move table kept its catch-all first, so later moves were never reached (a bug in step 6);
+  - the like-terms hint and message picked or named letters only (`2 log a + log a`, and `2√3 + √3` too);
+  - `condHTML` had no `> 0`;
+  - the judge assumed every expression is defined everywhere. It now skips sample points where a written condition fails, and has two sample points with all letters positive;
+  - CSS for the tile.
+
+The next topic (e.g. sin/cos) should need none of these again. It will need its own explode rules (identities as what a piece is made of) and possibly a parser hook for typing `log`/`sin`, which the parser doesn't have yet.

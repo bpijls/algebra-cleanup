@@ -18,4 +18,4 @@ defineHintMove(h => h.drag != null, (S, h) => opDrag(S, h.drag));   // the hinte
 defineHintMove(keys('hSwap'), (S, h) => opSwap(S, h.bi || 0));
 defineHintMove(h => !!h.balance, (S, h) => opBalance(S, h.balance.op, h.balance.value, h.bi || 0));   // + 9, · 8 from the panel
 defineHintMove(keys('hNoReal', 'hNoRealD'), () => null);   // nothing to do: no real solutions
-defineHintMove(() => true, (S, h) => opPair(S, h.ids[0], h.ids[1]));   // tap one piece, then the other
+defineHintMove(() => true, (S, h) => opPair(S, h.ids[0], h.ids[1]), { fallback: true });   // tap one piece, then the other

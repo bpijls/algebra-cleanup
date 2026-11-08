@@ -4,6 +4,8 @@ import './ui/buttons.js';
 import './ui/menu.js';
 import './ui/layout.js';
 import './ui/balance.js';
+import './topics/index.js';
+import './topics/tiles.js';
 import { hint } from './core/goals/index.js';
 import { setLang } from './i18n.js';
 import { autoSolveStep } from './practice.js';

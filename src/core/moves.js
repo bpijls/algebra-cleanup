@@ -161,7 +161,7 @@ export function termPair(S, aId, bId) {
   if (A.terms !== B.terms) return { no: A.side !== B.side ? 'termSide' : 'bracketWall', ids: [aId, bId] };
   if (!tidy(A.term) || !tidy(B.term)) return { no: 'untidy', ids: [aId, bId] };
   if (sig(A.term) !== sig(B.term)) return { no: 'notLike', p: { v1: mx(termHTML(A.term)), v2: mx(termHTML(B.term)) }, ids: [aId, bId] };
-  const vp = varPart(A.term);
+  const vp = A.term.f.filter(f => f.k !== 'n');
   const r = addTermsIn(A.terms, [A.term, B.term].sort((a, b) => A.terms.indexOf(a) - A.terms.indexOf(b)));
   if (!r.nt) return { ok: 'likeZero', p: { ex: r.ex } };
   return { ok: 'likeAdd', p: { v: vp.length ? mx(factorsHTML(vp)) : '1', ex: r.ex, r: r.r }, born: r.born, origins: r.origins };

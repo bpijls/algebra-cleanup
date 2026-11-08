@@ -5,6 +5,7 @@ import { V } from '../core/kinds/letter.js';
 import { N } from '../core/kinds/number.js';
 import { F, T } from '../core/kinds/sums.js';
 import { parseProblem } from '../parse.js';
+import { Lg } from '../topics/log/kind.js';
 
 /* ---- levels ---- */
 export const LEVELS = [
@@ -154,6 +155,16 @@ export const LEVELS = [
   { goal: 'solve', abc: 'generic', s: () => parseProblem('ax^2+bx+c=0').S,
     en: 'The big one: <i>a</i><i>x</i>² + <i>b</i><i>x</i> + <i>c</i> = 0, for every <i>a</i>, <i>b</i> and <i>c</i> at once. Same plan as 2<i>x</i>² + 3<i>x</i> − 1 = 0: multiply by 4<i>a</i>, complete the square, take the root.',
     nl: 'De grote: <i>a</i><i>x</i>² + <i>b</i><i>x</i> + <i>c</i> = 0, voor alle <i>a</i>, <i>b</i> en <i>c</i> tegelijk. Hetzelfde plan als bij 2<i>x</i>² + 3<i>x</i> − 1 = 0: keer 4<i>a</i>, volledig kwadraat, wortel trekken.' },
+  // logarithms (src/topics/log): the log of a product is the sum of the logs, and nothing else is a rule
+  { s: () => ({ parts: [F([T([Lg([T([V('a'), V('b')])])])])] }),
+    en: 'A new piece: <b>log</b>. The log of a product is the sum of the logs. Tap log twice to explode it. That only holds for numbers above 0, so the game writes that down.',
+    nl: 'Een nieuw stuk: <b>log</b>. De log van een product is de som van de logs. Tik twee keer op log om hem te exploderen. Dat klopt alleen voor getallen boven 0, dus het spel schrijft dat op.' },
+  { s: () => ({ parts: [F([T([Lg([T([V('a', 3)])])])])] }),
+    en: 'log(<i>a</i>³) is not a product yet. Explode <i>a</i>³ first: what does log(<i>a</i>·<i>a</i>·<i>a</i>) become?',
+    nl: 'log(<i>a</i>³) is nog geen product. Explodeer eerst <i>a</i>³: wat wordt log(<i>a</i>·<i>a</i>·<i>a</i>)?' },
+  { s: () => ({ parts: [F([T([Lg([T([V('a', 2), V('b')])])]), T([Lg([T([V('b')])])], true)])] }),
+    en: 'Explode, then look for like terms. What is left?',
+    nl: 'Explodeer, en zoek dan gelijksoortige termen. Wat blijft er over?' },
 ];
 
 export function buildLevel(i) { const S = LEVELS[i].s(); S.op = S.op || null; S.goal = LEVELS[i].goal || 'simplify'; return S; }

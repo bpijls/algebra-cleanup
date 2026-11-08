@@ -84,7 +84,7 @@ export function merges(S) {
 
 // like terms add
 export function likeTerms(S) {
-  const pick = t => t.f.find(f => f.k === 'v') || t.f[0];
+  const pick = t => t.f.find(f => f.k === 'v') || t.f.find(f => f.k !== 'n') || t.f[0];   // a letter, else a root, a log …
   for (const ts of containers(S))
     for (let i = 0; i < ts.length; i++) for (let j = i + 1; j < ts.length; j++)
       if (tidy(ts[i]) && tidy(ts[j]) && sig(ts[i]) === sig(ts[j]))

@@ -159,6 +159,11 @@ button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 .tile.g { background: var(--card); border: 2px solid var(--line); gap: 3px; padding: 0 8px; font-size: 22px; }
 .tile.g .paren { font-family: var(--f-math); font-size: 40px; color: var(--muted); line-height: 1; }
 .tile.p { background: var(--card); border: 2px solid var(--line); gap: 2px; padding: 6px 6px; cursor: pointer; }
+.tile.log { background: var(--card); border: 2px solid var(--line); gap: 2px; padding: 6px 6px; cursor: pointer; }
+.tile.log .lname, .mfn { font-family: var(--f-math); font-style: normal; margin-right: 1px; }
+.mfn { margin-left: .18em; }
+.tile.log > .lname { font-size: 26px; padding-left: 4px; }
+.tile.log > .paren { font-family: var(--f-math); font-size: 44px; color: var(--muted); line-height: 1; padding: 0 1px; }
 .tile.p.block { background: var(--blk); border-color: var(--blk); color: var(--on-var); padding: 0 12px; font-family: var(--f-math); font-size: 24px; white-space: nowrap; }
 .tile.p.block .bk { background: none; padding: 0; }
 /* a bracket that goes outside brackets, as one block (also in the notes) */

@@ -60,4 +60,4 @@ export const bx = b => mx(`<i class="mv">${b}</i>`);
 export const blockHTML = (terms, key) => sumHTML(terms.map(t => ({ ...t, f: t.f.map(f => f.k === 'p' && sumKey(f.terms) === key ? { k: 'bk', terms: f.terms, e: f.e } : f) })));
 
 // a condition a move took for granted (addCond): a − c ≠ 0, b² − 4ac ≥ 0
-export const condHTML = c => mx(sumHTML(c.terms) + (c.rel === 'ge' ? ' ≥ 0' : ' ≠ 0'));
+export const condHTML = c => mx(sumHTML(c.terms) + { ge: ' ≥ 0', gt: ' > 0', ne: ' ≠ 0' }[c.rel]);

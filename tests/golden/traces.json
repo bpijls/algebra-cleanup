@@ -575,6 +575,28 @@
   "hCancel [nyEqAlone] → cancelVar | x = [√b^2 − 4ac − b/2a ∨ x = [−√b^2 − 4ac − b/2a",
   "clean"
  ],
+ "level 49": [
+  "log(ab)",
+  "hExplodeLog [nyTidy] → logProduct | log(a) + log(b)",
+  "clean"
+ ],
+ "level 50": [
+  "log(a^3)",
+  "hExplodeLogInside [nyTidy] → explodeVar | log(aaa)",
+  "hExplodeLog [nyTidy] → logProduct | log(a) + log(a) + log(a)",
+  "hLike [nyLike] → likeAdd | 2log(a) + log(a)",
+  "hLike [nyLike] → likeAdd | 3log(a)",
+  "clean"
+ ],
+ "level 51": [
+  "log(a^2b) − log(b)",
+  "hExplodeLog [nyTidy] → logProduct | log(a^2) + log(b) − log(b)",
+  "hExplodeLogInside [nyTidy] → explodeVar | log(aa) + log(b) − log(b)",
+  "hExplodeLog [nyTidy] → logProduct | log(a) + log(a) + log(b) − log(b)",
+  "hLike [nyLike] → likeAdd | 2log(a) + log(b) − log(b)",
+  "hLike [nyLike] → likeZero | 2log(a)",
+  "clean"
+ ],
  "machten (powers): 3a^2·2a^5": [
   "3a^2·2a^5",
   "hMerge [nyTidy] → mergeNum | 6a^2a^5",

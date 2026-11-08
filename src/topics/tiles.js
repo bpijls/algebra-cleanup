@@ -1,0 +1,3 @@
+/* The tiles of the topics beyond the core (UI side; loaded by src/ui.js). */
+import './log/tile.js';
+

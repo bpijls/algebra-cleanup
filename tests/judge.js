@@ -5,7 +5,8 @@
 const assert = require('node:assert/strict');
 const { load } = require('./load');
 const G = load();
-const VALS = [{ a: 1.7, b: -2.3, x: 0.61, y: 3.1 }, { a: -0.9, b: 1.3, x: 2.2, y: -1.4 }, { a: 2.9, b: 0.47, x: -1.6, y: 0.8 }];
+const VALS = [{ a: 1.7, b: -2.3, x: 0.61, y: 3.1 }, { a: -0.9, b: 1.3, x: 2.2, y: -1.4 }, { a: 2.9, b: 0.47, x: -1.6, y: 0.8 },
+  { a: 0.8, b: 2.6, c: 1.9, x: 1.9, y: 0.35 }, { a: 3.3, b: 1.1, c: 0.6, x: 0.45, y: 2.4 }];
 // the judge's own arithmetic for the kinds it knows; a kind added later is evaluated by its registry entry
 function evF(f, env) {
   if (!'nvgrp'.includes(f.k)) return G.evalF(f, env);
@@ -25,7 +26,10 @@ function value(S, env) {
   if (S.op === '·') return a * b;
   return a / b;   // '/', ':'
 }
-const values = S => VALS.map(env => value(S, env));
+// the value at each sample point; null where a condition a move wrote down doesn't hold (a > 0 under a log):
+// a move may take its own written conditions for granted. Pass the conditions of the later state to compare.
+const holds = (conds, env) => (conds || []).every(c => { const v = evTerms(c.terms, env); return c.rel === 'gt' ? v > 0 : c.rel === 'ge' ? v >= 0 : v !== 0; });
+const values = (S, conds = S.conds) => VALS.map(env => holds(conds, env) ? value(S, env) : null);
 
 // an equation with parameters (ax + b = cx + d) is judged at fixed parameter values, the ones the game uses
 // too (a − c ≠ 0, b² − 4ac > 0 …); only the unknown varies
@@ -61,7 +65,8 @@ function equivalent(u, v) {
   const r = u.map((x, i) => v[i] / x);
   return r.every(k => isFinite(k) && Math.abs(k) > 1e-9 && Math.abs(k - r[0]) <= 1e-7 * Math.max(1, Math.abs(r[0])));
 }
-const same = (u, v) => u.every((x, i) => (!isFinite(x) && !isFinite(v[i])) || Math.abs(x - v[i]) <= 1e-7 * Math.max(1, Math.abs(x)));
+const same = (u, v) => u.some((x, i) => x !== null && v[i] !== null)
+  && u.every((x, i) => x === null || v[i] === null || (!isFinite(x) && !isFinite(v[i])) || Math.abs(x - v[i]) <= 1e-7 * Math.max(1, Math.abs(x)));
 
 // every move a player can make from S: each registered move (G.MOVES) with every argument its gesture allows,
 // plus, for equations, balance values that must work and ones that must be refused
@@ -103,7 +108,7 @@ function candidates(S) {
 function fuzz(start, steps, label) {
   let S = JSON.parse(JSON.stringify(start));
   for (let k = 0; k < steps; k++) {
-    const before = values(S), snap = JSON.stringify(S);
+    const snap = JSON.stringify(S);
     const moves = candidates(S).sort(() => Math.random() - 0.5);
     let moved = false;
     for (const m of moves) {
@@ -122,7 +127,7 @@ function fuzz(start, steps, label) {
       const pair = (X, b) => ({ parts: X.parts.slice(2 * b, 2 * b + 2), op: '=' });
       const kept = branching ? sameSolutions(solutions(old), solutions(trial))
         : S.op === '=' ? old.parts.every((_, i) => i % 2 || equivalent(eqValues(pair(old, i / 2), old), eqValues(pair(trial, i / 2), old)))
-        : same(before, values(trial));
+        : same(values(old, trial.conds), values(trial));
       assert.ok(kept, `${label}: move ${r.ok} changed the ${S.op === '=' ? 'solutions' : 'value'}\nbefore ${G.stateHTML(JSON.parse(snap))}\nafter  ${G.stateHTML(trial)}`);
       S = trial; moved = true; break;
     }
