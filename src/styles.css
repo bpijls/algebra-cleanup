@@ -157,6 +157,7 @@ button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 .tile.v { background: var(--c); color: var(--on-var); font-family: var(--f-math); font-style: italic; font-size: 30px; }
 .tile.n { background: var(--num); border: 2px solid var(--num-edge); font-weight: 700; font-size: 24px; font-variant-numeric: tabular-nums; }
 .tile.g { background: var(--card); border: 2px solid var(--line); gap: 3px; padding: 0 8px; font-size: 22px; }
+.tile.g.npow { background: var(--num); border-color: var(--num-edge); font-weight: 700; font-size: 24px; font-variant-numeric: tabular-nums; gap: 0; padding: 0 9px; }
 .tile.g .paren { font-family: var(--f-math); font-size: 40px; color: var(--muted); line-height: 1; }
 .tile.p { background: var(--card); border: 2px solid var(--line); gap: 2px; padding: 6px 6px; cursor: pointer; }
 .tile.log { background: var(--card); border: 2px solid var(--line); gap: 2px; padding: 6px 6px; cursor: pointer; }

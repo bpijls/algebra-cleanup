@@ -1,7 +1,7 @@
 /* Service worker: the game works offline once it has been opened.
    Own files are network-first (edits on the server show up on the next load; the cache is the fallback),
    Google Fonts are cache-first (they never change for a given URL). Bump VERSION when SHELL changes. */
-const VERSION = 'v26';
+const VERSION = 'v27';
 const SHELL_CACHE = 'alg-shell-' + VERSION, FONT_CACHE = 'alg-fonts-' + VERSION;
 const SHELL = [
   './', 'index.html', 'manifest.webmanifest',
