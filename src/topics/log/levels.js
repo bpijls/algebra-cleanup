@@ -17,7 +17,7 @@ import { Lg } from './kind.js';
     nl: 'Explodeer, en zoek dan gelijksoortige termen. Wat blijft er over?' },
 ].forEach(defineLevel);
 
-defineSkill('logs', { requires: ['powers', 'like'], glyph: 'log',
+defineSkill('logs', { requires: ['like'], glyph: 'log',
   title: { en: 'Logarithms', nl: 'Logaritmen' },
   blurb: { en: 'The log of a product is the sum of the logs. Everything else follows from exploding.',
            nl: 'De log van een product is de som van de logs. De rest volgt uit exploderen.' },

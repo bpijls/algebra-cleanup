@@ -122,7 +122,7 @@ This keeps the rule "nothing happens that the player can't see the reason for": 
 **The map** (`src/ui/map.js`, a full-screen view instead of the level sheet):
 
 *Layout*
-- Tiers by longest prerequisite path, top to bottom, scrolling vertically. Within a tier, order nodes by field lane and then by the position of their parents (one barycentre sweep).
+- Tiers by longest prerequisite path, top to bottom, scrolling vertically. Each skill sits in a column centred over its own branch (its parent is the lowest skill it needs), like a family tree, so lines only cross for a second prerequisite; the map scrolls sideways when it is wider than the screen.
 - Phone upright: at most 3 nodes per row, and a crowded tier wraps. Landscape and desktop: wider rows.
 - Edges are SVG curves; an unmet edge is dashed.
 - Field chips at the top (Algebra · Goniometry · Calculus · Logic · Applied) collapse or expand lanes, so the map stays readable on a phone.

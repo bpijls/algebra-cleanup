@@ -53,10 +53,10 @@ level('fracexp.6', 'a^2·√a',
 /* ---- the skills ---- */
 const S = (id, requires, glyph, en, nl, ben, bnl, n, gen) => defineSkill(id, {
   field: 'algebra', requires, glyph, title: { en, nl }, blurb: { en: ben, nl: bnl }, levels: Array.from({ length: n }, (_, i) => `${id}.${i + 1}`), gen });
-S('negexp', ['fracpow', 'numfrac'], 'a⁻²', 'Negative exponents', 'Negatieve exponenten',
+S('negexp', ['fracpow'], 'a⁻²', 'Negative exponents', 'Negatieve exponenten',
   'a⁻² = 1/a²: a negative power is the same power on the other side of the bar.',
   'a⁻² = 1/a²: een negatieve macht is dezelfde macht aan de andere kant van de streep.', 6, ['negexp']);
-S('fracexp', ['sqrt', 'negexp'], 'a½', 'Fractional exponents', 'Gebroken exponenten',
+S('fracexp', ['negexp'], 'a½', 'Fractional exponents', 'Gebroken exponenten',
   'Two halves make a whole, so a to the power ½ is √a.',
   'Twee halven maken een geheel, dus a tot de macht ½ is √a.', 6, ['fracexp']);
 

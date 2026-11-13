@@ -75,12 +75,12 @@ const trProve = (L, R) => ({ parts: [F(L), F(R)], op: '=', goal: 'prove' });
 ].map(L => /^trig(id|sum)/.test(L.id) ? { goal: 'prove', ...L } : L).forEach(defineLevel);
 
 const trigIds = (id, k) => Array.from({ length: k }, (_, i) => `${id}.${i + 1}`);
-defineSkill('trigvals', { field: 'goniometry', requires: ['fracpow', 'like'], glyph: 'sin',
+defineSkill('trigvals', { field: 'goniometry', requires: ['sqrt'], glyph: 'sin',
   title: { en: 'The unit circle', nl: 'De eenheidscirkel' },
   blurb: { en: 'sin and cos are the coordinates of a point on the unit circle. Their exact values, and tan = sin / cos.',
            nl: 'sin en cos zijn de coördinaten van een punt op de eenheidscirkel. Hun exacte waarden, en tan = sin / cos.' },
   levels: trigIds('trigvals', 7), gen: ['trigvals'] });
-defineSkill('trigid', { field: 'goniometry', requires: ['trigvals', 'double'], glyph: 'sin²+cos²',
+defineSkill('trigid', { field: 'goniometry', requires: ['trigvals'], glyph: 'sin²+cos²',
   title: { en: 'Identities', nl: 'Identiteiten' },
   blurb: { en: 'Show that two forms are always equal, with one fact: sin²a + cos²a = 1.',
            nl: 'Laat zien dat twee vormen altijd gelijk zijn, met één feit: sin²a + cos²a = 1.' },

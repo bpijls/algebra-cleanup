@@ -87,13 +87,13 @@ const S = (id, requires, glyph, en, nl, ben, bnl, n, gen) => defineSkill(id, {
 S('numfrac', [], '½+⅓', 'Fractions', 'Breuken',
   'Halves and thirds don’t add up as they are: expand them to the same bottom first.',
   'Halven en derden tel je niet zomaar op: breid ze eerst uit tot dezelfde noemer.', 6, ['numfrac']);
-S('sqrt', ['powers'], '√12', 'Square roots', 'Wortels',
+S('sqrt', ['numfrac'], '√12', 'Square roots', 'Wortels',
   'Pairs come out of a root, roots of the same number add up, and no root stays below the bar.',
   'Paren komen uit een wortel, wortels van hetzelfde getal tel je op, en er blijft geen wortel onder de streep.', 6, ['sqrt']);
-S('algfrac', ['factor', 'fracpow', 'numfrac'], 'a⁄b+c⁄d', 'Fractions with letters', 'Breuken met letters',
+S('algfrac', ['numfrac'], 'a⁄b+c⁄d', 'Fractions with letters', 'Breuken met letters',
   '1/a + 1/b: the same expanding, now with letters at the bottom.',
   '1/a + 1/b: hetzelfde uitbreiden, nu met letters in de noemer.', 5, ['algfrac']);
-S('fraceq', ['linear', 'algfrac'], 'x⁄3=4', 'Equations with fractions', 'Vergelijkingen met breuken',
+S('fraceq', ['linear'], 'x⁄3=4', 'Equations with fractions', 'Vergelijkingen met breuken',
   'Multiply both sides by the bottoms, and the fractions are gone.',
   'Vermenigvuldig beide kanten met de noemers, en de breuken zijn weg.', 4, ['fraceq']);
 

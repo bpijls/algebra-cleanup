@@ -26,7 +26,7 @@ export function showMap(opts = {}) {
     const state = done ? t('mapDone') : open ? t('mapWon', { k, n }) : t('mapLocked');
     const cls = ['node', done ? 'done' : '', open ? '' : 'locked', !pick && next === K ? 'next' : '', picked ? 'picked' : '', K.field].filter(Boolean).join(' ');
     const ring = 2 * Math.PI * 30, frac = n ? k / n : 0;
-    return `<li><button type="button" class="${cls}" data-skill="${K.id}" ${pick ? `aria-pressed="${picked}"` : ''} aria-label="${title(K)}, ${state}">
+    return `<li style="--x:${rows.col[K.id]}"><button type="button" class="${cls}" data-skill="${K.id}" ${pick ? `aria-pressed="${picked}"` : ''} aria-label="${title(K)}, ${state}">
       <span class="nface"><svg class="nring" viewBox="0 0 68 68" aria-hidden="true"><circle cx="34" cy="34" r="30"/><circle class="nfill" cx="34" cy="34" r="30" stroke-dasharray="${ring * frac} ${ring}"/></svg>
         <span class="nglyph${[...K.glyph].length > 5 ? ' long' : ''}">${K.glyph}</span>${open ? '' : LOCK}${pick ? '<span class="ncheck" aria-hidden="true">✓</span>' : ''}</span>
       <span class="ntitle">${title(K)}</span></button></li>`;
@@ -39,7 +39,7 @@ export function showMap(opts = {}) {
       <div><h2 id="mapTitle">${t(pick ? 'pickTitle' : 'mapTitle')}</h2><p>${t(pick ? 'pickIntro' : 'mapIntro')}</p></div>
       <button type="button" class="mapclose" aria-label="${t('closeBtn')}">×</button>
     </header>
-    <div class="mapscroll"><div class="mapinner"><svg class="mapedges" aria-hidden="true"></svg>
+    <div class="mapscroll"><div class="mapinner" style="--cols:${rows.cols}"><svg class="mapedges" aria-hidden="true"></svg>
       <ol class="maprows">${rows.map(r => `<li><ul class="maprow">${r.map(node).join('')}</ul></li>`).join('')}</ol>
     </div></div>
     ${pick ? `<div class="mapbar"><span class="mapcount" aria-live="polite"></span>
@@ -74,7 +74,7 @@ export function showMap(opts = {}) {
   document.fonts?.ready.then(drawEdges);
   // bring the suggested skill (or the first picked one) into view
   const focus = el.querySelector(pick ? '.node.picked' : '.node.next') || el.querySelector('.node');
-  focus.scrollIntoView({ block: 'center' }); focus.focus({ preventScroll: true });
+  focus.scrollIntoView({ block: 'center', inline: 'center' }); focus.focus({ preventScroll: true });
 }
 
 // a line from each skill to every skill that needs it: solid when that skill is finished, dashed while it isn't

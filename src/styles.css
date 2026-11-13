@@ -392,15 +392,17 @@ button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 .maphead h2 { font-family: var(--f-display); font-weight: 800; font-size: 1.7rem; letter-spacing: -.02em; margin: 0; }
 .maphead p { margin: 2px 0 0; color: var(--muted); font-size: .95rem; }
 .mapclose { flex: none; width: 48px; height: 48px; border-radius: 14px; border: 2px solid var(--line); background: var(--card); color: var(--ink); font-size: 1.8rem; line-height: 1; cursor: pointer; }
-.mapscroll { flex: 1; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
-.mapinner { position: relative; padding: 8px 16px 40px; }
+.mapscroll { flex: 1; overflow: auto; -webkit-overflow-scrolling: touch; }
+/* a family tree: each skill in a column (--x, from tiers) under the skill it builds on; scrolls sideways on a phone */
+.mapinner { --col: 116px; position: relative; width: calc(var(--cols) * var(--col)); margin: 0 auto; padding: 8px 16px 40px; }
 .picking .mapinner { padding-bottom: 120px; }
 .mapedges { position: absolute; left: 0; top: 0; pointer-events: none; overflow: visible; }
 .mapedges path { fill: none; stroke: var(--line); stroke-width: 2.5; stroke-dasharray: 6 6; }
 .mapedges path.met { stroke: var(--accent); stroke-dasharray: none; opacity: .55; }
 .maprows, .maprow { list-style: none; margin: 0; padding: 0; }
 .maprows > li + li { margin-top: 30px; }
-.maprow { display: flex; flex-wrap: wrap; justify-content: center; gap: 22px 14px; }
+.maprow { position: relative; height: 112px; }
+.maprow > li { position: absolute; top: 0; left: calc(var(--x) * var(--col) + (var(--col) - 104px) / 2); }
 .node { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; width: 104px; padding: 0; border: 0; background: none; color: var(--ink); cursor: pointer; font: inherit; }
 .nface { position: relative; display: grid; place-items: center; width: 68px; height: 68px; border-radius: 50%; background: var(--card); box-shadow: 0 4px 0 var(--line); transition: transform .15s; }
 .node:hover .nface { transform: translateY(-2px); }

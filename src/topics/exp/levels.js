@@ -63,10 +63,10 @@ const g = (c, b, n) => eq(c === 1 ? [T([Ex(b, [x('t')])])] : [T([N(c), Ex(b, [x(
     nl: 'Een gerucht: 5 mensen weten het, en elke dag vertelt ieder het aan 2 anderen, dus het verdrievoudigt. Wanneer weten 405 mensen het?' },
 ].forEach(L => defineLevel({ ...L, goal: 'solve' }));
 
-defineSkill('logrules', { requires: ['logs', 'algfrac'], glyph: 'log a⁄b', title: { en: 'Log rules', nl: 'Logregels' },
+defineSkill('logrules', { requires: ['logs'], glyph: 'log a⁄b', title: { en: 'Log rules', nl: 'Logregels' },
   blurb: { en: 'The log of a quotient is a difference of logs; log(aˣ) is a shortcut you earned.', nl: 'De log van een quotiënt is een verschil van logs; log(aˣ) is een kortere weg die je verdiende.' },
   levels: ['logrules.1', 'logrules.2', 'logrules.3', 'logrules.4'], gen: ['logrules'] });
-defineSkill('expeq', { requires: ['logrules', 'negexp', 'linear'], glyph: '2ˣ=8', title: { en: 'Exponential equations', nl: 'Exponentiële vergelijkingen' },
+defineSkill('expeq', { requires: ['logrules'], glyph: '2ˣ=8', title: { en: 'Exponential equations', nl: 'Exponentiële vergelijkingen' },
   blurb: { en: 'The same base on both sides: the exponents are equal. Otherwise: log of both sides.', nl: 'Hetzelfde grondtal aan beide kanten: de exponenten zijn gelijk. Anders: de log van beide kanten.' },
   levels: ['expeq.1', 'expeq.2', 'expeq.3', 'expeq.4', 'expeq.5'], gen: ['expeq'] });
 defineSkill('growth', { field: 'applied', requires: ['expeq'], glyph: '2ᵗ', title: { en: 'Growth', nl: 'Groei' },

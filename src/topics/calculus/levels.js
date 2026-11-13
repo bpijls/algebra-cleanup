@@ -19,7 +19,7 @@ L('derivrules.2', '(4x^3-2x)′', 'A polynomial, term by term.', 'Een veelterm, 
 L('derivrules.3', '((x+1)(x+2))′', 'A product of brackets: the product rule again.', 'Een product van haakjes: weer de productregel.', { earned: EARNED_D });
 
 const Sk = (id, requires, glyph, en, nl, ben, bnl, n, gen) => defineSkill(id, { field: 'calculus', requires, glyph, title: { en, nl }, blurb: { en: ben, nl: bnl }, levels: Array.from({ length: n }, (_, i) => `${id}.${i + 1}`), gen });
-Sk('deriv', ['brackets', 'like'], "f′", 'Derivatives', 'Afgeleiden', 'The slope as a tile: the sum rule, numbers in front, and the product rule. x² is x · x.',
+Sk('deriv', ['brackets'], "f′", 'Derivatives', 'Afgeleiden', 'The slope as a tile: the sum rule, numbers in front, and the product rule. x² is x · x.',
   'De helling als tegel: de somregel, getallen ervoor, en de productregel. x² is x · x.', 4, ['deriv']);
 Sk('derivrules', ['deriv'], "xⁿ′", 'The power rule', 'De machtsregel', '(xⁿ)′ = n · xⁿ⁻¹, earned, for whole polynomials and products.',
   '(xⁿ)′ = n · xⁿ⁻¹, verdiend, voor hele veeltermen en producten.', 3, ['derivrules']);

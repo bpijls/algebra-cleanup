@@ -18,7 +18,7 @@ const P = (src, extra) => () => Object.assign(parseProblem(src).S, { complex: tr
     'D < 0: geen reële oplossingen, maar kwadraat afsplitsen werkt nog steeds. Ga door voorbij de wortel van een negatief getal.'],
 ].forEach(([id, src, en, nl]) => defineLevel({ id, s: P(src), goal: src.includes('=') ? 'solve' : undefined, en, nl }));
 
-defineSkill('complex', { field: 'algebra', requires: ['quadratic', 'sqrt'], glyph: 'i²', title: { en: 'Complex numbers', nl: 'Complexe getallen' },
+defineSkill('complex', { field: 'algebra', requires: ['quadratic'], glyph: 'i²', title: { en: 'Complex numbers', nl: 'Complexe getallen' },
   blurb: { en: 'A number i with i · i = −1. Now every quadratic equation has solutions.', nl: 'Een getal i met i · i = −1. Nu heeft elke kwadratische vergelijking oplossingen.' },
   levels: Array.from({ length: 6 }, (_, i) => `complex.${i + 1}`), gen: ['complex'] });
 

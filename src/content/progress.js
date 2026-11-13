@@ -24,20 +24,33 @@ export function nextInSkill(levelId) {
 // skills that became open between two progress states (after winning a skill's last level)
 export const newlyOpen = (before, after) => SKILL_LIST.filter(K => !skillOpen(K, before) && skillOpen(K, after));
 
-// the map's rows: a skill sits one row below the lowest skill it needs. Within a row, skills are ordered by where
-// the skills they need sit (one barycentre sweep), so the lines between rows cross as little as possible.
+// the map's rows: a skill sits one row below the lowest skill it needs. Most skills need one; a skill's branch is
+// the lowest skill it needs (its parent). Within a row, skills are in depth-first order of those branches, so a
+// branch stays together from left to right and its lines never cross another branch's.
 export function tiers(list = SKILL_LIST) {
   const depth = {}, ids = new Set(list.map(K => K.id));
   const d = K => depth[K.id] ??= 1 + Math.max(-1, ...K.requires.filter(r => ids.has(r)).map(r => d(SKILLS[r])));
   list.forEach(d);
+  const parent = K => K.requires.filter(r => ids.has(r)).reduce((p, r) => (p == null || depth[r] > depth[p] ? r : p), null);
+  const kids = {};
+  list.forEach(K => (kids[parent(K)] ||= []).push(K));
+  const order = {};
+  let n = 0;
+  const visit = K => { order[K.id] = n++; (kids[K.id] || []).forEach(visit); };
+  [...(kids[null] || [])].sort((A, B) => FIELD_ORDER(A) - FIELD_ORDER(B)).forEach(visit);
+  // columns as in a family tree: leaves side by side in that order, a skill centred over its own branch
+  const col = {};
+  let leaf = 0;
+  const place = K => {
+    const ks = kids[K.id] || [];
+    ks.forEach(place);
+    col[K.id] = ks.length ? (col[ks[0].id] + col[ks[ks.length - 1].id]) / 2 : leaf++;
+  };
+  [...(kids[null] || [])].sort((A, B) => FIELD_ORDER(A) - FIELD_ORDER(B)).forEach(place);
   const rows = [];
   list.forEach(K => (rows[depth[K.id]] ||= []).push(K));
-  const pos = {};
-  rows.forEach(row => {
-    const at = K => { const ps = K.requires.filter(r => pos[r] != null); return ps.length ? ps.reduce((a, r) => a + pos[r], 0) / ps.length : 0.5; };
-    row.sort((A, B) => at(A) - at(B) || FIELD_ORDER(A) - FIELD_ORDER(B));
-    row.forEach((K, i) => { pos[K.id] = (i + 0.5) / row.length; });
-  });
+  rows.forEach(row => row.sort((A, B) => order[A.id] - order[B.id]));
+  rows.cols = leaf; rows.col = col;
   return rows;
 }
 const FIELD_ORDER = K => ['algebra', 'goniometry', 'calculus', 'logic', 'applied'].indexOf(K.field);

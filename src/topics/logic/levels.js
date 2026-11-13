@@ -23,7 +23,7 @@ L('demorgan.4', '¬(a·b)+a', 'De Morgan first, then what you already know.', 'E
 const Sk = (id, requires, glyph, en, nl, ben, bnl, n, gen) => defineSkill(id, { field: 'logic', requires, glyph, title: { en, nl }, blurb: { en: ben, nl: bnl }, levels: Array.from({ length: n }, (_, i) => `${id}.${i + 1}`), gen });
 Sk('logic', [], 'a·a', 'Logic', 'Logica', 'True and false with letters: AND is ·, OR is +, NOT is a bar. a · a = a, a + ¬a = 1.',
   'Waar en onwaar met letters: EN is ·, OF is +, NIET is een streep. a · a = a, a + ¬a = 1.', 4, ['logic']);
-Sk('logicsimp', ['logic', 'factor'], 'a+ab', 'Simplifying logic', 'Logica vereenvoudigen', 'Outside brackets, as with numbers: a + ab = a(1 + b) = a.',
+Sk('logicsimp', ['logic'], 'a+ab', 'Simplifying logic', 'Logica vereenvoudigen', 'Outside brackets, as with numbers: a + ab = a(1 + b) = a.',
   'Buiten haakjes, zoals bij getallen: a + ab = a(1 + b) = a.', 4, ['logicsimp']);
 Sk('demorgan', ['logicsimp'], '¬(ab)', 'De Morgan', 'De Morgan', 'A NOT over a product becomes a sum of NOTs, and the other way round.',
   'Een NIET over een product wordt een som van NIETs, en andersom.', 4, ['demorgan']);

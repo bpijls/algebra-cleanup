@@ -50,11 +50,11 @@ L('physics.4', 'solve', () => solveFor('p·v=n·r·t', 't'),
   'The gas law pV = nRT (written small here). Solve for the temperature t.', 'De gaswet pV = nRT (hier klein geschreven). Los op naar de temperatuur t.');
 
 const Sk = (id, field, requires, glyph, en, nl, ben, bnl, n, gen) => defineSkill(id, { field, requires, glyph, title: { en, nl }, blurb: { en: ben, nl: bnl }, levels: Array.from({ length: n }, (_, i) => `${id}.${i + 1}`), gen });
-Sk('sequences', 'algebra', ['formulas', 'expeq'], 'uₙ', 'Sequences', 'Rijen', 'The n-th term of a sequence: write in n, or solve for it.',
+Sk('sequences', 'algebra', ['expeq'], 'uₙ', 'Sequences', 'Rijen', 'The n-th term of a sequence: write in n, or solve for it.',
   'De n-de term van een rij: vul n in, of los op naar n.', 4, ['sequences']);
 Sk('sums', 'algebra', ['sequences'], 'Σ', 'Sums', 'Sommen', '1 + 2 + … + 100 without adding a hundred numbers: Gauss’s pairs.',
   '1 + 2 + … + 100 zonder honderd getallen op te tellen: de paren van Gauss.', 3, ['sums']);
-Sk('physics', 'applied', ['formulas', 'fraceq'], 'v=at', 'Physics formulas', 'Natuurkundeformules', 'A formula solved for the letter you need, with the balance method.',
+Sk('physics', 'applied', ['formulas'], 'v=at', 'Physics formulas', 'Natuurkundeformules', 'A formula solved for the letter you need, with the balance method.',
   'Een formule opgelost naar de letter die je nodig hebt, met de balansmethode.', 4, ['physics']);
 
 GEN.sequences = d => {

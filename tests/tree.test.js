@@ -23,13 +23,20 @@ test('skill tree: prerequisites exist, no cycles, every level in exactly one ski
   assert.deepEqual(G.tiers()[0].map(K => K.id).sort(), ['logic', 'numfrac', 'powers']);   // three roots: powers, number fractions, logic
 });
 
+test('skill tree: the map is a family tree (few lines, a column per skill, no overlaps)', () => {
+  const rows = G.tiers(), edges = G.SKILL_LIST.reduce((a, K) => a + K.requires.length, 0);
+  assert.ok(edges <= G.SKILL_LIST.length, `${edges} lines for ${G.SKILL_LIST.length} skills`);
+  for (const r of rows) for (let i = 1; i < r.length; i++)
+    assert.ok(rows.col[r[i].id] - rows.col[r[i - 1].id] >= 1, `${r[i - 1].id} and ${r[i].id} overlap`);
+});
+
 test('skill tree: soft lock, next level, newly opened skills', () => {
   const none = {};
   assert.ok(G.skillOpen(G.SKILLS.powers, none));
-  assert.deepEqual(G.needs(G.SKILLS.sumproduct, none), ['double', 'factor']);
+  assert.deepEqual(G.needs(G.SKILLS.quadratic, none), ['sumproduct', 'linear']);
   assert.equal(G.suggested(none).id, 'powers');
   const powers = Object.fromEntries(G.SKILLS.powers.levels.map(id => [id, 3]));
-  assert.deepEqual(G.newlyOpen(none, powers).map(K => K.id).sort(), ['fracpow', 'like', 'sqrt']);
+  assert.deepEqual(G.newlyOpen(none, powers).map(K => K.id).sort(), ['fracpow', 'like']);
   assert.equal(G.nextInSkill('powers.2'), 'powers.3');
   assert.equal(G.nextInSkill('powers.6'), null);
   assert.equal(G.nextLevelIn(G.SKILLS.powers, { 'powers.1': 4 }), 'powers.2');
