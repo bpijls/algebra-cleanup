@@ -7,6 +7,7 @@ import { cancelCheck } from './moves.js';
 import { powerLeft } from './exponents.js';
 import { Pr } from './kinds/bracket.js';
 import { G } from './kinds/group.js';
+import { V } from './kinds/letter.js';
 import { N } from './kinds/number.js';
 import { KINDS, kindOf } from './kinds/registry.js';
 import { F, T, fkey, sumKey, tHasU } from './kinds/sums.js';
@@ -104,7 +105,10 @@ export function normTerms(terms, keepBare) {
         if (f.terms.length === 1) {
           const it = f.terms[0];
           if (it.neg && f.e % 2) t.neg = !t.neg;
-          if (f.e === 1) nf.push(...it.f); else nf.push(G(it.f, f.e));   // (2a)² is a power of a product
+          const v = it.f.length === 1 && it.f[0].k === 'v' && it.f[0].e === 1 && it.f[0];
+          if (f.e === 1) nf.push(...it.f);
+          else if (v) nf.push(V(v.b, f.e));                                // (−a)³ is −a³: a bracket around one letter is no bracket
+          else nf.push(G(it.f, f.e));                                      // (2a)² is a power of a product
           continue;
         }
       }

@@ -111,7 +111,8 @@ function tileEl(f, partners) {
       return `<span class="mini ${m.k}"${c}>${m.k === 'n' ? m.v : m.b}${m.k === 'v' && showsExp(m.e) ? `<sup>${expText(m.e)}</sup>` : ''}</span>`;
     }).join('');
     const bare = f.f.length === 1 && f.f[0].k === 'n';   // 2³: a power of a number needs no brackets
-    b.innerHTML = (bare ? inner : `<span class="paren">(</span>${inner}<span class="paren">)</span>`) + (showsExp(f.e) && !ui.detached.has(f.id) ? `<sup>${expText(f.e)}</sup>` : '');
+    // (the number plainly, like a letter's power: a mini tile around it reads as the bracket (2)⁻³ it is stored as)
+    b.innerHTML = (bare ? String(f.f[0].v) : `<span class="paren">(</span>${inner}<span class="paren">)</span>`) + (showsExp(f.e) && !ui.detached.has(f.id) ? `<sup>${expText(f.e)}</sup>` : '');
     b.setAttribute('aria-label', (bare ? String(f.f[0].v) : 'bracket') + (showsExp(f.e) ? ` to the power ${expText(f.e)}` : ''));
   }
   if (ui.sel && ui.sel.t === 'f' && ui.sel.id === f.id) b.classList.add('sel');

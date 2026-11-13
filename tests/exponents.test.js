@@ -92,3 +92,12 @@ test('Done? names what is left: a negative power, or (as a power) a bar or a roo
   assert.equal(G.whyNotDone(Object.assign(G.parseProblem('√a').S, { exps: true, asPower: true })).k, 'nyAsRoot');
   assert.equal(G.isClean(Object.assign(G.parseProblem('a^-2').S, { asPower: true })), true);
 });
+
+test('a bracket around one letter is no bracket: (a)⁻³ is a⁻³, (−a)³ is −a³; (a²)³ stays to explode', () => {
+  const show = s => strip(G.stateHTML(G.parseProblem(s).S));
+  assert.equal(show('(a)^-3'), 'a−3');
+  assert.equal(show('(-a)^3'), '−a^3');
+  assert.equal(show('(-a)^2'), 'a^2');
+  assert.equal(show('(a^2)^3'), '(a^2)^3');
+  assert.equal(show('(-2a)^3'), '−(2a)^3');
+});

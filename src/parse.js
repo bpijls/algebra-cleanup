@@ -154,6 +154,8 @@ export function parseProblem(src, goal, unknown) {
     const it = inner[0];
     const simple = it.f.every(f => f.k === 'n' || f.k === 'v');
     if (e === 1) return it.neg ? [{ flip: true }, ...it.f] : it.f;   // (2a) is just 2a, (−a) is −a
+    const lone = it.f.length === 1 && it.f[0];
+    if (lone && lone.k === 'v' && lone.e === 1 && !it.neg) return [V(lone.b, e)];   // (a)⁻³ is just a⁻³ ((a²)³ stays: explode it)
     if (simple && !it.neg) return [G(it.f, e)];
     if (e < 0 || !Number.isInteger(e)) fail('pPowSum');
     return [Pr(inner, e)];                                            // (−2a)³: normalize turns it into a sign and a power
