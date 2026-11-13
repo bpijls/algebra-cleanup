@@ -13,7 +13,26 @@ test('a⁵ · a⁻² does not merge: a⁻² is seen as 1/a² first', () => {
   assert.equal(r.type, 'fizzle'); assert.equal(r.msg, 'mixedSign');
   const e = play(S, s => G.opExplode(s, y.id));
   assert.equal(e.ok, 'negPower');
+  assert.equal(strip(G.stateHTML(S)), 'a^5[1/a^2');           // 1/a² first, not straight to a⁵/a²
+  const q = S.parts[0].num[0].f.find(f => f.k === 'q');
+  const m = play(S, s => G.opPair(s, x.id, q.id));            // then a⁵ is multiplied into the fraction by hand
+  assert.equal(m.ok, 'intoFrac');
   assert.equal(strip(G.stateHTML(S)), '[a^5/a^2');
+});
+
+test('two negative powers are two fractions, multiplied top by top and bottom by bottom', () => {
+  const S = G.parseProblem('a^-2·a^-3').S;
+  ids(S).forEach(f => play(S, s => G.opExplode(s, f.id)));
+  assert.equal(strip(G.stateHTML(S)), '[1/a^2[1/a^3');
+  const [p, q] = S.parts[0].num[0].f;
+  assert.equal(play(S, s => G.opPair(s, p.id, q.id)).ok, 'mergeGroup');
+  assert.equal(strip(G.stateHTML(S)), '[1/a^2a^3');
+});
+
+test('against a bar you can see, a negative power goes across it', () => {
+  const S = G.parseProblem('a^-3/(2a^2)').S;
+  play(S, s => G.opExplode(s, ids(s)[0].id));
+  assert.equal(strip(G.stateHTML(S)), '[1/2a^2a^3');
 });
 
 test('a negative power in a sum becomes a fraction of its own', () => {

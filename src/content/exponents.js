@@ -12,8 +12,8 @@ const AS = { asPower: true };
 
 /* ---- negative exponents ---- */
 level('negexp.1', 'a^-2·a^5',
-  'A negative power. <i>a</i>⁻² is the same as 1/<i>a</i>²: the power goes to the other side of the bar. Tap it twice to see it, then cancel as usual.',
-  'Een negatieve macht. <i>a</i>⁻² is hetzelfde als 1/<i>a</i>²: de macht gaat naar de andere kant van de streep. Tik er twee keer op om het te zien en streep dan weg zoals altijd.');
+  'A negative power. <i>a</i>⁻² is the same as 1/<i>a</i>²: the power goes to the other side of the bar. Tap it twice to see it, bring <i>a</i>⁵ onto the top of that fraction, then cancel as usual.',
+  'Een negatieve macht. <i>a</i>⁻² is hetzelfde als 1/<i>a</i>²: de macht gaat naar de andere kant van de streep. Tik er twee keer op om het te zien, haal <i>a</i>⁵ in de teller van die breuk en streep dan weg zoals altijd.');
 level('negexp.2', '2^-3',
   'A number to a negative power: under the bar it becomes an ordinary power.',
   'Een getal tot een negatieve macht: onder de streep wordt het een gewone macht.');

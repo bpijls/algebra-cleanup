@@ -210,7 +210,9 @@ defineAction('into', (S, A, B, v) => {
   const [O, I] = v.out === 'A' ? [A, B] : [B, A], q = I.f.k === 'q' ? I.f : I.in, term = O.term;
   const before = mx(termHTML(term));
   term.f.splice(term.f.indexOf(O.f), 1);
-  if (q.num.length === 1) q.num[0].f.unshift(O.f);
+  const lone1 = q.num.length === 1 && q.num[0].f.length === 1 && q.num[0].f[0].k === 'n' && q.num[0].f[0].v === 1;
+  if (lone1) q.num[0].f = [O.f];   // 1/a² with a⁵ in front: a⁵/a², not 1·a⁵/a²
+  else if (q.num.length === 1) q.num[0].f.unshift(O.f);
   else q.num = [T([O.f, Pr(q.num)])];
   return { ok: 'intoFrac', p: { x: mx(fx(O.f)), ex: before, r: mx(termHTML(term)) }, born: [O.f.id] };
 });
