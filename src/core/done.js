@@ -1,7 +1,7 @@
 /* "Done?" pressed too early: say what is still left, without giving the move away. */
 import { quadSplit } from './hints.js';
 import { sumKey } from './kinds/sums.js';
-import { SIDES, coefAbs, fracTerm, gcd, hasU, isClean, isOne, joinablePair, rootBelow, sig, sumClean, tidy, unbare, unknownOf, varPart } from './model.js';
+import { SIDES, coefAbs, fracOnFracLeft, fracTerm, gcd, hasU, isClean, isOne, joinablePair, rootBelow, sig, sumClean, tidy, unbare, unknownOf, varPart } from './model.js';
 import { cancelCheck } from './moves.js';
 import { powerLeft } from './exponents.js';
 import { branchCount, eqView, isBranched } from './problem.js';
@@ -54,6 +54,8 @@ export function whyNotDone(S) {
     }
     return { k: 'nyTidyAll' };
   }
+  const ff = fracOnFracLeft(S);   // (1/a³)/(2a²)
+  if (ff) return { k: 'nyFracOnFrac', p: { x: mx(fx(ff)) } };
   const pl = powerLeft(S);   // a⁻², a^½ (or, when the level wants powers, a root or a bar)
   if (pl) return { k: pl.k, p: { x: mx(fx(pl.f)) } };
   for (const side of SIDES) {

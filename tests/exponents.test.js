@@ -29,10 +29,24 @@ test('two negative powers are two fractions, multiplied top by top and bottom by
   assert.equal(strip(G.stateHTML(S)), '[1/a^2a^3');
 });
 
-test('against a bar you can see, a negative power goes across it', () => {
+test('against a bar you can see, a negative power is 1/a³ first, then its bottom goes across by hand', () => {
   const S = G.parseProblem('a^-3/(2a^2)').S;
   play(S, s => G.opExplode(s, ids(s)[0].id));
+  assert.equal(strip(G.stateHTML(S)), '[[1/a^3/2a^2');               // a fraction on a fraction
+  assert.equal(G.isClean(S), false);
+  assert.equal(G.whyNotDone(S).k, 'nyFracOnFrac');
+  const a3 = ids(S).find(f => f.k === 'v' && f.e === 3), two = ids(S).find(f => f.k === 'n' && f.v === 2);
+  assert.equal(play(S, s => G.opPair(s, a3.id, two.id)).ok, 'fracOnTop');
   assert.equal(strip(G.stateHTML(S)), '[1/2a^2a^3');
+});
+
+test('below the bar: dividing by 1/a² is multiplying by a²', () => {
+  const S = G.parseProblem('6/a^-2').S;
+  play(S, s => G.opExplode(s, ids(s).find(f => f.k === 'v').id));
+  assert.equal(strip(G.stateHTML(S)), '[6/[1/a^2');
+  const a2 = ids(S).find(f => f.k === 'v'), six = ids(S).find(f => f.k === 'n' && f.v === 6);
+  assert.equal(play(S, s => G.opPair(s, six.id, a2.id)).ok, 'fracBelow');   // either order
+  assert.equal(strip(G.stateHTML(S)), '6a^2');
 });
 
 test('a negative power in a sum becomes a fraction of its own', () => {

@@ -183,8 +183,21 @@ export const unbare = side => side.length === 1 && !side[0].neg && side[0].f.len
 export const isClean = S => goalOf(S).isDone(S);
 
 // a simplify goal is done when each side is a sum of tidy, unlike terms and the fraction can't cancel
+// a fraction on a fraction ((1/a³)/(2a²), 6/(1/a²), left by exploding a negative power): a small fraction in a term
+// that sits against a bar that is drawn
+export function fracOnFracLeft(S) {
+  let hit = null;
+  walk(S, L => {
+    if (hit || L.kind !== 'f' || L.f.k !== 'q') return;
+    const far = L.qs ? L.in[L.qs === 'num' ? 'den' : 'num'] : !L.depth ? S.parts[L.p][L.side === 'num' ? 'den' : 'num'] : null;
+    if (far && !isOne(far)) hit = L.f;
+  });
+  return hit;
+}
+
 export function isSimplified(S) {
   if (S.parts.length > 1) return false;
+  if (fracOnFracLeft(S)) return false;
   if (powerLeft(S)) return false;   // a⁻², a^½ written out (or, when the level asks for powers, a root or a bar left)
   const P = S.parts[0];
   for (const side of SIDES) {

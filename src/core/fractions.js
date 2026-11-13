@@ -10,7 +10,7 @@ import { Rt } from './kinds/root.js';
 import { T, cloneF, cloneT, fkey, sumKey } from './kinds/sums.js';
 import { letters } from './balance.js';
 import { addCond, containers, eachTerm, fracTerm, isCombined, isOne, joinablePair, locate, rootBelow, primeFactors, tidy, unknownOf } from './model.js';
-import { defineExplode, defineMove, gated } from './rules/registry.js';
+import { defineAction, defineExplode, defineMove, definePairRule, gated } from './rules/registry.js';
 import { addTactic, defineGoal, defineHintMove } from './goals/registry.js';
 import { cancelIn, fractionPair, groups, likeTerms, merges, openBrackets, rootPairs } from './goals/simplify.js';
 import { condHTML, factorsHTML, fracHTML, fx, mx, sumHTML, termHTML } from '../render/text.js';
@@ -26,6 +26,43 @@ defineExplode('q', (S, L, id) => {
   });
   L.terms.splice(L.t, 1, ...nts);
   return { ok: 'fracSplit', p: { x: before, ex: mx(sumHTML(nts)) }, born: Object.keys(origins).map(Number), origins, arcs: true };
+});
+
+/* A fraction on a fraction: (1/a³)/(2a²) or 6/(1/a²). Exploding a⁻³ against a bar makes such a small fraction
+   (1/a³ in its place, core/exponents.js); its bottom then goes across the big bar by hand: tap a piece of the small
+   bottom, then a piece on the other side of the big bar. (1/a³)/(2a²) → 1/(2a²·a³), 6/(1/a²) → 6·a²/1. The small
+   fraction's term must be the whole of its side, so nothing else is divided by it. */
+const across = side => side === 'num' ? 'den' : 'num';
+// the big bar around fraction q: { P (the part or outer fraction), side (where q's term is) }, or null
+export function bigBar(S, q) {
+  const L = locate(S, q.id);
+  if (!L || L.terms.length !== 1) return null;
+  const bb = L.qs ? { P: L.in, side: L.qs, at: L } : L.depth ? null : { P: S.parts[L.p], side: L.side, at: L };
+  return bb && !isOne(bb.P[across(bb.side)]) ? bb : null;   // over 1 there is no bar to cross: a⁵ · 1/a² goes into the fraction
+}
+// a piece below a small bar (I) and a piece on the far side of the big bar around it (O)
+function fracOnFrac(S, A, B) {
+  for (const [I, O] of [[A, B], [B, A]]) {
+    if (!I.in || I.in.k !== 'q' || I.qs !== 'den') continue;
+    const bb = bigBar(S, I.in);
+    if (bb && O.terms === bb.P[across(bb.side)]) return { I, bb };
+  }
+  return null;
+}
+const asTerm = ts => ts.length === 1 ? ts[0] : T([Pr(ts)]);
+definePairRule('wall', 'fracOnFrac', (S, A, B) => fracOnFrac(S, A, B) ? { type: 'fracOnFrac' } : undefined, { before: 'intoFrac' });
+defineAction('fracOnFrac', (S, A, B) => {
+  const { I, bb } = fracOnFrac(S, A, B), q = I.in, { P, side, at } = bb, far = across(side);
+  const big = () => mx(fx(Q(P.num, P.den)));
+  const ex = big(), down = asTerm(q.den), up = asTerm(q.num), t = at.term;
+  const lone1 = up.f.length === 1 && up.f[0].k === 'n' && up.f[0].v === 1 && t.f.length > 1;
+  t.f.splice(t.f.indexOf(q), 1, ...(lone1 ? [] : up.f));   // the small top stays where the fraction was (a 1 beside others goes)
+  if (up.neg) t.neg = !t.neg;
+  const o = asTerm(P[far]);
+  o.f.push(...down.f);                       // the small bottom joins the far side of the big bar
+  if (down.neg) o.neg = !o.neg;
+  P[far] = [o];
+  return { ok: side === 'num' ? 'fracOnTop' : 'fracBelow', p: { ex, r: big(), x: mx(factorsHTML(down.f)) }, born: down.f.map(f => f.id) };
 });
 
 /* Expanding: the top and the bottom times the same piece, ½ = (1·3)/(2·3). It works on a fraction in a sum,
@@ -123,6 +160,20 @@ export function intoFrac(S) {
   });
   return h;
 }
+// a fraction on a fraction: its bottom goes across the big bar
+export function fracOnFracs(S) {
+  let h = null;
+  eachTerm(S, L => {
+    if (h) return;
+    for (const q of L.term.f) {
+      const bb = q.k === 'q' && bigBar(S, q);
+      if (!bb) continue;
+      const far = bb.P[across(bb.side)][0], o = far.f[0];
+      if (o) { h = { k: 'hFracOnFrac', p: { x: mx(factorsHTML(asTerm(q.den).f)) }, ids: [q.den[0].f[0].id, o.id] }; return; }
+    }
+  });
+  return h;
+}
 // two fractions over the same bottom: join them
 export function joinFracs(S) {
   for (const ts of containers(S)) {
@@ -164,6 +215,7 @@ addTactic('simplify', rationalize, { before: 'cancelAcross' });
 
 // in simplify, a fraction's own pieces go on top and fractions over the same bottom join
 addTactic('simplify', intoFrac, { before: 'likeTerms' });
+addTactic('simplify', fracOnFracs, { before: 'groups' });
 addTactic('simplify', joinFracs, { before: 'openBrackets' });
 // written as one fraction (the combine goal): the same, and then everything over one bottom. Only the result is
 // cancelled: cancelling a fraction just expanded would undo the expansion (½ + ⅓ → 3/6 + … → ½ + … again)

@@ -31,12 +31,6 @@ function barOf(S, L) {
   if (!L.depth) return S.parts[L.p][L.side].length === 1 ? { P: S.parts[L.p], side: L.side } : null;
   return null;
 }
-// the bar a piece sits against, but only when it is drawn: a⁵ · a⁻² over 1 has none
-function visibleBar(S, L) {
-  const B = barOf(S, L);
-  return B && !(B.P === S.parts[L.p] && !L.qs && isOne(B.P[across(B.side)])) ? B : null;
-}
-const isOne = ts => ts.length === 1 && !ts[0].neg && ts[0].f.every(g => g.k === 'n' && g.v === 1);
 const across = side => side === 'num' ? 'den' : 'num';
 // a factor onto one side of a fraction: into its one term, or times the sum as a whole
 function putOn(P, side, f) {
@@ -44,16 +38,14 @@ function putOn(P, side, f) {
   else P[side] = [T([Pr(P[side]), f])];
 }
 
-/* a⁻² → 1/a²: the same power on the other side of the bar. Against a bar you can see (a⁻³/2, 6/a⁻²) it goes
-   across that bar; anywhere else it becomes a fraction of its own, 1/a², in its place, and the player multiplies
-   it in by hand (a⁵ · 1/a² → a⁵/a², tapping a⁵ and then the fraction), so a⁵ · a⁻² never jumps to a⁵/a². */
+/* a⁻² → 1/a²: the same power on the other side of the bar, written as a fraction of its own in its place. The
+   player then multiplies it in by hand: a⁵ · 1/a² → a⁵/a² (tap a⁵, then the fraction), and against a bar that is
+   drawn the small bottom goes across the big bar ((1/a³)/(2a²) → 1/(2a²·a³), fracOnFrac in core/fractions.js).
+   So a negative power never jumps across a bar in one step. */
 export function flipPower(S, L) {
-  const f = L.f, flipped = withE(f, -f.e), B = visibleBar(S, L), below = B ? B.side === 'den' : L.side === 'den' && !L.qs && !L.depth;
-  const p = { x: mx(below ? fx(over(f)) : fx(f)), ex: mx(below ? fx(flipped) : fx(over(flipped))) };
-  if (B) { L.term.f.splice(L.i, 1); putOn(B.P, across(B.side), flipped); return { ok: 'negPower', p, born: [flipped.id], origins: { [flipped.id]: [f.id] } }; }
-  const q = over(flipped);
+  const f = L.f, q = over(withE(f, -f.e));
   L.term.f.splice(L.i, 1, q);
-  return { ok: 'negPower', p, born: [q.id], origins: { [q.id]: [f.id] } };
+  return { ok: 'negPower', p: { x: mx(fx(f)), ex: mx(fx(q)) }, born: [q.id], origins: { [q.id]: [f.id] } };
 }
 
 /* a^½ → √a; a^(3/2) → a · a^½ (the whole part comes off first) */
