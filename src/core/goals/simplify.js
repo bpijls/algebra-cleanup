@@ -86,7 +86,8 @@ export function cancelIn(P) {
 export function merges(S) {
   let h = null;
   eachTerm(S, L => {
-    const t = L.term;
+    const t = L.term, z = t.f.length > 1 && t.f.find(f => f.k === 'n' && f.v === 0);
+    if (!h && z) { const o = t.f.find(f => f !== z); h = { k: 'hTimesZero', p: { x: mx(fx(o)) }, ids: [z.id, o.id] }; }
     for (let i = 0; !h && i < t.f.length; i++) for (let j = i + 1; !h && j < t.f.length; j++)
       // (a+b)·(a+b) only folds back into (a+b)² when the goal is to factor; to simplify, it gets opened
       // a · a^½ stays apart unless the level wants one power: it is a√a, and merging would undo the explode

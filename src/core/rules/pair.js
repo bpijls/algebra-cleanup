@@ -47,6 +47,9 @@ definePairRule('sum', 'rootOut', (S, A, B) => {
   if (x.v !== y.v && x.v > 1 && y.v > 1) return { type: 'merge' };
   return undefined;
 });
+// 0 · a = 0: zero times any piece of its term is zero (tap the 0, then the piece)
+const isZero = f => f.k === 'n' && f.v === 0;
+definePairRule('sum', 'timesZero', (S, A, B) => A.term === B.term && A.f !== B.f && (isZero(A.f) || isZero(B.f)) ? { type: 'timesZero' } : undefined);
 // 3 · x/4: a piece beside a fraction goes onto its top, (3·x)/4 (tap the piece, then the fraction)
 definePairRule('sum', 'intoFracTile', (S, A, B) => A.term === B.term && (A.f.k === 'q') !== (B.f.k === 'q') ? { type: 'into', out: A.f.k === 'q' ? 'B' : 'A' } : undefined);
 // a⁵ · a⁻²: a negative power is 1/a² first, then a² cancels (no adding −2 to 5 unseen)
@@ -181,6 +184,12 @@ defineAction('addTerms', (S, A, B) => {
   return res;
 });
 
+defineAction('timesZero', (S, A, B) => {
+  const [z, o] = isZero(A.f) ? [A.f, B.f] : [B.f, A.f], arr = A.term.f;
+  const p = { x: mx(fx(z) + ' · ' + fx(o)) };
+  arr.splice(arr.indexOf(o), 1);
+  return { ok: 'timesZero', p, born: [z.id], origins: { [z.id]: [z.id, o.id] } };
+});
 defineAction('merge', (S, A, B, v, ids) => {
   const x = A.f, y = B.f;
   if (x.k === 'n' && x.v * y.v > 1e12) return { no: 'tooBig', ids };   // beyond exact arithmetic
@@ -207,7 +216,7 @@ defineAction('cancel', (S, A, B) => {
 
 // 3 · x/4 → (3·x)/4: the piece goes onto the top (a sum on top is multiplied as a whole)
 defineAction('into', (S, A, B, v) => {
-  const [O, I] = v.out === 'A' ? [A, B] : [B, A], q = I.f.k === 'q' ? I.f : I.in, term = O.term;
+  const [O, I] = v.out === 'A' ? [A, B] : [B, A], term = O.term, q = term.f.includes(I.f) ? I.f : I.in;   // the fraction in O's own term, not one inside its top
   const before = mx(termHTML(term));
   term.f.splice(term.f.indexOf(O.f), 1);
   const lone1 = q.num.length === 1 && q.num[0].f.length === 1 && q.num[0].f[0].k === 'n' && q.num[0].f[0].v === 1;

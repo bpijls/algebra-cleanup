@@ -2779,9 +2779,9 @@
   "conds: "
  ],
  "level logic.3": [
-  "hint: There is a 0 in <span class=\"mx\"><span class=\"mn\">0</span><i class=\"mv\">a</i></span>.",
+  "hint: There is a 0 in <span class=\"mx\"><i class=\"mv\">a</i>·<span class=\"mn\">0</span></span>.",
   "done?: A term still holds a 0, something twice, or something with its opposite.",
-  "move: <span class=\"mx\"><span class=\"mn\">0</span><i class=\"mv\">a</i></span> = 0: AND with false is false.",
+  "move: <span class=\"mx\"><i class=\"mv\">a</i>·<span class=\"mn\">0</span></span> = 0: AND with false is false.",
   "state: <i class=\"mv\">b</i>",
   "conds: "
  ],

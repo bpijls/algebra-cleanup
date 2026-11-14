@@ -1273,7 +1273,7 @@
   "clean"
  ],
  "level logic.3": [
-  "0a + b",
+  "a·0 + b",
   "hAndZero [nyAnd] → andZero | b",
   "clean"
  ],

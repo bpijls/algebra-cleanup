@@ -50,6 +50,7 @@ export const SIDES = ['num', 'den'];
 
 /* A term is tidy when it reads as: one number, each letter once (and, if allowed, one clean bracket). */
 export function tidy(t, allowB) {
+  if (t.f.length > 1 && t.f.some(f => f.k === 'n' && f.v === 0)) return false;   // 0 · a is 0
   let n = 0, p = 0, r = 0; const bs = new Set();
   const seen = {};   // for kinds with their own rule (tidyIn): how many of each are in the term so far
   for (const f of t.f) {

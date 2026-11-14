@@ -97,3 +97,13 @@ test('splitting a term with a root keeps the root in both halves', () => {
   assert.equal(G.opSplitTwo(S, t.id, 3).ok, 'splitTwo');
   assert.equal(show(S), 'x = 3p√q − p√q');
 });
+
+test('0 · a = 0: multiplying = 0 by 4a leaves 0 · a, and tapping the 0 and the a gives 0', () => {
+  let S = G.parseProblem('ax^2+bx+c=0', 'solve').S;
+  S = G.play(S, s => G.opBalance(s, '·', G.parseProblem('4a').S.parts[0].num[0])).S; G.normalize(S);
+  const piece = v => S.parts[1].num[0].f.find(f => f.k === 'n' ? f.v === v : v === 'a');
+  assert.equal(G.opPair(S, piece(4).id, piece(0).id).ok, 'timesZero'); G.normalize(S);
+  const r = G.opPair(S, piece(0).id, piece('a').id); G.normalize(S);
+  assert.equal(r.ok, 'timesZero');
+  assert.equal(strip(G.stateHTML(S)).split('= ')[1], '0');
+});

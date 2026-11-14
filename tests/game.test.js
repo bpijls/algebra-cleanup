@@ -137,3 +137,14 @@ test('multiplying by hand down to 1/1 leaves the 1/1 on the board', () => {
   assert.equal(S.parts.length, 2);
   assert.equal(G.hint(S).k, 'hCancelOnes');
 });
+
+test('a piece in front goes onto the top of its own fraction, not into a fraction inside that top', () => {
+  const { Q, T, N, V } = G;
+  const inner = Q([T([V('x', 1)])], [T([N(3)])]);
+  const outer = Q([T([N(2), inner]), Object.assign(T([N(4)]), { neg: true })], [T([N(2)])]);
+  const two = N(2);
+  const S = { parts: [{ num: [T([two, outer])], den: [T([N(1)])] }], op: null, goal: 'simplify' };
+  const r = G.play(S, s => G.opPair(s, two.id, inner.id));
+  assert.equal(r.r.ok, 'intoFrac');
+  assert.equal(strip(G.stateHTML(r.S)), '[2(2[x/3 − 4)/2');
+});
