@@ -66,7 +66,8 @@ defineExplode('g', (S, L, id) => {
   if (!isWhole(f.e)) return halfPower(S, L);   // 9^½ → √9
   if (f.e >= 2) {
     if (f.e > MAX_GROUP) return { no: 'tooBig', ids: [id] };
-    const copies = Array.from({ length: f.e }, () => G(f.f.map(cloneF), 1));
+    // one piece inside (2³, (a²)³) gives plain copies of it, not brackets: 2 · 2 · 2, which then multiply to 8
+    const copies = Array.from({ length: f.e }, () => f.f.length === 1 ? cloneF(f.f[0]) : G(f.f.map(cloneF), 1));
     L.term.f.splice(L.i, 1, ...copies);
     return { ok: 'explodeGroup', p: { e: f.e, x: mx(fx(f)), ex: mx(copies.map(fx).join(' · ')) }, born: copies.map(c => c.id), origins: fromOne(f, copies) };
   }

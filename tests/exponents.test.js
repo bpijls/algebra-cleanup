@@ -101,3 +101,15 @@ test('a bracket around one letter is no bracket: (a)⁻³ is a⁻³, (−a)³ is
   assert.equal(show('(a^2)^3'), '(a^2)^3');
   assert.equal(show('(-2a)^3'), '−(2a)^3');
 });
+
+test('exploding 2³ gives plain 2s that multiply to 8, not brackets that merge back into 2³', () => {
+  const S = G.parseProblem('2^-3').S;
+  play(S, s => G.opExplode(s, ids(S)[0].id));                  // 1/2³
+  const pw = ids(S).find(f => f.k === 'g');
+  assert.equal(play(S, s => G.opExplode(s, pw.id)).ok, 'explodeGroup');
+  assert.equal(strip(G.stateHTML(S)), '[1/2·2·2');
+  const twos = ids(S).filter(f => f.k === 'n' && f.v === 2);
+  assert.equal(twos.length, 3);
+  assert.equal(play(S, s => G.opPair(s, twos[0].id, twos[1].id)).ok, 'mergeNum');
+  assert.equal(strip(G.stateHTML(S)), '[1/4·2');
+});
