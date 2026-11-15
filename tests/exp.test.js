@@ -55,6 +55,19 @@ test('the quotient rule writes down its conditions; equal pieces only go outside
   assert.ok(same(v0, values(T)));
 });
 
+test('a log splits only once every piece inside is tidy: (a³ − 3a³) is −2a³, which can’t be positive with a', () => {
+  const a = () => G.V('a'), lg = inner => G.Lg([G.T(inner)]);
+  const messy = lg([G.Pr([G.T([G.V('a', 3)]), G.T([G.N(3), G.V('a', 3)], true)]), a()]);
+  const S = { parts: [G.F([G.T([messy])])], op: null, goal: 'simplify' }, snap = JSON.stringify(S);
+  assert.equal(G.opExplode(S, messy.id).no, 'logTidy');
+  assert.equal(JSON.stringify(S), snap);
+  assert.notEqual(G.hint(S).k, 'hExplodeLog');   // the hint tidies the bracket first
+  const q = lg([G.V('b'), G.Q([G.T([G.N(2), a()])], [G.T([G.N(4), G.V('b')])])]);   // b · 2a/4b: the 2 cancels first
+  assert.equal(G.opExplode({ parts: [G.F([G.T([q])])], op: null, goal: 'simplify' }, q.id).no, 'logTidy');
+  const ok = lg([G.Pr([G.T([a()]), G.T([G.V('b')])]), a()]);
+  assert.equal(G.opExplode({ parts: [G.F([G.T([ok])])], op: null, goal: 'simplify' }, ok.id).ok, 'logProduct');
+});
+
 test('every new level and practice problem is solved by the hints, keeping its solutions or value', () => {
   const starts = G.LEVELS.filter(L => /^(expeq|growth|logrules)\./.test(L.id)).map(L => [L.id, level(L.id)]);
   for (const k of ['expeq', 'growth', 'logrules']) for (const d of [1, 2, 3]) for (let i = 0; i < 8; i++) starts.push([`${k} ${d}`, G.makeProblem([k], d)]);

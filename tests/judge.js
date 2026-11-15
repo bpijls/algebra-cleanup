@@ -262,7 +262,7 @@ function fuzz(start, steps, label) {
           || (r.scale && equivalent(scaled(eqValues(pair(old, i / 2), old), r.scale, old), eqValues(pair(trial, i / 2), old))))
         : same(values(old, trial.conds), values(trial));
       if (old.rel) assert.ok(sameTruth(old, trial), `${label}: move ${r.ok} changed where the inequality holds\nbefore ${G.stateHTML(old)}\nafter  ${G.stateHTML(trial)}`);
-      assert.ok(kept, `${label}: move ${r.ok} changed the ${S.op === '=' ? 'solutions' : 'value'}\nbefore ${G.stateHTML(JSON.parse(snap))}\nafter  ${G.stateHTML(trial)}`);
+      assert.ok(kept, `${label}: move ${r.ok} changed the ${S.op === '=' ? 'solutions' : 'value'}\nbefore ${G.stateHTML(JSON.parse(snap))}\nafter  ${G.stateHTML(trial)}\n${snap}`);
       S = trial; moved = true; break;
     }
     if (!moved || G.isClean(S)) break;

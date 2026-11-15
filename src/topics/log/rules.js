@@ -8,7 +8,7 @@ import { V } from '../../core/kinds/letter.js';
 import { N } from '../../core/kinds/number.js';
 import { Pr } from '../../core/kinds/bracket.js';
 import { F, T, cloneF, cloneT, fkey, sumKey } from '../../core/kinds/sums.js';
-import { addCond, eachFactor, primeFactors } from '../../core/model.js';
+import { addCond, eachFactor, isSimplified, primeFactors, sumClean } from '../../core/model.js';
 import { opExplode } from '../../core/rules/engine.js';
 import { defineExplode, definePairRule } from '../../core/rules/registry.js';
 import { GEN } from '../../practice.js';
@@ -28,6 +28,12 @@ function posConds(S, fs) {
   return out.join(', ');
 }
 const hasLetterIn = g => JSON.stringify(g).includes('"k":"v"');
+// a piece the rule may take as positive has to be finished first: (a³ − 3a³) is −2a³, and (2·3 − 4·2) is −2,
+// so splitting log((a³ − 3a³)·(2·3 − 4·2)) would ask for something negative to be positive
+const untidy = g => (g.k === 'p' && !sumClean(g.terms))
+  || (g.k === 'q' && !isSimplified({ parts: [F(g.num, g.den)], op: null, goal: 'simplify' }));
+export const untidyIn = f => f.terms.length === 1 && (f.terms[0].f.length === 1 && f.terms[0].f[0].k === 'q'
+  ? [...f.terms[0].f[0].num, ...f.terms[0].f[0].den].flatMap(t => t.f) : f.terms[0].f).find(untidy) || null;
 // log(ab) → log a + log b; c·log(ab) → c·log a + c·log b
 defineExplode('log', (S, L, id) => {
   const f = L.f, x = mx(fx(f));
@@ -35,6 +41,8 @@ defineExplode('log', (S, L, id) => {
   const inner = f.terms[0];
   if (inner.neg || atomicLog(f)) return { no: 'logAtom', p: { x }, ids: [id] };
   const g = inner.f.length === 1 ? inner.f[0] : null;
+  const messy = untidyIn(f);
+  if (messy && (g?.k === 'q' || inner.f.length > 1)) return { no: 'logTidy', p: { x, y: mx(fx(messy)) }, ids: [messy.id] };
   // log(a/b) → log a − log b: the quotient rule, the twin of the product rule
   if (g && g.k === 'q' && g.num.length === 1 && g.den.length === 1 && !g.num[0].neg && !g.den[0].neg) {
     const before = mx(termHTML(L.term)), others = L.term.f.filter(h => h !== f), origins = {};
@@ -76,7 +84,7 @@ definePairRule('sum', 'logs', (S, A, B) => A.f.k === 'log' && B.f.k === 'log' &&
 export function explodeLogs(S) {
   let h = null;
   eachFactor(S, L => {
-    if (h || L.f.k !== 'log' || atomicLog(L.f) || L.f.terms.length > 1) return;
+    if (h || L.f.k !== 'log' || atomicLog(L.f) || L.f.terms.length > 1 || untidyIn(L.f)) return;
     const inner = L.f.terms[0].f;
     if (inner.length > 1 || inner[0].k === 'q') h = { k: 'hExplodeLog', p: { x: mx(fx(L.f)) }, ids: [L.f.id] };
     else if ((inner[0].k === 'v' && inner[0].e > 1) || (inner[0].k === 'n' && primeFactors(inner[0].v).length > 1))
