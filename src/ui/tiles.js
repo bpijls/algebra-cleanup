@@ -16,6 +16,7 @@ import { fitBoard } from './layout.js';
 import { previewOf, showExpand, splitTermOf } from './split.js';
 import { expandTarget } from '../core/fractions.js';
 import { opToHalf, opToNeg } from '../core/exponents.js';
+import { opHalves } from '../core/divide.js';
 import { $, board, ui } from './state.js';
 
 const VARCOL = { a: '--va', b: '--vb', x: '--vx', y: '--vy' };
@@ -47,6 +48,8 @@ export const defineTile = (k, make) => { TILES[k] = make; };
 // written back as a power (levels with negative or half exponents): 1/a² = a⁻², √a = a^½
 defineToolMove('toNeg', opToNeg);
 defineToolMove('toHalf', opToHalf);
+// bx/a = bx/2a + bx/2a: completing the square with a fraction (core/divide.js)
+defineToolMove('halves', opHalves);
 // the state a tile shows: picked, a partner of the picked one, hinted, just made
 function mark(b, f, partners) {
   if (ui.sel && ui.sel.t === 'f' && ui.sel.id === f.id) b.classList.add('sel');
@@ -108,6 +111,7 @@ function tileEl(f, partners) {
   } else {
     const inner = f.f.map(m => {
       const c = m.k === 'v' ? ` style="--c:var(${VARCOL[m.b] || '--vz'})"` : '';
+      if (m.k !== 'n' && m.k !== 'v') return `<span class="mini ${m.k}">${fx(m)}</span>`;   // (b/2a)²: a fraction, a root … as written
       return `<span class="mini ${m.k}"${c}>${m.k === 'n' ? m.v : m.b}${m.k === 'v' && showsExp(m.e) ? `<sup>${expText(m.e)}</sup>` : ''}</span>`;
     }).join('');
     const bare = f.f.length === 1 && f.f[0].k === 'n';   // 2³: a power of a number needs no brackets
@@ -173,9 +177,12 @@ export function render() {
     fr.append(sideEl(P.num, partners));
     if (!isOne(P.den) || ui.S.op === '·') {
       let bar;
-      if (ui.S.parts.length === 1) {
-        bar = document.createElement('button'); bar.type = 'button'; bar.className = 'bar fbar';
+      if (ui.S.parts.length === 1 || (isEquation(ui.S) && P.num.length > 1)) {
+        // one fraction: tap it to write it as top : bottom; a side of an equation with a sum on top: tap it to
+        // give each term a fraction of its own
+        bar = document.createElement('button'); bar.type = 'button'; bar.className = 'bar fbar'; bar.dataset.p = pi;
         bar.setAttribute('aria-label', 'fraction bar');
+        if (ui.lastHint && ui.lastHint.bar && ui.lastHint.ids.includes(P.num[0].id)) bar.classList.add('hint');
       } else { bar = document.createElement('div'); bar.className = 'bar'; }
       fr.append(bar);
       fr.append(sideEl(P.den, partners));

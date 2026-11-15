@@ -31,19 +31,22 @@ export function opBalance(S, op, v, bi = 0) {
   const shown = mx((v.neg ? '−' : '') + factorsHTML(v.f, true));
   const mul = op === '·' || op === ':';
   // a bracket only to multiply or divide by (a − c), and never one with the unknown in it
-  if (v.f.some(f => f.k === 'g' || (f.k === 'r' && mul) || (f.k === 'p' && (!mul || f.e !== 1 || fHasU(f, u) || !hasLetter(f.terms))))) return { no: 'balanceShape', ids: ['op'] };
+  if (v.f.some(f => (f.k === 'g' && mul) || (f.k === 'r' && mul) || (f.k === 'p' && (!mul || f.e !== 1 || fHasU(f, u) || !hasLetter(f.terms))))) return { no: 'balanceShape', ids: ['op'] };
   const parts = pairOf(S, bi);
   if (vNum === 0) return { no: op === ':' ? 'balanceDivZero' : op === '·' ? 'balanceMulZero' : 'balanceNothing', ids: ['op'] };
   const born = [];
   let cond = null;
   if (!mul) {
     for (const P of parts) {
-      if (!isOne(P.den)) { P.num = [T([Q(P.num, P.den)])]; P.den = [T([N(1)])]; }   // x/3 − 2: the fraction is a term now
+      if (!isOne(P.den)) {   // x/3 − 2: the fraction is a term now (−c/a keeps its minus in front)
+        const neg = P.num.length === 1 && P.num[0].neg;
+        P.num = [T([Q(neg ? [{ ...P.num[0], neg: false }] : P.num, P.den)], neg)]; P.den = [T([N(1)])];
+      }
       const t = cloneT(v); if (op === '-') t.neg = !t.neg;
       born.push(...t.f.map(f => f.id));
       // b² added to −4ac reads b² − 4ac
       if (isZeroSide(P.num)) P.num = [t];
-      else if (!t.neg && P.num.length === 1 && P.num[0].neg && t.f.some(f => f.k === 'v')) P.num.unshift(t);
+      else if (!t.neg && P.num.length === 1 && P.num[0].neg && t.f.some(f => f.k === 'v' || f.k === 'g')) P.num.unshift(t);
       else P.num.push(t);
     }
   } else {

@@ -1,5 +1,7 @@
 /* Equations: the balance panel (+ − · : and a number on a slider, done to both sides) and balance mode (drag a piece across the =). */
 import { BOPS, opBalance, opDrag } from '../core/balance.js';
+import { opCompleteSquare, squareOf } from '../core/divide.js';
+import { fx, mx } from '../render/text.js';
 import { V } from '../core/kinds/letter.js';
 import { N } from '../core/kinds/number.js';
 import { T } from '../core/kinds/sums.js';
@@ -42,7 +44,8 @@ const balShown = balText;
 function balTry() {
   return { r: play(ui.S, s => opBalance(s, bal.op, balTerm(), ui.balBranch)).r };
 }
-// a topic's own button in the panel (log of both sides): definePanelMove({ id, label: i18n key, applies(S), run(S, bi) })
+// a topic's own button in the panel (log of both sides): definePanelMove({ id, label: i18n key or (S, bi) → html,
+// applies(S, bi), run(S, bi), hint?: the hint key that makes it glow })
 const PANEL_MOVES = [];
 export const definePanelMove = m => { PANEL_MOVES.push(m); };
 function panelMoves() {
@@ -53,8 +56,10 @@ function panelMoves() {
       b.onclick = () => run(s => { const r = m.run(s, ui.balBranch); if (r && !r.no) ui.balancing = false; return r; });
       $('balOps').append(b);
     }
-    b.textContent = t(m.label);
-    b.hidden = !(isEquation(ui.S) && m.applies(ui.S));
+    const on = isEquation(ui.S) && m.applies(ui.S, ui.balBranch);
+    if (typeof m.label === 'function') { if (on) b.innerHTML = m.label(ui.S, ui.balBranch); } else b.textContent = t(m.label);
+    b.hidden = !on;
+    b.classList.toggle('hint', !!(on && m.hint && ui.lastHint && ui.lastHint.k === m.hint));
   }
 }
 export function balSync(preview) {
@@ -179,3 +184,6 @@ export function balanceUp(e) {
   if (over) dropAcross(d.id);
   else say('balanceMiss', {}, 'info');
 }
+
+// completing the square with a fraction: + (b/2a)², labelled with what it adds (core/divide.js)
+definePanelMove({ id: 'completeSquare', label: (S, bi) => '+ ' + mx(fx(squareOf(S, bi))), applies: (S, bi) => !!squareOf(S, bi), run: (S, bi) => opCompleteSquare(S, bi), hint: 'hCompleteFrac' });

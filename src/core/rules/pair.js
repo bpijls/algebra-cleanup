@@ -70,7 +70,8 @@ definePairRule('sum', 'sharedBracket', (S, A, B) => {
 // two fractions over the same bottom join into one: a/6 + b/6 = (a + b)/6
 definePairRule('sum', 'joinFrac', (S, A, B) => {
   if (A.f.k !== 'q' || B.f.k !== 'q') return undefined;
-  if (A.term.f.length > 1 || B.term.f.length > 1) return { type: 'fizzle', msg: 'joinInto' };
+  // x · b/2a + b/2a · b/2a: the same fraction beside other pieces in both terms goes outside brackets
+  if (A.term.f.length > 1 || B.term.f.length > 1) return fkey(A.f) === fkey(B.f) ? undefined : { type: 'fizzle', msg: 'joinInto' };
   if (sumKey(A.f.den) === sumKey(B.f.den)) return { type: 'join' };
   return { type: 'fizzle', msg: 'joinUnequal', p: { x: mx(fx(A.f)), y: mx(fx(B.f)) } };
 });

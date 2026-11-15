@@ -202,6 +202,7 @@ function argsOf(S, gesture) {
     case 'split': return ts.flatMap(id => [-3, 1, 2].map(k => [id, k]));
     case 'sweep': return pairs(fs).map(ab => [ab]);
     case 'board': return [[]];
+    case 'part': return S.parts.map((_, p) => [p]);
     case 'expand': return fs.flatMap(id => [G.T([G.N(2)]), G.T([G.N(3)]), G.T([G.V('a')]), G.T([G.N(0)]), G.T([G.N(1)])].map(v => [id, v]));   // 0 and 1: refused
     case 'drag': return eq ? [...fs, ...ts, ...fs.map(id => -id)].map(id => [id]) : [];   // a piece, or the ² of a lone square
     case 'branch': return branches.map(b => [b]);

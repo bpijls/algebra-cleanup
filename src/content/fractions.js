@@ -131,3 +131,10 @@ GEN.fraceq = d => {
   const x = r(2, 5), b = r(1, 4);
   return pick([() => prob(`${x * b}/x=${b}`, 'solve'), () => prob(`(x+${b})/2=(x+${b + 2})/3`, 'solve')])();
 };
+
+// the abc-formula the way most books derive it: divide by a, complete the square with a fraction (core/divide.js).
+// A level of the genquad skill, registered here so LEGACY_ORDER stays a prefix of LEVELS.
+[{ id: 'genquad.5', goal: 'solve', abc: 'generic', s: () => Object.assign(parseProblem('ax^2+bx+c=0').S, { divide: true }),
+    en: 'The same equation, the way most books do it: divide both sides by <i>a</i> first, so <i>x</i>² stands alone. Then complete the square with a fraction: half of <i>b</i>/<i>a</i>, squared.',
+    nl: 'Dezelfde vergelijking, zoals de meeste boeken het doen: deel eerst beide kanten door <i>a</i>, zodat <i>x</i>² alleen staat. Maak dan een volledig kwadraat met een breuk: de helft van <i>b</i>/<i>a</i>, in het kwadraat.' },
+].forEach(defineLevel);

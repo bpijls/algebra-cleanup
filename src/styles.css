@@ -184,6 +184,7 @@ button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 .mini { display: inline-flex; align-items: center; justify-content: center; border-radius: 7px; min-width: 28px; height: 32px; padding: 0 5px; font-size: 19px; }
 .mini.v { background: var(--c); color: var(--on-var); font-family: var(--f-math); font-style: italic; }
 .mini.n { border: 1.5px solid var(--num-edge); font-weight: 700; }
+.mini.q, .mini.r { height: auto; padding: 2px 4px; font-family: var(--f-math); font-size: 17px; }
 .mini sup { font-size: 11px; margin: 2px 0 0 1px; }
 
 .tile.sel { transform: translateY(-5px); box-shadow: 0 9px 0 var(--edge), 0 0 0 3px var(--paper), 0 0 0 6px var(--accent); }
@@ -352,6 +353,8 @@ button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 .balop { width: 46px; min-height: 44px; border: 0; background: none; font-family: var(--f-math); font-size: 1.5rem; cursor: pointer; color: var(--ink); }
 .balop + .balop { border-left: 2px solid var(--line); }
 .balop.on { background: var(--accent); color: var(--paper); }
+.balop.pm { width: auto; padding: 2px 12px; white-space: nowrap; font-size: 1.2rem; }   /* a move of its own: log, + (b/2a)² */
+.balop.pm.hint { box-shadow: inset 0 0 0 3px var(--accent); }
 .balgo { font-size: 1.25rem; font-weight: 800; white-space: nowrap; min-width: 76px; justify-content: center; }
 .balgo.hint { box-shadow: 0 0 0 4px var(--hl); }
 .balnum { flex: 1 1 100%; display: flex; align-items: center; gap: 8px; }

@@ -1,6 +1,7 @@
 /* Input on the board: taps, swipes across tiles, keyboard. */
 import { opBar, opOp, opSweep } from '../core/moves.js';
 import { isEquation } from '../core/problem.js';
+import { opSplitBar } from '../core/divide.js';
 import { balanceDown, balanceDrop, balanceMove, balanceUp, dropAcross, setBalancing } from './balance.js';
 import { onFactor, onTerm, run, select } from './controller.js';
 import { setMenu } from './menu.js';
@@ -66,7 +67,8 @@ board.addEventListener('click', e => {
   if (ui.busy || ui.won) return;
   const chip = e.target.closest('.opchip');
   if (chip) { if (!isEquation(ui.S)) return run(s => opOp(s)); if (ui.S.goal === 'prove') return say('proveNoBalance', {}, 'info'); ui.balBranch = +chip.dataset.b || 0; return setBalancing(!ui.balancing); }
-  if (e.target.closest('.fbar')) return run(s => opBar(s));
+  const fbar = e.target.closest('.fbar');
+  if (fbar) return run(s => isEquation(s) ? opSplitBar(s, +fbar.dataset.p) : opBar(s));
   const hit = e.target.closest('.tile, .term');
   if (ui.balancing) {
     if (!hit) return setBalancing(false);

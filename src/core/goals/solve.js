@@ -7,6 +7,7 @@ import { BRANCH_STRATEGIES, DONE, defineBranchStrategy, defineGoal } from './reg
 import { params, unknownOf } from '../model.js';
 import { branchCount, eqView } from '../problem.js';
 import { quadHint, quadOf } from '../quadratic.js';
+import '../divide.js';
 
 export function eqHint(S) {
   if (isSolved(S)) return DONE;

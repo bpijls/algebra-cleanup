@@ -107,3 +107,41 @@ test('0 · a = 0: multiplying = 0 by 4a leaves 0 · a, and tapping the 0 and the
   assert.equal(r.ok, 'timesZero');
   assert.equal(strip(G.stateHTML(S)).split('= ')[1], '0');
 });
+
+test('divide by a first: the textbook route to the abc-formula, every step a move the judge accepts', () => {
+  const S0 = Object.assign(eq('ax^2+bx+c=0'), { divide: true }), S = JSON.parse(JSON.stringify(S0)), sol = solutions(S0);
+  const seen = new Set(), states = [];
+  for (let k = 0; k < 60 && !G.isClean(S); k++) {
+    const h = G.hint(S); assert.ok(hasText(h.k), h.k); seen.add(h.k);
+    const r = G.autoSolveStep(S);
+    assert.ok(r && hasText(r.ok), `stuck at ${show(S)} (${h.k})`);
+    assert.ok(sameSolutions(sol, solutions(S)), `lost a solution at ${show(S)}`);
+    states.push(JSON.parse(JSON.stringify(S)));
+  }
+  assert.equal(show(S), 'x = [√b^2 − 4ac − b/2a ∨ x = [−√b^2 − 4ac − b/2a');
+  assert.equal(conds(S), 'a ≠ 0, b^2 − 4ac ≥ 0');
+  for (const k of ['hDivA', 'hZeroOver', 'hSplitBar', 'hCompleteFrac', 'hHalves', 'hOutOfFrac', 'hRoot']) assert.ok(seen.has(k), k);
+  // the judge plays every move (the new ones too: split the bar, halves, + (b/2a)², x out of a fraction) from states on the way
+  for (const st of states.filter((_, i) => i % 3 === 0)) fuzz(st, 12, 'divide route');
+});
+
+test('divide route: the single moves and their refusals', () => {
+  const tile = (S, pred) => { let hit; G.walk(S, L => { if (!hit && L.kind === 'f' && pred(L.f, L)) hit = L.f; }); return hit; };
+  // 0/a = 0, by tapping the 0 and the a
+  const z = G.parseProblem('x^2/a = 0/a', 'solve', 'x').S;
+  assert.equal(G.opPair(z, tile(z, f => f.k === 'n' && f.v === 0).id, tile(z, (f, L) => L.p === 1 && f.b === 'a').id).ok, 'zeroOver');
+  // halves only in equations with letters for numbers
+  const n = G.parseProblem('x/3 + 1/3', 'simplify').S;
+  assert.equal(G.opHalves(n, tile(n, f => f.k === 'q').id), null);
+  // x out in front of its fraction
+  const o = G.parseProblem('x^2 + bx/a = c', 'solve', 'x').S, q = tile(o, f => f.k === 'q');
+  const r = G.opPair(o, q.num[0].f.find(f => f.b === 'x').id, q.id); G.normalize(o);
+  assert.equal(r.ok, 'outOfFrac'); assert.equal(show(o), 'x^2 + x[b/a = c');
+  // + (b/2a)² completes x² + bx/a; a whole-number coefficient goes by the slider instead
+  assert.equal(G.squareOf(G.parseProblem('x^2 + bx/a = c', 'solve', 'x').S) && 'yes', 'yes');
+  assert.equal(G.squareOf(G.parseProblem('x^2 + 6x = c', 'solve', 'x').S), null);
+  // √ of both sides: over a square the root of the bottom comes out; over anything else it is refused
+  const s = G.parseProblem('(x+p)^2 = q/(4a^2)', 'solve', 'x').S;
+  assert.equal(G.opRoot(s).ok, 'rootFracBothIf'); G.normalize(s); assert.equal(show(s), 'x + p = [√q/2a ∨ x + p = [−√q/2a');
+  assert.equal(G.opRoot(G.parseProblem('(x+p)^2 = q/(2a)', 'solve', 'x').S).no, 'rootFrac');
+});

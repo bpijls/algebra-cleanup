@@ -42,4 +42,4 @@ S('formulas', ['linear'], 'ax=b', 'Letters for numbers', 'Letters als getallen',
   'Los één keer op voor alle waarden: waar twee lijnen snijden, voor elke a, b, c, d.', n('formulas', 3), ['generic']);
 S('genquad', ['quadratic'], 'abc', 'The abc-formula', 'De abc-formule',
   'ax² + bx + c = 0 for every a, b and c at once.',
-  'ax² + bx + c = 0 voor alle a, b en c tegelijk.', n('genquad', 4), ['generic']);
+  'ax² + bx + c = 0 voor alle a, b en c tegelijk.', n('genquad', 5), ['generic']);

@@ -8,6 +8,7 @@ import { V } from './kinds/letter.js';
 import { N } from './kinds/number.js';
 import { Rt } from './kinds/root.js';
 import { F, T, cloneF, cloneT, evalTerms, fHasU, fkey } from './kinds/sums.js';
+import { monoOf, monoSqrt, monoTerm } from './generic.js';
 import { addCond, canMerge, cleanTerm, hasU, isOne, unknownOf, walkTerms } from './model.js';
 import { hasBranch, pairOf, setBranch } from './problem.js';
 import { defineMove } from './rules/registry.js';
@@ -52,18 +53,23 @@ export function opRoot(S, bi = 0) {
   if (!sq) return { no: 'rootNoSquare', ids: ['op'] };
   if (t.f.length > 1 || t.neg) return { no: 'rootCoef', p: { x: mx(sumHTML([t])), s: mx(fx(sq)) }, ids: [t.id] };
   if (hasU(O.num, u) || hasU(O.den, u)) return { no: 'rootLetter', ids: [sq.id] };
-  if (!isOne(O.den)) return { no: 'rootFrac', ids: [sq.id] };
+  // over a square (4a² = 2a · 2a) the root of the bottom comes out: ±√(D/4a²) = ±√D/2a, whatever the sign of a,
+  // since both signs are taken; any other bottom is refused
+  const dm = !isOne(O.den) && O.den.length === 1 && monoOf(O.den[0]), dr = dm && monoSqrt(dm);
+  if (!isOne(O.den) && !dr) return { no: 'rootFrac', ids: [sq.id] };
+  const den = dr && monoTerm(dr);
   const v = constVal(O);   // null with letters in it: then it has to be ≥ 0, and the answer says so
   if (v != null && v < -1e-12 && !S.complex) return { no: 'rootNeg', p: { s: mx(fx(sq)), v: mx(sumHTML(O.num)) }, ids: [sq.id] };
   const base = () => sq.k === 'v' ? V(sq.b, 1) : sq.k === 'g' ? G(sq.f.map(cloneF), 1) : Pr(sq.terms.map(cloneT), 1);
-  const side = (neg) => F([T([Rt(O.num.map(cloneT))], neg)]);
+  const side = (neg) => F([T([Rt(O.num.map(cloneT))], neg)], den ? [cloneT(den)] : undefined);
   const branch = neg => { const pair = [F([T([base()])]), side(neg)]; return qi ? pair.reverse() : pair; };
   const add = v != null && Math.abs(v) < 1e-12 ? [...branch(false)] : [...branch(false), ...branch(true)];
   const before = mx(fracHTML(parts[0]) + ' = ' + fracHTML(parts[1]));
   const cond = v == null ? condHTML(addCond(S, O.num, 'ge')) : null;
   setBranch(S, bi, add);
   const ex = Array.from({ length: add.length / 2 }, (_, k) => fracHTML(add[2 * k]) + ' = ' + fracHTML(add[2 * k + 1])).join(` ${orWord()} `);
-  return { ok: cond ? 'rootBothIf' : add.length > 2 ? 'rootBoth' : 'rootZero', p: { x: before, ex: mx(ex), s: mx(fx(sq)), c: cond }, born: add.flatMap(P => P.num.flatMap(t => t.f.map(f => f.id))) };
+  const fr = den ? { d: mx(sumHTML(O.den)), r: mx(termHTML(den)) } : {};
+  return { ok: (den ? 'rootFrac' : 'root') + (cond ? 'BothIf' : add.length > 2 ? 'Both' : 'Zero'), p: { x: before, ex: mx(ex), s: mx(fx(sq)), c: cond, ...fr }, born: add.flatMap(P => P.num.flatMap(t => t.f.map(f => f.id))) };
 }
 
 // a product that is 0: one of its factors is 0 → a branch for each factor with a letter in it
