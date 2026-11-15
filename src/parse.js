@@ -210,6 +210,14 @@ export function parseProblem(src, goal, unknown) {
       S = { parts: [A, B], op };
     } else S = { parts: [A], op: null };
     if (peek()) fail(peek().t === ')' ? 'pParen' : 'pMissing');
+    // 2/3 · 3/4: two fractions times each other, each with its own big bar, multiplied by hand row by row
+    // (the same picture as 2/3 : 4/5 after its : is turned round); not two fraction tiles in one term
+    const t0 = S.parts.length === 1 && isOne(A.den) && A.num.length === 1 ? A.num[0] : null;
+    if (t0 && t0.f.length === 2 && t0.f.every(f => f.k === 'q')) {
+      const [q1, q2] = t0.f;
+      if (t0.neg) q1.num = q1.num.map(t => ({ ...t, neg: !t.neg }));
+      S = { parts: [F(q1.num, q1.den), F(q2.num, q2.den)], op: '·' };
+    }
     S.goal = goal || 'simplify';
     if (exps) S.exps = true;
     for (const fl of flags) S[fl] = true;

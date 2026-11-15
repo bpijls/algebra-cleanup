@@ -4,15 +4,16 @@ import { T, cloneF, cloneT } from '../core/kinds/sums.js';
 import { V } from '../core/kinds/letter.js';
 import { Rt } from '../core/kinds/root.js';
 import { expandTarget, opExpand } from '../core/fractions.js';
-import { coef, eachFactor, locate, tidy, varPart } from '../core/model.js';
+import { coef, eachFactor, locate, normalize, tidy, varPart } from '../core/model.js';
 import { opSplitTwo } from '../core/moves.js';
 import { play } from '../core/rules/engine.js';
 import { t } from '../i18n.js';
 import { mx, sumHTML } from '../render/text.js';
 import { termText } from './balance.js';
 import { run } from './controller.js';
-import { closeSheet, openSheet } from './sheets.js';
-import { ui } from './state.js';
+import { say } from './note.js';
+import { $, board, ui } from './state.js';
+import { render } from './tiles.js';
 
 /* ---- split a term in two: 5x = 2x + 3x ---- */
 // the term (selected, or holding the selected piece) when it can be written as a sum of two terms
@@ -34,6 +35,38 @@ export function previewOf(fn) {
   const right = r.ok === 'gather' ? inner(p.r) : short(inner(p.ex));
   return mx(r.ok === 'gather' ? short(inner(p.ex)) + ' = ' + right : left + ' = ' + right);
 }
+/* ---- a slider in place: the strip sits under the formula (in the bottom bar, where the balance panel goes) and the
+   board itself shows the result while the slider moves, on a copy; ✓ plays it, ✕ or a tap on the board puts the board
+   back. It used to be a sheet over the board, which hid the formula it was changing. ---- */
+export function closeStrip(again = true) {
+  if (!ui.strip) return;
+  ui.strip = null;
+  const el = $('slideStrip'); el.hidden = true; el.replaceChildren();
+  board.classList.remove('previewing');
+  if (again) { ui.born = new Set(); render(); }
+}
+function openStrip(title, controls, move, goLabel) {
+  closeStrip(false);
+  const el = $('slideStrip');
+  el.innerHTML = `<div class="striptitle">${title}</div>${controls}
+    <div class="striprow"><button class="tool main balgo" type="button" id="stGo"><span></span></button>
+    <button class="tool" type="button" id="stNo" aria-label="${t('stripCancel')}">✕</button></div>`;
+  el.hidden = false;
+  ui.strip = { move, goLabel };
+  el.querySelector('#stNo').addEventListener('click', () => closeStrip());
+  el.querySelector('#stGo').addEventListener('click', () => { const m = ui.strip.move(); closeStrip(false); run(m); });
+  return el;
+}
+// the board shows what the move would make, the new tiles outlined; the state itself doesn't change
+function stripShow() {
+  const { S, r } = play(ui.S, ui.strip.move());
+  const real = ui.S, sel = ui.sel;
+  if (r && r.ok) { normalize(S); ui.S = S; ui.born = new Set(r.born || []); ui.sel = null; }
+  ui.previewing = true; board.classList.add('previewing');
+  try { render(); } finally { ui.S = real; ui.sel = sel; ui.previewing = false; }
+  $('stGo').querySelector('span').innerHTML = ui.strip.goLabel(r);
+}
+
 // 5x = 2x + 3x: a slider picks the first term, the second is what is left
 export function showSplit(tid) {
   const L = locate(ui.S, tid);
@@ -42,26 +75,27 @@ export function showSplit(tid) {
   const mono2 = k => T([...(Math.abs(k) !== 1 ? [N(Math.abs(k))] : []), ...vp.map(cloneF)], k < 0);
   const R = Math.max(12, Math.abs(c) + 12);
   let p = Math.sign(c) * (Math.abs(c) > 1 ? 1 : 2);
-  ui.sheetFn = null;
-  const host = openSheet(`<h2 style="font-size:1.6rem">${t('splitTitle', { x: mx(sumHTML([L.term])) })}</h2><p>${t('splitHow')}</p>
-    <div class="splitprev expr-n" id="sPrev" aria-live="polite"></div>
-    <input type="range" class="slider" id="sRange" min="${-R}" max="${R}" step="1" value="${p}" aria-label="${t('splitTitle', { x: termText(L.term) })}">
-    <div class="sliderends"><span>${-R}</span><span>0</span><span>${R}</span></div>
-    <div class="row" style="margin-top:16px">
-      <button class="tool main" type="button" id="sDo">${t('splitDo')}</button>
-    </div>`);
-  const range = host.querySelector('#sRange'), prev = host.querySelector('#sPrev'), go = host.querySelector('#sDo');
+  const el = openStrip(t('splitTitle', { x: mx(sumHTML([L.term])) }),
+    `<div class="balnum"><button type="button" class="balstep" id="sLess">‹</button>
+      <input type="range" class="slider" id="sRange" min="${-R}" max="${R}" step="1" value="${p}" aria-label="${t('splitTitle', { x: termText(L.term) })}">
+      <button type="button" class="balstep" id="sMore">›</button></div>`,
+    () => s => opSplitTwo(s, tid, p),
+    () => mx(sumHTML([mono2(p), mono2(c - p)])));
+  const range = el.querySelector('#sRange');
   // 0 or the whole term would leave nothing to split: skip over them in the direction the slider moves
   const update = () => {
     let v = +range.value;
     if (v === 0 || v === c) { v += v >= p ? 1 : -1; if (v === 0 || v === c) v += v >= p ? 1 : -1; if (Math.abs(v) > R) v = p; range.value = v; }
     p = v;
-    prev.innerHTML = `${sumHTML([L.term])} = ${sumHTML([mono2(p), mono2(c - p)])}`;
     const said = k => (k < 0 ? '−' : '') + termText(mono2(k));
     range.setAttribute('aria-valuetext', `${said(p)} + ${said(c - p)}`);
+    stripShow();
   };
+  const step = d => { range.value = Math.max(-R, Math.min(R, p + d)); if (+range.value === 0 || +range.value === c) range.value = Math.max(-R, Math.min(R, +range.value + d)); update(); };
   range.addEventListener('input', update);
-  go.addEventListener('click', () => { closeSheet(); run(s => opSplitTwo(s, tid, p)); });
+  el.querySelector('#sLess').addEventListener('click', () => step(-1));
+  el.querySelector('#sMore').addEventListener('click', () => step(1));
+  say('splitHow', {}, 'info');
   update();
   setTimeout(() => range.focus(), 50);
 }
@@ -80,24 +114,25 @@ export function showExpand(id) {
   });
   let pick = null, k = 2;
   const shown = play(ui.S, s => opExpand(s, id, T([N(2)]))).r;
-  ui.sheetFn = null;
-  const host = openSheet(`<h2 style="font-size:1.6rem">${t('expandTitle', { x: shown && shown.p ? shown.p.x : '' })}</h2><p>${t('expandHow')}</p>
-    <div class="splitprev expr-n" id="ePrev" aria-live="polite"></div>
-    <input type="range" class="slider" id="eRange" min="2" max="12" step="1" value="2" aria-label="${t('expandTitle', { x: '' })}">
-    <div class="sliderends"><span>2</span><span>12</span></div>
-    ${chips.length ? `<div class="row" style="margin-top:10px">${chips.map((f, i) => `<button type="button" class="pchip" data-c="${i}" aria-pressed="false">${mx(sumHTML([T([f])]))}</button>`).join('')}</div>` : ''}
-    <div class="row" style="margin-top:16px"><button class="tool main" type="button" id="eDo">${t('expandDo')}</button></div>`);
-  const range = host.querySelector('#eRange'), prev = host.querySelector('#ePrev');
   const value = () => T([pick != null ? chips[pick] : N(k)].map(f => JSON.parse(JSON.stringify(f))));
+  const el = openStrip(t('expandTitle', { x: shown && shown.p ? shown.p.x : '' }),
+    `<div class="balnum">${chips.length ? `<div class="ballets">${chips.map((f, i) => `<button type="button" class="pchip" data-c="${i}" aria-pressed="false">${mx(sumHTML([T([f])]))}</button>`).join('')}</div>` : ''}
+      <button type="button" class="balstep" id="eLess">‹</button>
+      <input type="range" class="slider" id="eRange" min="2" max="12" step="1" value="2" aria-label="${t('expandTitle', { x: '' })}">
+      <button type="button" class="balstep" id="eMore">›</button></div>`,
+    () => { const v = value(); return s => opExpand(s, id, v); },
+    () => t('expandDo') + ' ' + mx('× ' + sumHTML([value()])));
+  const range = el.querySelector('#eRange');
   const update = () => {
     k = +range.value;
-    const { r } = play(ui.S, s => opExpand(s, id, value()));
-    prev.innerHTML = r && r.ok ? `${r.p.x} = ${r.p.ex}` : '';
-    host.querySelectorAll('[data-c]').forEach(b => { const on = +b.dataset.c === pick; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
+    el.querySelectorAll('[data-c]').forEach(b => { const on = +b.dataset.c === pick; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
+    stripShow();
   };
   range.addEventListener('input', () => { pick = null; update(); });
-  host.querySelectorAll('[data-c]').forEach(b => b.addEventListener('click', () => { pick = pick === +b.dataset.c ? null : +b.dataset.c; update(); }));
-  host.querySelector('#eDo').addEventListener('click', () => { const v = value(); closeSheet(); run(s => opExpand(s, id, v)); });
+  el.querySelector('#eLess').addEventListener('click', () => { pick = null; range.value = Math.max(2, k - 1); update(); });
+  el.querySelector('#eMore').addEventListener('click', () => { pick = null; range.value = Math.min(12, k + 1); update(); });
+  el.querySelectorAll('[data-c]').forEach(b => b.addEventListener('click', () => { pick = pick === +b.dataset.c ? null : +b.dataset.c; update(); }));
+  say('expandHow', {}, 'info');
   update();
   setTimeout(() => range.focus(), 50);
 }

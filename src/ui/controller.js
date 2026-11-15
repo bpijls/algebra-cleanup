@@ -1,5 +1,5 @@
 /* The controller: loads levels and problems, plays moves (run: on a copy, then history, note, animation), and handles taps on tiles. */
-import { LEVELS, SKILLS, buildLevel, skillOfLevel } from '../content/registry.js';
+import { LEVELS, SHORTCUTS, SKILLS, buildLevel, skillOfLevel } from '../content/registry.js';
 import { earnedFor } from '../content/progress.js';
 import { normalize } from '../core/model.js';
 import { partnersOf, termPair } from '../core/moves.js';
@@ -11,6 +11,7 @@ import { animateMoves, shake, tileRects } from './motion.js';
 import { say, sayIntro } from './note.js';
 import { showOwn } from './own.js';
 import { $, board, snap, store, ui } from './state.js';
+import { movesFor, secondTap } from './ring.js';
 import { render } from './tiles.js';
 
 export function nextProblem() {
@@ -25,6 +26,13 @@ export function nextProblem() {
 export function earn(S, skillId) {
   const e = [...new Set([...(S.earned || []), ...earnedFor(skillId, ui.done)])];
   if (e.length) S.earned = e;
+  applyShortcuts(S);
+}
+// the menu's shortcuts switch: its shortcuts are in S.earned exactly while it is on
+export function applyShortcuts(S) {
+  const sw = SHORTCUTS.filter(c => c.toggle).map(c => c.id), on = store.get('shortcuts', false);
+  const e = [...(S.earned || []).filter(id => !sw.includes(id)), ...(on ? sw : [])];
+  if (e.length) S.earned = e; else delete S.earned;
 }
 export function startBoard() {
   ui.initial = JSON.stringify(ui.S);
@@ -72,7 +80,8 @@ export function run(fn, animIds) {
   return true;
 }
 export function onFactor(id) {
-  if (ui.sel && ui.sel.t === 'f' && ui.sel.id === id) { run(s => opExplode(s, id)); return; }
+  // the second tap: its one move, or a ring of them (ring.js); with none, the explode explains why
+  if (ui.sel && ui.sel.t === 'f' && ui.sel.id === id) { secondTap(ui.sel, () => run(s => opExplode(s, id))); return; }
   if (ui.sel && ui.sel.t === 'f') {
     const a = ui.sel.id;
     if (run(s => opPair(s, a, id), [a, id])) return;
@@ -80,9 +89,7 @@ export function onFactor(id) {
   select({ t: 'f', id });
 }
 export function onTerm(tid) {
-  if (ui.sel && ui.sel.t === 't' && ui.sel.id === tid) {
-    ui.sel = null; render(); return;
-  }
+  if (ui.sel && ui.sel.t === 't' && ui.sel.id === tid) { secondTap(ui.sel, () => { ui.sel = null; render(); }); return; }
   if (ui.sel && ui.sel.t === 't') { const a = ui.sel.id; run(s => termPair(s, a, tid)); return; }
   select({ t: 't', id: tid });
 }
@@ -93,7 +100,7 @@ export function select(s) {
   if (ui.block || folded) animateMoves(rects, {}, false);   // the brackets visibly fold into blocks
   if (ui.block) return say('pickedBlock', { x: mx(fx(ui.block.L.f)), ex: mx(blockHTML(ui.block.L.terms, ui.block.key)) }, 'info');
   const has = partnersOf(ui.S, ui.sel).size > 0;
-  const canExplode = s.t === 'f' && !$('btnExplode').hidden;
+  const canExplode = s.t === 'f' && movesFor(ui.S, s).length > 0;
   if (isEquation(ui.S) && ui.S.goal !== 'prove' && !has) return say('pickedEq', {}, 'info');
   say(s.t === 'f' ? (has ? 'pickedP' : canExplode ? 'picked' : 'pickedAtom') : (has ? 'pickedTermP' : 'pickedTerm'), {}, 'info');
 }

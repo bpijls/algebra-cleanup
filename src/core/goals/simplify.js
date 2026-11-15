@@ -6,6 +6,7 @@ import { fkey } from '../kinds/sums.js';
 import { SIDES, canMerge, containers, eachFactor, eachTerm, isFactored, isOne, isSimplified, isUnit, primeFactors, sig, squareFactor, tidy } from '../model.js';
 import { cancelCheck, joinable, usedUp } from '../moves.js';
 import { fx, mx, sumHTML, termHTML } from '../../render/text.js';
+import { squarePiece } from '../rules/explode.js';
 
 // two fractions being divided or multiplied: flip, cross-cancel, join, then multiply by hand
 export function fractionPair(S) {
@@ -32,21 +33,30 @@ export function fractionPair(S) {
 
 // under a root: a pair comes out, a number with a square in it explodes, numbers merge
 export function rootPairs(S) {
+  const short = (S.earned || []).includes('rootOut');
   let h = null;
   eachFactor(S, L => {
-    if (h || L.f.k !== 'r' || L.f.terms.length !== 1) return;
-    const vs = L.f.terms[0].f.filter(f => f.k === 'v' && f.e > 0 && Number.isInteger(f.e));   // √(a·a·a): a pair of a's comes out
-    for (let i = 0; !h && i < vs.length; i++) for (let j = i + 1; !h && j < vs.length; j++)
-      if (vs[i].b === vs[j].b && vs[i].e === 1 && vs[j].e === 1) h = { k: 'hRootPair', p: { x: mx(fx(L.f)), n: mx(fx(vs[i])) }, ids: [vs[i].id, vs[j].id] };
-    const bigV = vs.find(f => f.e > 1);
-    if (!h && bigV) h = { k: 'hExplodeRoot', p: { x: mx(fx(L.f)), n: mx(fx(bigV)) }, ids: [bigV.id] };
+    if (h || L.f.k !== 'r' || L.f.terms.length !== 1 || L.f.terms[0].neg) return;
+    const x = mx(fx(L.f)), inner = L.f.terms[0].f;
+    // √(a·a·a): a pair of a's comes out (with the shortcut), or becomes a² first (without it; not in an equation,
+    // where √(a²) would be |a|)
+    const vs = inner.filter(f => f.k === 'v' && f.e > 0 && Number.isInteger(f.e));
+    if (short || S.op !== '=') for (let i = 0; !h && i < vs.length; i++) for (let j = i + 1; !h && j < vs.length; j++)
+      if (vs[i].b === vs[j].b && vs[i].e === 1 && vs[j].e === 1)
+        h = short ? { k: 'hRootPair', p: { x, n: mx(fx(vs[i])) }, ids: [vs[i].id, vs[j].id] } : { k: 'hRootMerge', p: { x, n: mx(fx(vs[i])) }, ids: [vs[i].id, vs[j].id] };
+    const bigV = vs.find(f => f.e > 1 && (short || f.e % 2));
+    if (!h && bigV && (short || S.op !== '=')) h = { k: 'hExplodeRoot', p: { x, n: mx(fx(bigV)) }, ids: [bigV.id] };
     if (h) return;
-    const ns = L.f.terms[0].f.filter(f => f.k === 'n' && f.v > 1);
+    const ns = inner.filter(f => f.k === 'n' && f.v > 1);
     for (let i = 0; !h && i < ns.length; i++) for (let j = i + 1; !h && j < ns.length; j++)
-      if (ns[i].v === ns[j].v) h = { k: 'hRootPair', p: { x: mx(fx(L.f)), n: ns[i].v }, ids: [ns[i].id, ns[j].id] };
-    const big = ns.find(f => squareFactor(f.v) && primeFactors(f.v).length > 1);
-    if (!h && big) h = { k: 'hExplodeRoot', p: { x: mx(fx(L.f)), n: big.v }, ids: [big.id] };
-    if (!h && ns.length > 1) h = { k: 'hMerge', p: { x: ns[0].v, y: ns[1].v }, ids: [ns[0].id, ns[1].id] };
+      if (ns[i].v === ns[j].v) h = short ? { k: 'hRootPair', p: { x, n: ns[i].v }, ids: [ns[i].id, ns[j].id] } : { k: 'hRootMerge', p: { x, n: ns[i].v }, ids: [ns[i].id, ns[j].id] };
+    if (h) return;
+    // a square under it: the root explodes (√(4·3) → √4 · √3, √9 → 3, √(a²) → a)
+    if (!short && inner.some(squarePiece) && (inner.length > 1 || S.op !== '=' || inner[0].k === 'n'))
+      { h = { k: inner.length > 1 ? 'hRootSplit' : 'hRootSquare', p: { x }, ids: [L.f.id] }; return; }
+    const big = ns.find(f => squareFactor(f.v) && primeFactors(f.v).length > 1 && (short || !squarePiece(f)));
+    if (big) h = { k: 'hExplodeRoot', p: { x, n: big.v }, ids: [big.id] };
+    else if (ns.length > 1) h = { k: 'hMerge', p: { x: ns[0].v, y: ns[1].v }, ids: [ns[0].id, ns[1].id] };
   });
   return h;
 }

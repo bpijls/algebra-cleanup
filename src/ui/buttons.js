@@ -2,22 +2,17 @@
 import { opBalance, opSwap } from '../core/balance.js';
 import { whyNotDone } from '../core/done.js';
 import { hint } from '../core/goals/index.js';
-import { opGather } from '../core/moves.js';
-import { opExplode } from '../core/rules/engine.js';
 import { lang, setLang } from '../i18n.js';
 import { bal, balBounds, balFromHint, balSet, balSync, balTerm } from './balance.js';
-import { loadLevel, nextProblem, run } from './controller.js';
+import { applyShortcuts, loadLevel, nextProblem, run } from './controller.js';
 import { showMap } from './map.js';
 import { say, sayIntro } from './note.js';
 import { showOwn } from './own.js';
 import { showPractice } from './practice.js';
 import { closeSheet, win } from './sheets.js';
-import { showSplit, splitTermOf } from './split.js';
 import { $, board, store, ui } from './state.js';
 import { render } from './tiles.js';
 
-$('btnExplode').onclick = () => ui.sel && run(s => opExplode(s, ui.sel.id));
-$('btnGather').onclick = () => ui.sel && run(s => opGather(s, ui.sel.id));
 $('btnSwap').onclick = () => { if (ui.busy || ui.won) return; ui.balancing = false; run(s => opSwap(s, ui.balBranch)); };
 document.querySelectorAll('#balOps [data-bop]').forEach(b => { b.onclick = () => balSet(b.dataset.bop, null); });
 $('balLets').addEventListener('click', e => { const b = e.target.closest('[data-let]'); if (!b) return; bal.lets[b.dataset.let] = ((bal.lets[b.dataset.let] || 0) + 1) % 3; balSync(true); });
@@ -29,7 +24,6 @@ $('balGo').onclick = () => {
   const v = balTerm();
   run(s => { const r = opBalance(s, bal.op, v, ui.balBranch); if (r && !r.no) ui.balancing = false; return r; });
 };
-$('btnSplitTwo').onclick = () => ui.sel && !ui.busy && !ui.won && showSplit(splitTermOf(ui.sel.id));
 $('btnUndo').onclick = () => {
   if (!ui.history.length || ui.busy) return;
   const prev = JSON.parse(ui.history.pop()); ui.S = prev.S; ui.moves = prev.moves;
@@ -63,6 +57,11 @@ $('btnLang').onclick = () => {
   if (ui.lastNote) say(ui.lastNote.key, ui.lastNote.p, ui.lastNote.type, ui.lastNote.raw);
   if (ui.won) win(true);
   else if (ui.sheetFn && $('sheetHost').children.length) ui.sheetFn();
+};
+$('btnShort').onclick = () => {
+  const on = !store.get('shortcuts', false);
+  store.set('shortcuts', on); applyShortcuts(ui.S); ui.sel = null; render();
+  say(on ? 'shortcutsOnNote' : 'shortcutsOffNote', {}, 'info');
 };
 $('btnLevels').onclick = () => showMap();
 $('btnOwn').onclick = () => showOwn();

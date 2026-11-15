@@ -5,15 +5,44 @@ import { V } from '../kinds/letter.js';
 import { N } from '../kinds/number.js';
 import { T, cloneF, cloneT } from '../kinds/sums.js';
 import { isWhole } from '../kinds/exponent.js';
-import { MAX_GROUP, MAX_VAR, primeFactors } from '../model.js';
+import { MAX_GROUP, MAX_VAR, addCond, primeFactors } from '../model.js';
+import { Rt } from '../kinds/root.js';
 import { flipPower, halfPower } from '../exponents.js';
 import { defineExplode } from './registry.js';
-import { bx, fx, mx, sumHTML, termHTML } from '../../render/text.js';
+import { bx, condHTML, fx, mx, sumHTML, termHTML } from '../../render/text.js';
 
 const fromOne = (f, made) => Object.fromEntries(made.map(c => [c.id, [f.id]]));
 
-// a root is a tile, not a product: its number explodes (√(2·2·3)), the root itself doesn't
-defineExplode('r', (S, L, id) => ({ no: 'rootTap', ids: [id] }));
+// a root explodes once there is a square under it: √(4·3) → √4 · √3 (the squares each a root of their own, the rest
+// together), √9 → 3, √(a²) → a (a ≥ 0 written down; not in an equation, where a letter may be negative). A pair under
+// it is made into a square first by the player (2 · 2 = 4); with the rootOut shortcut it comes out in one tap instead.
+const squareN = v => v > 1 && Number.isInteger(Math.sqrt(v));
+export const squarePiece = g => (g.k === 'n' && squareN(g.v)) || (g.k === 'v' && Number.isInteger(g.e) && g.e >= 2 && g.e % 2 === 0);
+defineExplode('r', (S, L, id) => {
+  const f = L.f, t = f.terms.length === 1 ? f.terms[0] : null, x = mx(fx(f));
+  if (!t || t.neg) return { no: 'rootTap', p: { x }, ids: [id] };
+  if (t.f.length > 1) {
+    const sq = t.f.filter(squarePiece), rest = t.f.filter(g => !squarePiece(g));
+    if (!sq.length) return { no: 'rootNoPair', p: { x }, ids: [id] };
+    const made = [...sq.map(g => Rt([T([cloneF(g)])])), ...(rest.length ? [Rt([T(rest.map(cloneF))])] : [])];
+    L.term.f.splice(L.i, 1, ...made);
+    return { ok: 'rootSplit', p: { x, ex: mx(made.map(fx).join(' · ')) }, born: made.map(g => g.id), origins: fromOne(f, made) };
+  }
+  const g = t.f[0];
+  if (g.k === 'n' && squareN(g.v)) {
+    const n = N(Math.sqrt(g.v));
+    L.term.f.splice(L.i, 1, n);
+    return { ok: 'rootSquare', p: { x, n: n.v, v: g.v }, born: [n.id], origins: fromOne(f, [n]) };
+  }
+  if (squarePiece(g)) {
+    if (S.op === '=') return { no: 'rootSquareEq', p: { x, b: bx(g.b) }, ids: [id] };
+    const v = V(g.b, g.e / 2);
+    L.term.f.splice(L.i, 1, v);
+    const c = condHTML(addCond(S, [T([V(g.b, 1)])], 'ge'));
+    return { ok: 'rootSquareIf', p: { x, n: mx(fx(v)), c }, born: [v.id], origins: fromOne(f, [v]) };
+  }
+  return { no: 'rootTap', p: { x }, ids: [id] };
+});
 
 // x³ → x · x · x
 defineExplode('v', (S, L, id) => {
@@ -47,6 +76,11 @@ defineExplode('p', (S, L, id) => {
     L.term.f.splice(L.i, 1, ...copies);
     return { ok: 'explodeGroup', p: { e: f.e, x: mx(fx(f)), ex: mx(copies.map(fx).join(' · ')) }, born: copies.map(c => c.id), origins: fromOne(f, copies) };
   }
+  // a bracket that is the whole bottom of a fraction: opening it changes nothing but loses the one piece that can
+  // cancel (x(a − c) over a − c can't). A whole top still opens: (x + 1)/2 splits into terms from there
+  const side = L.depth === 0 ? L.side : L.in && L.in.k === 'q' ? L.qs : null;
+  if (side === 'den' && L.terms.length === 1 && L.term.f.length === 1 && !L.term.neg)
+    return { no: 'bracketWhole', p: { x: mx(fx(f)) }, ids: [id] };
   const before = mx(termHTML(L.term));
   const others = L.term.f.filter(g => g !== f);
   const origins = {};

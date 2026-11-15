@@ -145,3 +145,21 @@ test('divide route: the single moves and their refusals', () => {
   assert.equal(G.opRoot(s).ok, 'rootFracBothIf'); G.normalize(s); assert.equal(show(s), 'x + p = [√q/2a ∨ x + p = [−√q/2a');
   assert.equal(G.opRoot(G.parseProblem('(x+p)^2 = q/(2a)', 'solve', 'x').S).no, 'rootFrac');
 });
+
+test('a bracket that is a whole bottom stays shut: x(a − c)/(a − c) can still cancel', () => {
+  const S = eq('ax-cx=d-b');
+  let r; for (let k = 0; k < 10 && !(S.parts[0].den[0].f[0]?.k === 'p'); k++) r = G.autoSolveStep(S);
+  const below = S.parts[0].den[0].f[0];
+  assert.equal(below.k, 'p', show(S));
+  const snap = JSON.stringify(S);
+  assert.equal(G.opExplode(S, below.id).no, 'bracketWhole');
+  assert.equal(JSON.stringify(S), snap);
+});
+
+test('a piece of a top goes out in front of its bar, as it does against a fraction tile', () => {
+  const S = G.parseProblem('x/3=4', 'solve').S, x = S.parts[0].num[0].f[0];
+  assert.equal(G.opOutOfBar(S, 0, x.id).ok, 'outOfFrac'); G.normalize(S);
+  assert.equal(show(S), '[1/3x = 4');
+  const T = G.parseProblem('2/3 : 4/5', 'combine').S;   // two fractions side by side keep their own bars
+  assert.equal(G.opOutOfBar(T, 0, T.parts[0].num[0].f[0].id), null);
+});

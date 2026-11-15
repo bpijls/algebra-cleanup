@@ -137,14 +137,19 @@ export function dragBalance(S, id) {
     if (side === 'num' && !isOne(P.den)) return { no: 'dragFracTop' };   // x/3 = 4: the 3 below the bar is what to drag
     if (side === 'den') return ts.length === 1 ? { op: '·', value: T(top.f.map(cloneF), top.neg), bi } : { no: 'dragDenSum' };
     const whole = { op: top.neg ? '+' : '-', value: T(top.f.map(cloneF)), bi };
-    if (ts.length > 1 || L.kind === 't') return whole;
-    // the only term on its side: a number in front divides, and so does a letter or bracket in a term with the
-    // unknown (ax: drag a → : a). A lone minus divides by −1; anything else takes the term away
-    const u = unknownOf(S);
-    if (L.depth === 0 && L.f.k === 'n' && top.f.length > 1) return { op: ':', value: T([N(L.f.v)], top.neg), bi };
+    if (L.kind === 't') return whole;
+    // a piece of a term with more in it, alone on its side or in a sum: a number divides, and so does a letter or
+    // bracket in a term with the unknown (ax − cx: drag c → : c, which the player may find doesn't help). The term
+    // itself, the unknown's tile or a one-piece term is taken away
+    // (alone on its side the term's minus goes along, −3x: : −3 so x keeps no minus; in a sum the minus belongs to
+    // the term, not to the whole side: ax − cx, drag c → : c)
+    const u = unknownOf(S), neg = ts.length === 1 && top.neg;
+    if (L.depth === 0 && L.f.k === 'n' && top.f.length > 1) return { op: ':', value: T([N(L.f.v)], neg), bi };
     // (and a log of a number: x · log 2 → : log 2)
     if (L.depth === 0 && top.f.length > 1 && tHasU(top, u) && !fHasU(L.f, u) && (L.f.k === 'v' || (L.f.k === 'p' && L.f.e === 1) || (L.f.k === 'log' && !hasLetterF(L.f))))
-      return { op: ':', value: T([cloneF(L.f)], top.neg), bi };
+      return { op: ':', value: T([cloneF(L.f)], neg), bi };
+    if (ts.length > 1) return whole;
+    // the only term on its side: a lone minus divides by −1; anything else takes the term away
     if (top.neg && !top.f.some(f => f.k === 'n')) return { op: ':', value: T([N(1)], true), bi };
     return whole;
   }

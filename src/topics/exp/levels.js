@@ -34,8 +34,8 @@ const x = (u = 'x') => T([V(u, 1)]);
 const eq = (L, R, extra) => () => Object.assign({ parts: [F(L.map(cloneT)), F(R.map(cloneT))], op: '=', goal: 'solve' }, extra || {});
 [
   { id: 'expeq.1', s: eq([T([Ex(2, [x()])])], [T([N(8)])]),
-    en: 'An unknown in the exponent. Write 8 as a power of 2 (select it: a button shows how). Then the same base is on both sides: drag the power across the =, and the exponents must be equal.',
-    nl: 'Een onbekende in de exponent. Schrijf 8 als macht van 2 (kies hem: een knop laat zien hoe). Dan staat links en rechts hetzelfde grondtal: sleep de macht over het =-teken, en de exponenten moeten gelijk zijn.' },
+    en: 'An unknown in the exponent. Write 8 as a power of 2 (tap it twice to see how). Then the same base is on both sides: drag the power across the =, and the exponents must be equal.',
+    nl: 'Een onbekende in de exponent. Schrijf 8 als macht van 2 (tik er twee keer op om te zien hoe). Dan staat links en rechts hetzelfde grondtal: sleep de macht over het =-teken, en de exponenten moeten gelijk zijn.' },
   { id: 'expeq.2', s: eq([T([Ex(3, [x(), T([N(1)])])])], [T([N(27)])]),
     en: 'The exponent is a sum. Same base, so the sums are equal.',
     nl: 'De exponent is een som. Hetzelfde grondtal, dus de sommen zijn gelijk.' },

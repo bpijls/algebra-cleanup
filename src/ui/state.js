@@ -27,6 +27,8 @@ export const ui = {
   mode: 'levels',
   initial: null,
   sheetFn: null,
+  strip: null,       // a slider in place (split.js): { move, goLabel }
+  previewing: false, // render() is drawing the strip's result, not the state
   prac: store.get('practice2', { skills: ['powers'], d: 1 }),
   session: { solved: 0, streak: 0 },
   own: store.get('own', { src: '', goal: null }),

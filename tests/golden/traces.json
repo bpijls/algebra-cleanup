@@ -324,10 +324,8 @@
  "level quadratic.1": [
   "x^2 = 9",
   "hRoot [nyEqAlone] → rootBoth | x = √9 ∨ x = −√9",
-  "hExplodeRoot [nyEqTidy] → explodeNum | x = √3·3 ∨ x = −√9",
-  "hRootPair [nyEqTidy] → rootOut | x = 3 ∨ x = −√9",
-  "hExplodeRoot [nyEqTidy] → explodeNum | x = 3 ∨ x = −√3·3",
-  "hRootPair [nyEqTidy] → rootOut | x = 3 ∨ x = −3",
+  "hRootSquare [nyEqTidy] → rootSquare | x = 3 ∨ x = −√9",
+  "hRootSquare [nyEqTidy] → rootSquare | x = 3 ∨ x = −3",
   "clean"
  ],
  "level quadratic.2": [
@@ -340,9 +338,13 @@
   "hMerge [nyEqAlone] → mergeNum | x^2 = 12",
   "hRoot [nyEqAlone] → rootBoth | x = √12 ∨ x = −√12",
   "hExplodeRoot [nyEqTidy] → explodeNum | x = √2·2·3 ∨ x = −√12",
-  "hRootPair [nyEqTidy] → rootOut | x = 2√3 ∨ x = −√12",
+  "hRootMerge [nyEqTidy] → mergeNum | x = √4·3 ∨ x = −√12",
+  "hRootSplit [nyEqTidy] → rootSplit | x = √4√3 ∨ x = −√12",
+  "hRootSquare [nyEqTidy] → rootSquare | x = 2√3 ∨ x = −√12",
   "hExplodeRoot [nyEqTidy] → explodeNum | x = 2√3 ∨ x = −√2·2·3",
-  "hRootPair [nyEqTidy] → rootOut | x = 2√3 ∨ x = −2√3",
+  "hRootMerge [nyEqTidy] → mergeNum | x = 2√3 ∨ x = −√4·3",
+  "hRootSplit [nyEqTidy] → rootSplit | x = 2√3 ∨ x = −√4√3",
+  "hRootSquare [nyEqTidy] → rootSquare | x = 2√3 ∨ x = −2√3",
   "clean"
  ],
  "level quadratic.3": [
@@ -611,7 +613,8 @@
   "hExplodeTrig [nyTidy] → trigValue | [√3cos(30°)/2",
   "hExplodeTrig [nyTidy] → trigValue | [√3√3/2·2",
   "hMerge [nyTidy] → mergeGroup | [√3·3/2·2",
-  "hRootPair [nyTidy] → rootOut | [3/2·2",
+  "hRootMerge [nyTidy] → mergeNum | [√9/2·2",
+  "hRootSquare [nyTidy] → rootSquare | [3/2·2",
   "hMerge [nyTidy] → mergeNum | [3/4",
   "clean"
  ],
@@ -762,9 +765,9 @@
   "clean"
  ],
  "level numfrac.5": [
-  "[2/3[3/4",
-  "hMerge [nyTidy] → mergeGroup | [2·3/3·4",
-  "hCancel [nyTidy] → cancelVar | [2/4",
+  "[2/3 · [3/4",
+  "hCancel [nyTwoParts] → cancelVar | [2/1 · [1/4",
+  "hJoin [nyTwoParts] → joined | [2/4",
   "hExplodeCancel [nyCancelNum] → explodeNum | [2/2·2",
   "hCancel [nyTidy] → cancelVar | [1/2",
   "clean"
@@ -783,7 +786,9 @@
  "level sqrt.1": [
   "√12",
   "hExplodeRoot [nyTidy] → explodeNum | √2·2·3",
-  "hRootPair [nyTidy] → rootOut | 2√3",
+  "hRootMerge [nyTidy] → mergeNum | √4·3",
+  "hRootSplit [nyTidy] → rootSplit | √4√3",
+  "hRootSquare [nyTidy] → rootSquare | 2√3",
   "clean"
  ],
  "level sqrt.2": [
@@ -791,7 +796,9 @@
   "hMerge [nyTidy] → mergeGroup | √2·6",
   "hMerge [nyTidy] → mergeNum | √12",
   "hExplodeRoot [nyTidy] → explodeNum | √2·2·3",
-  "hRootPair [nyTidy] → rootOut | 2√3",
+  "hRootMerge [nyTidy] → mergeNum | √4·3",
+  "hRootSplit [nyTidy] → rootSplit | √4√3",
+  "hRootSquare [nyTidy] → rootSquare | 2√3",
   "clean"
  ],
  "level sqrt.3": [
@@ -802,9 +809,13 @@
  "level sqrt.4": [
   "√8 + √18",
   "hExplodeRoot [nyTidy] → explodeNum | √2·2·2 + √18",
-  "hRootPair [nyTidy] → rootOut | 2√2 + √18",
+  "hRootMerge [nyTidy] → mergeNum | √4·2 + √18",
+  "hRootSplit [nyTidy] → rootSplit | √4√2 + √18",
+  "hRootSquare [nyTidy] → rootSquare | 2√2 + √18",
   "hExplodeRoot [nyTidy] → explodeNum | 2√2 + √2·3·3",
-  "hRootPair [nyTidy] → rootOut | 2√2 + 3√2",
+  "hRootMerge [nyTidy] → mergeNum | 2√2 + √2·9",
+  "hRootSplit [nyTidy] → rootSplit | 2√2 + √9√2",
+  "hRootSquare [nyTidy] → rootSquare | 2√2 + 3√2",
   "hLike [nyLike] → likeAdd | 5√2",
   "clean"
  ],
@@ -812,14 +823,16 @@
   "[1/√2",
   "hRationalize [nyRootBelow] → expandBy | [√2/√2√2",
   "hMerge [nyTidy] → mergeGroup | [√2/√2·2",
-  "hRootPair [nyTidy] → rootOut | [√2/2",
+  "hRootMerge [nyTidy] → mergeNum | [√2/√4",
+  "hRootSquare [nyTidy] → rootSquare | [√2/2",
   "clean"
  ],
  "level sqrt.6": [
   "[6/√3",
   "hRationalize [nyRootBelow] → expandBy | [6√3/√3√3",
   "hMerge [nyTidy] → mergeGroup | [6√3/√3·3",
-  "hRootPair [nyTidy] → rootOut | [6√3/3",
+  "hRootMerge [nyTidy] → mergeNum | [6√3/√9",
+  "hRootSquare [nyTidy] → rootSquare | [6√3/3",
   "hExplodeCancel [nyCancelNum] → explodeNum | [2·3√3/3",
   "hCancel [nyTidy] → cancelVar | 2√3",
   "clean"
@@ -1031,8 +1044,7 @@
  "level fracexp.2": [
   "9½",
   "hGroup [nyHalfPower] → halfRoot | √9",
-  "hExplodeRoot [nyTidy] → explodeNum | √3·3",
-  "hRootPair [nyTidy] → rootOut | 3",
+  "hRootSquare [nyTidy] → rootSquare | 3",
   "clean"
  ],
  "level fracexp.3": [
@@ -1050,7 +1062,9 @@
  "level fracexp.5": [
   "√a^3",
   "hExplodeRoot [nyAsRoot] → explodeVar | √aaa",
-  "hRootPair [nyAsRoot] → rootOutIf | a√a",
+  "hRootMerge [nyAsRoot] → mergeVar | √a^2a",
+  "hRootSplit [nyAsRoot] → rootSplit | √a^2√a",
+  "hRootSquare [nyAsRoot] → rootSquareIf | a√a",
   "hToHalf [nyAsRoot] → toHalf | aa½",
   "hMerge [nyTidy] → mergeHalf | a3/2",
   "clean"
@@ -1251,8 +1265,7 @@
  "level complex.3": [
   "√−9",
   "hRootI [nyTidy] → rootI | √9i",
-  "hExplodeRoot [nyTidy] → explodeNum | √3·3i",
-  "hRootPair [nyTidy] → rootOut | 3i",
+  "hRootSquare [nyTidy] → rootSquare | 3i",
   "clean"
  ],
  "level complex.4": [
@@ -1270,11 +1283,9 @@
   "x^2 = −4",
   "hRoot [nyEqAlone] → rootBoth | x = √−4 ∨ x = −√−4",
   "hRootI [nyEqTidy] → rootI | x = √4i ∨ x = −√−4",
-  "hExplodeRoot [nyEqTidy] → explodeNum | x = √2·2i ∨ x = −√−4",
-  "hRootPair [nyEqTidy] → rootOut | x = 2i ∨ x = −√−4",
+  "hRootSquare [nyEqTidy] → rootSquare | x = 2i ∨ x = −√−4",
   "hRootI [nyEqTidy] → rootI | x = 2i ∨ x = −√4i",
-  "hExplodeRoot [nyEqTidy] → explodeNum | x = 2i ∨ x = −√2·2i",
-  "hRootPair [nyEqTidy] → rootOut | x = 2i ∨ x = −2i",
+  "hRootSquare [nyEqTidy] → rootSquare | x = 2i ∨ x = −2i",
   "clean"
  ],
  "level complex.6": [
@@ -1290,13 +1301,11 @@
   "hMerge [nyEqAlone] → mergeGroup | (x + 1)^2 = −4",
   "hRoot [nyEqAlone] → rootBoth | x + 1 = √−4 ∨ x + 1 = −√−4",
   "hRootI [nyEqAlone] → rootI | x + 1 = √4i ∨ x + 1 = −√−4",
-  "hExplodeRoot [nyEqAlone] → explodeNum | x + 1 = √2·2i ∨ x + 1 = −√−4",
-  "hRootPair [nyEqAlone] → rootOut | x + 1 = 2i ∨ x + 1 = −√−4",
+  "hRootSquare [nyEqAlone] → rootSquare | x + 1 = 2i ∨ x + 1 = −√−4",
   "hBalanceTerm [nyEqAlone] → balance | x + 1 − 1 = 2i − 1 ∨ x + 1 = −√−4",
   "hLike [nyEqAlone] → likeZero | x = 2i − 1 ∨ x + 1 = −√−4",
   "hRootI [nyEqAlone] → rootI | x = 2i − 1 ∨ x + 1 = −√4i",
-  "hExplodeRoot [nyEqAlone] → explodeNum | x = 2i − 1 ∨ x + 1 = −√2·2i",
-  "hRootPair [nyEqAlone] → rootOut | x = 2i − 1 ∨ x + 1 = −2i",
+  "hRootSquare [nyEqAlone] → rootSquare | x = 2i − 1 ∨ x + 1 = −2i",
   "hBalanceTerm [nyEqAlone] → balance | x = 2i − 1 ∨ x + 1 − 1 = −2i − 1",
   "hLike [nyEqAlone] → likeZero | x = 2i − 1 ∨ x = −2i − 1",
   "clean"
@@ -1593,9 +1602,9 @@
   "clean"
  ],
  "breuken optellen (adding fractions): 2/3·3/4": [
-  "[2/3[3/4",
-  "hMerge [nyTidy] → mergeGroup | [2·3/3·4",
-  "hCancel [nyTidy] → cancelVar | [2/4",
+  "[2/3 · [3/4",
+  "hCancel [nyTwoParts] → cancelVar | [2/1 · [1/4",
+  "hJoin [nyTwoParts] → joined | [2/4",
   "hExplodeCancel [nyCancelNum] → explodeNum | [2/2·2",
   "hCancel [nyTidy] → cancelVar | [1/2",
   "clean"
@@ -1627,15 +1636,21 @@
  "wortels (square roots): √12": [
   "√12",
   "hExplodeRoot [nyTidy] → explodeNum | √2·2·3",
-  "hRootPair [nyTidy] → rootOut | 2√3",
+  "hRootMerge [nyTidy] → mergeNum | √4·3",
+  "hRootSplit [nyTidy] → rootSplit | √4√3",
+  "hRootSquare [nyTidy] → rootSquare | 2√3",
   "clean"
  ],
  "wortels (square roots): √8+√18": [
   "√8 + √18",
   "hExplodeRoot [nyTidy] → explodeNum | √2·2·2 + √18",
-  "hRootPair [nyTidy] → rootOut | 2√2 + √18",
+  "hRootMerge [nyTidy] → mergeNum | √4·2 + √18",
+  "hRootSplit [nyTidy] → rootSplit | √4√2 + √18",
+  "hRootSquare [nyTidy] → rootSquare | 2√2 + √18",
   "hExplodeRoot [nyTidy] → explodeNum | 2√2 + √2·3·3",
-  "hRootPair [nyTidy] → rootOut | 2√2 + 3√2",
+  "hRootMerge [nyTidy] → mergeNum | 2√2 + √2·9",
+  "hRootSplit [nyTidy] → rootSplit | 2√2 + √9√2",
+  "hRootSquare [nyTidy] → rootSquare | 2√2 + 3√2",
   "hLike [nyLike] → likeAdd | 5√2",
   "clean"
  ],
@@ -1644,21 +1659,26 @@
   "hMerge [nyTidy] → mergeGroup | √2·6",
   "hMerge [nyTidy] → mergeNum | √12",
   "hExplodeRoot [nyTidy] → explodeNum | √2·2·3",
-  "hRootPair [nyTidy] → rootOut | 2√3",
+  "hRootMerge [nyTidy] → mergeNum | √4·3",
+  "hRootSplit [nyTidy] → rootSplit | √4√3",
+  "hRootSquare [nyTidy] → rootSquare | 2√3",
   "clean"
  ],
  "wortels (square roots): 3√2·4√2": [
   "3√2·4√2",
   "hMerge [nyTidy] → mergeNum | 12√2√2",
   "hMerge [nyTidy] → mergeGroup | 12√2·2",
-  "hRootPair [nyTidy] → rootOut | 12·2",
+  "hRootMerge [nyTidy] → mergeNum | 12√4",
+  "hRootSquare [nyTidy] → rootSquare | 12·2",
   "hMerge [nyTidy] → mergeNum | 24",
   "clean"
  ],
  "wortels (square roots): √50-√2": [
   "√50 − √2",
   "hExplodeRoot [nyTidy] → explodeNum | √2·5·5 − √2",
-  "hRootPair [nyTidy] → rootOut | 5√2 − √2",
+  "hRootMerge [nyTidy] → mergeNum | √2·25 − √2",
+  "hRootSplit [nyTidy] → rootSplit | √25√2 − √2",
+  "hRootSquare [nyTidy] → rootSquare | 5√2 − √2",
   "hLike [nyLike] → likeAdd | 4√2",
   "clean"
  ],
@@ -1810,10 +1830,7 @@
  "negatieve en gebroken exponenten (negative and fractional exponents): 16^(1/2)": [
   "16½",
   "hGroup [nyHalfPower] → halfRoot | √16",
-  "hExplodeRoot [nyTidy] → explodeNum | √2·2·2·2",
-  "hRootPair [nyTidy] → rootOut | 2√2·2",
-  "hRootPair [nyTidy] → rootOut | 2·2",
-  "hMerge [nyTidy] → mergeNum | 4",
+  "hRootSquare [nyTidy] → rootSquare | 4",
   "clean"
  ],
  "negatieve en gebroken exponenten (negative and fractional exponents): a^(3/2)": [
@@ -2713,19 +2730,21 @@
  "kwadratische vergelijkingen (quadratic equations): x^2=49": [
   "x^2 = 49",
   "hRoot [nyEqAlone] → rootBoth | x = √49 ∨ x = −√49",
-  "hExplodeRoot [nyEqTidy] → explodeNum | x = √7·7 ∨ x = −√49",
-  "hRootPair [nyEqTidy] → rootOut | x = 7 ∨ x = −√49",
-  "hExplodeRoot [nyEqTidy] → explodeNum | x = 7 ∨ x = −√7·7",
-  "hRootPair [nyEqTidy] → rootOut | x = 7 ∨ x = −7",
+  "hRootSquare [nyEqTidy] → rootSquare | x = 7 ∨ x = −√49",
+  "hRootSquare [nyEqTidy] → rootSquare | x = 7 ∨ x = −7",
   "clean"
  ],
  "kwadratische vergelijkingen (quadratic equations): x^2=12": [
   "x^2 = 12",
   "hRoot [nyEqAlone] → rootBoth | x = √12 ∨ x = −√12",
   "hExplodeRoot [nyEqTidy] → explodeNum | x = √2·2·3 ∨ x = −√12",
-  "hRootPair [nyEqTidy] → rootOut | x = 2√3 ∨ x = −√12",
+  "hRootMerge [nyEqTidy] → mergeNum | x = √4·3 ∨ x = −√12",
+  "hRootSplit [nyEqTidy] → rootSplit | x = √4√3 ∨ x = −√12",
+  "hRootSquare [nyEqTidy] → rootSquare | x = 2√3 ∨ x = −√12",
   "hExplodeRoot [nyEqTidy] → explodeNum | x = 2√3 ∨ x = −√2·2·3",
-  "hRootPair [nyEqTidy] → rootOut | x = 2√3 ∨ x = −2√3",
+  "hRootMerge [nyEqTidy] → mergeNum | x = 2√3 ∨ x = −√4·3",
+  "hRootSplit [nyEqTidy] → rootSplit | x = 2√3 ∨ x = −√4√3",
+  "hRootSquare [nyEqTidy] → rootSquare | x = 2√3 ∨ x = −2√3",
   "clean"
  ],
  "kwadratische vergelijkingen (quadratic equations): 3x^2=75": [
@@ -2736,10 +2755,8 @@
   "hCancel [nyEqAlone] → cancelVar | x^2 = 5·5",
   "hMerge [nyEqAlone] → mergeNum | x^2 = 25",
   "hRoot [nyEqAlone] → rootBoth | x = √25 ∨ x = −√25",
-  "hExplodeRoot [nyEqTidy] → explodeNum | x = √5·5 ∨ x = −√25",
-  "hRootPair [nyEqTidy] → rootOut | x = 5 ∨ x = −√25",
-  "hExplodeRoot [nyEqTidy] → explodeNum | x = 5 ∨ x = −√5·5",
-  "hRootPair [nyEqTidy] → rootOut | x = 5 ∨ x = −5",
+  "hRootSquare [nyEqTidy] → rootSquare | x = 5 ∨ x = −√25",
+  "hRootSquare [nyEqTidy] → rootSquare | x = 5 ∨ x = −5",
   "clean"
  ],
  "kwadratische vergelijkingen (quadratic equations): x^2-9=0": [
@@ -2747,26 +2764,18 @@
   "hBalanceTerm [nyEqAlone] → balance | x^2 − 9 + 9 = 9",
   "hLike [nyEqAlone] → likeZero | x^2 = 9",
   "hRoot [nyEqAlone] → rootBoth | x = √9 ∨ x = −√9",
-  "hExplodeRoot [nyEqTidy] → explodeNum | x = √3·3 ∨ x = −√9",
-  "hRootPair [nyEqTidy] → rootOut | x = 3 ∨ x = −√9",
-  "hExplodeRoot [nyEqTidy] → explodeNum | x = 3 ∨ x = −√3·3",
-  "hRootPair [nyEqTidy] → rootOut | x = 3 ∨ x = −3",
+  "hRootSquare [nyEqTidy] → rootSquare | x = 3 ∨ x = −√9",
+  "hRootSquare [nyEqTidy] → rootSquare | x = 3 ∨ x = −3",
   "clean"
  ],
  "kwadratische vergelijkingen (quadratic equations): (x-2)^2=16": [
   "(x − 2)^2 = 16",
   "hRoot [nyEqAlone] → rootBoth | x − 2 = √16 ∨ x − 2 = −√16",
-  "hExplodeRoot [nyEqAlone] → explodeNum | x − 2 = √2·2·2·2 ∨ x − 2 = −√16",
-  "hRootPair [nyEqAlone] → rootOut | x − 2 = 2√2·2 ∨ x − 2 = −√16",
-  "hRootPair [nyEqAlone] → rootOut | x − 2 = 2·2 ∨ x − 2 = −√16",
-  "hMerge [nyEqAlone] → mergeNum | x − 2 = 4 ∨ x − 2 = −√16",
+  "hRootSquare [nyEqAlone] → rootSquare | x − 2 = 4 ∨ x − 2 = −√16",
   "hBalanceTerm [nyEqAlone] → balance | x − 2 + 2 = 4 + 2 ∨ x − 2 = −√16",
   "hLike [nyEqAlone] → likeZero | x = 4 + 2 ∨ x − 2 = −√16",
   "hLike [nyEqTidy] → likeAdd | x = 6 ∨ x − 2 = −√16",
-  "hExplodeRoot [nyEqAlone] → explodeNum | x = 6 ∨ x − 2 = −√2·2·2·2",
-  "hRootPair [nyEqAlone] → rootOut | x = 6 ∨ x − 2 = −2√2·2",
-  "hRootPair [nyEqAlone] → rootOut | x = 6 ∨ x − 2 = −2·2",
-  "hMerge [nyEqAlone] → mergeNum | x = 6 ∨ x − 2 = −4",
+  "hRootSquare [nyEqAlone] → rootSquare | x = 6 ∨ x − 2 = −4",
   "hBalanceTerm [nyEqAlone] → balance | x = 6 ∨ x − 2 + 2 = −4 + 2",
   "hLike [nyEqAlone] → likeZero | x = 6 ∨ x = −4 + 2",
   "hLike [nyEqTidy] → likeAdd | x = 6 ∨ x = −2",
@@ -4188,14 +4197,8 @@
  "practice quadratic d1 #1": [
   "x^2 = 81",
   "hRoot [nyEqAlone] → rootBoth | x = √81 ∨ x = −√81",
-  "hExplodeRoot [nyEqTidy] → explodeNum | x = √3·3·3·3 ∨ x = −√81",
-  "hRootPair [nyEqTidy] → rootOut | x = 3√3·3 ∨ x = −√81",
-  "hRootPair [nyEqTidy] → rootOut | x = 3·3 ∨ x = −√81",
-  "hMerge [nyEqTidy] → mergeNum | x = 9 ∨ x = −√81",
-  "hExplodeRoot [nyEqTidy] → explodeNum | x = 9 ∨ x = −√3·3·3·3",
-  "hRootPair [nyEqTidy] → rootOut | x = 9 ∨ x = −3√3·3",
-  "hRootPair [nyEqTidy] → rootOut | x = 9 ∨ x = −3·3",
-  "hMerge [nyEqTidy] → mergeNum | x = 9 ∨ x = −9",
+  "hRootSquare [nyEqTidy] → rootSquare | x = 9 ∨ x = −√81",
+  "hRootSquare [nyEqTidy] → rootSquare | x = 9 ∨ x = −9",
   "clean"
  ],
  "practice quadratic d1 #2": [
@@ -4207,22 +4210,18 @@
   "hCancel [nyEqAlone] → cancelVar | x^2 = 2·2",
   "hMerge [nyEqAlone] → mergeNum | x^2 = 4",
   "hRoot [nyEqAlone] → rootBoth | x = √4 ∨ x = −√4",
-  "hExplodeRoot [nyEqTidy] → explodeNum | x = √2·2 ∨ x = −√4",
-  "hRootPair [nyEqTidy] → rootOut | x = 2 ∨ x = −√4",
-  "hExplodeRoot [nyEqTidy] → explodeNum | x = 2 ∨ x = −√2·2",
-  "hRootPair [nyEqTidy] → rootOut | x = 2 ∨ x = −2",
+  "hRootSquare [nyEqTidy] → rootSquare | x = 2 ∨ x = −√4",
+  "hRootSquare [nyEqTidy] → rootSquare | x = 2 ∨ x = −2",
   "clean"
  ],
  "practice quadratic d1 #3": [
   "(a + 3)^2 = 25",
   "hRoot [nyEqAlone] → rootBoth | a + 3 = √25 ∨ a + 3 = −√25",
-  "hExplodeRoot [nyEqAlone] → explodeNum | a + 3 = √5·5 ∨ a + 3 = −√25",
-  "hRootPair [nyEqAlone] → rootOut | a + 3 = 5 ∨ a + 3 = −√25",
+  "hRootSquare [nyEqAlone] → rootSquare | a + 3 = 5 ∨ a + 3 = −√25",
   "hBalanceTerm [nyEqAlone] → balance | a + 3 − 3 = 5 − 3 ∨ a + 3 = −√25",
   "hLike [nyEqAlone] → likeZero | a = 5 − 3 ∨ a + 3 = −√25",
   "hLike [nyEqTidy] → likeAdd | a = 2 ∨ a + 3 = −√25",
-  "hExplodeRoot [nyEqAlone] → explodeNum | a = 2 ∨ a + 3 = −√5·5",
-  "hRootPair [nyEqAlone] → rootOut | a = 2 ∨ a + 3 = −5",
+  "hRootSquare [nyEqAlone] → rootSquare | a = 2 ∨ a + 3 = −5",
   "hBalanceTerm [nyEqAlone] → balance | a = 2 ∨ a + 3 − 3 = −5 − 3",
   "hLike [nyEqAlone] → likeZero | a = 2 ∨ a = −5 − 3",
   "hLike [nyEqTidy] → likeAdd | a = 2 ∨ a = −8",
@@ -4276,11 +4275,15 @@
   "hMerge [nyEqAlone] → mergeGroup | (x − 2)^2 = 8",
   "hRoot [nyEqAlone] → rootBoth | x − 2 = √8 ∨ x − 2 = −√8",
   "hExplodeRoot [nyEqAlone] → explodeNum | x − 2 = √2·2·2 ∨ x − 2 = −√8",
-  "hRootPair [nyEqAlone] → rootOut | x − 2 = 2√2 ∨ x − 2 = −√8",
+  "hRootMerge [nyEqAlone] → mergeNum | x − 2 = √4·2 ∨ x − 2 = −√8",
+  "hRootSplit [nyEqAlone] → rootSplit | x − 2 = √4√2 ∨ x − 2 = −√8",
+  "hRootSquare [nyEqAlone] → rootSquare | x − 2 = 2√2 ∨ x − 2 = −√8",
   "hBalanceTerm [nyEqAlone] → balance | x − 2 + 2 = 2√2 + 2 ∨ x − 2 = −√8",
   "hLike [nyEqAlone] → likeZero | x = 2√2 + 2 ∨ x − 2 = −√8",
   "hExplodeRoot [nyEqAlone] → explodeNum | x = 2√2 + 2 ∨ x − 2 = −√2·2·2",
-  "hRootPair [nyEqAlone] → rootOut | x = 2√2 + 2 ∨ x − 2 = −2√2",
+  "hRootMerge [nyEqAlone] → mergeNum | x = 2√2 + 2 ∨ x − 2 = −√4·2",
+  "hRootSplit [nyEqAlone] → rootSplit | x = 2√2 + 2 ∨ x − 2 = −√4√2",
+  "hRootSquare [nyEqAlone] → rootSquare | x = 2√2 + 2 ∨ x − 2 = −2√2",
   "hBalanceTerm [nyEqAlone] → balance | x = 2√2 + 2 ∨ x − 2 + 2 = −2√2 + 2",
   "hLike [nyEqAlone] → likeZero | x = 2√2 + 2 ∨ x = −2√2 + 2",
   "clean"
@@ -4897,7 +4900,8 @@
   "hExplodeTrig [nyTidy] → trigValue | [√3cos(30°)/2",
   "hExplodeTrig [nyTidy] → trigValue | [√3√3/2·2",
   "hMerge [nyTidy] → mergeGroup | [√3·3/2·2",
-  "hRootPair [nyTidy] → rootOut | [3/2·2",
+  "hRootMerge [nyTidy] → mergeNum | [√9/2·2",
+  "hRootSquare [nyTidy] → rootSquare | [3/2·2",
   "hMerge [nyTidy] → mergeNum | [3/4",
   "clean"
  ],

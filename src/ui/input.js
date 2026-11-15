@@ -1,7 +1,8 @@
 /* Input on the board: taps, swipes across tiles, keyboard. */
 import { opBar, opOp, opSweep } from '../core/moves.js';
 import { isEquation } from '../core/problem.js';
-import { opSplitBar } from '../core/divide.js';
+import { opOutOfBar, opSplitBar } from '../core/divide.js';
+import { locate } from '../core/model.js';
 import { balanceDown, balanceDrop, balanceMove, balanceUp, dropAcross, setBalancing } from './balance.js';
 import { onFactor, onTerm, run, select } from './controller.js';
 import { setMenu } from './menu.js';
@@ -9,6 +10,7 @@ import { shake } from './motion.js';
 import { say } from './note.js';
 import { closeSheet } from './sheets.js';
 import { $, board, ui } from './state.js';
+import { closeStrip } from './split.js';
 import { render } from './tiles.js';
 
 export const SVGNS = 'http://www.w3.org/2000/svg';
@@ -22,7 +24,7 @@ function clearSweep() {
   board.querySelectorAll('.swept').forEach(el => el.classList.remove('swept'));
 }
 board.addEventListener('pointerdown', e => {
-  if (ui.busy || ui.won || e.button > 0) return;
+  if (ui.busy || ui.won || e.button > 0 || e.target.closest('#ring') || ui.strip) return;
   if (ui.balancing) { balanceDown(e); return; }
   ui.drag = { x: e.clientX, y: e.clientY, lx: e.clientX, ly: e.clientY, id: e.pointerId, active: false, ids: [], pts: [] };
 });
@@ -65,10 +67,15 @@ board.addEventListener('pointercancel', () => { clearSweep(); ui.drag = null; ba
 board.addEventListener('click', e => {
   if (ui.suppressClick) { ui.suppressClick = false; return; }
   if (ui.busy || ui.won) return;
+  if (ui.strip) return closeStrip();   // a tap on the board while a slider shows its result: put the board back
   const chip = e.target.closest('.opchip');
   if (chip) { if (!isEquation(ui.S)) return run(s => opOp(s)); if (ui.S.goal === 'prove') return say('proveNoBalance', {}, 'info'); ui.balBranch = +chip.dataset.b || 0; return setBalancing(!ui.balancing); }
   const fbar = e.target.closest('.fbar');
-  if (fbar) return run(s => isEquation(s) ? opSplitBar(s, +fbar.dataset.p) : opBar(s));
+  if (fbar) {
+    const p = +fbar.dataset.p, L = ui.sel && ui.sel.t === 'f' ? locate(ui.S, ui.sel.id) : null;
+    if (L && L.p === p && L.side === 'num' && L.depth === 0) return run(s => opOutOfBar(s, p, ui.sel.id));
+    return run(s => isEquation(s) ? opSplitBar(s, p) : opBar(s));
+  }
   const hit = e.target.closest('.tile, .term');
   if (ui.balancing) {
     if (!hit) return setBalancing(false);

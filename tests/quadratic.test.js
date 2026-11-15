@@ -44,15 +44,26 @@ test('a product that is 0 splits into a branch per factor with the letter', () =
   assert.equal(G.opZero(eq('3(x-2)=0'))?.no, 'zeroOne');
 });
 
-test('a pair under the root comes out as one, only once it is visible', () => {
-  const S = eq('x^2=12');
-  G.opRoot(S); G.normalize(S);
-  const root = () => { let r; G.walk(S, L => { if (!r && L.kind === 'f' && L.f.k === 'r') r = L.f; }); return r; };
-  assert.equal(G.opExplode(S, root().id).no, 'rootTap');
-  G.opExplode(S, root().terms[0].f[0].id); G.normalize(S);           // 12 → 2·2·3 under the root
-  const [a, b] = root().terms[0].f.filter(f => f.v === 2);
-  assert.equal(G.opPair(S, a.id, b.id).ok, 'rootOut'); G.normalize(S);
-  assert.match(show(S), /^x = 2√3 ∨/);
+test('a root step by step: a pair becomes a square, the root explodes, √4 = 2; with the shortcut in one tap', () => {
+  for (const short of [false, true]) {
+    const S = eq('x^2=12'); if (short) S.earned = ['rootOut'];
+    G.opRoot(S); G.normalize(S);
+    const root = () => { let r; G.walk(S, L => { if (!r && L.kind === 'f' && L.f.k === 'r') r = L.f; }); return r; };
+    assert.equal(G.opExplode(S, root().id).no, 'rootTap');
+    G.opExplode(S, root().terms[0].f[0].id); G.normalize(S);           // 12 → 2·2·3 under the root
+    assert.equal(G.opExplode(S, root().id).no, 'rootNoPair');
+    const [a, b] = root().terms[0].f.filter(f => f.v === 2);
+    if (short) { assert.equal(G.opPair(S, a.id, b.id).ok, 'rootOut'); G.normalize(S); }
+    else {
+      assert.equal(G.opPair(S, a.id, b.id).ok, 'mergeNum'); G.normalize(S);   // √(4·3)
+      assert.equal(G.opExplode(S, root().id).ok, 'rootSplit'); G.normalize(S);   // √4 · √3
+      assert.equal(G.opExplode(S, root().id).ok, 'rootSquare'); G.normalize(S);   // 2 · √3
+    }
+    assert.match(show(S), /^x = 2√3 ∨/);
+  }
+  // √(b²) is |b| when b may be negative: not in an equation
+  const r = { parts: [G.F([G.T([G.Rt([G.T([G.V('b', 2)])])])]), G.F([G.T([G.V('x')])])], op: '=', goal: 'solve', unknown: 'x' };
+  assert.equal(G.opExplode(r, r.parts[0].num[0].f[0].id).no, 'rootSquareEq');
 });
 
 test('tiles in different branches do not combine', () => {

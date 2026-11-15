@@ -41,9 +41,11 @@ definePairRule('sum', 'rootOut', (S, A, B) => {
   const x = A.f, y = B.f;
   if (!(A.term === B.term && A.in && A.in.k === 'r' && A.in.terms.length === 1)) return undefined;
   // (not in an equation, where a letter may be a negative parameter and √(b·b) is |b|)
-  if (x.k === 'v' && y.k === 'v' && x.b === y.b && x.e === 1 && y.e === 1) return S.op === '=' ? undefined : { type: 'rootOut' };
+  // without the shortcut a pair is multiplied into a square (2 · 2 = 4) and the root explodes from there
+  const short = (S.earned || []).includes('rootOut');
+  if (x.k === 'v' && y.k === 'v' && x.b === y.b && x.e === 1 && y.e === 1) return S.op === '=' || !short ? undefined : { type: 'rootOut' };
   if (!(x.k === 'n' && y.k === 'n')) return undefined;
-  if (x.v === y.v && x.v > 1) return { type: 'rootOut' };
+  if (x.v === y.v && x.v > 1) return short ? { type: 'rootOut' } : { type: 'merge' };
   if (x.v !== y.v && x.v > 1 && y.v > 1) return { type: 'merge' };
   return undefined;
 });

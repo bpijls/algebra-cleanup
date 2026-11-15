@@ -16,7 +16,7 @@ import { G } from './kinds/group.js';
 import { N } from './kinds/number.js';
 import { T, cloneT, fHasU, fkey, sumKey, tHasU } from './kinds/sums.js';
 import { canMerge, hasU, isOne, locate, params, unknownOf } from './model.js';
-import { isEquation, pairOf } from './problem.js';
+import { isEquation, isFractionPair, pairOf } from './problem.js';
 import './rules/pair.js';   // the wall rules this one goes before
 import { defineAction, defineMove, definePairRule } from './rules/registry.js';
 import { coefOf, genHint, monoOf, monoTerm, uDeg } from './generic.js';
@@ -53,6 +53,20 @@ export function opSplitBar(S, p) {
   return { ok: 'barSplit', p: { x, ex: mx(sumHTML(P.num)) }, born: P.num.map(t => t.f[0].id) };
 }
 defineMove('splitBar', 'part', opSplitBar);
+
+/* ---- a piece of a whole side's top out in front of its bar: x/3 → x · 1/3, 2a/b → a · 2/b (tap the piece, then
+   the bar). The same move as against a fraction tile (outOfFrac), so the bar of a side behaves like one ---- */
+export function opOutOfBar(S, p, id) {
+  const P = S.parts[p];
+  if (!P || isFractionPair(S) || isOne(P.den) || P.num.length !== 1) return null;
+  const top = P.num[0], f = top.f.find(g => g.id === id);
+  if (!f) return null;
+  const ex = mx(fracHTML(P)), rest = top.f.filter(g => g !== f);
+  P.num = [T([f, Q([T(rest.length ? rest : [N(1)])], P.den)], top.neg)];
+  P.den = [T([N(1)])];
+  return { ok: 'outOfFrac', p: { x: mx(fx(f)), ex, r: mx(termHTML(P.num[0])) }, born: [f.id] };
+}
+defineMove('outOfBar', 'partPiece', opOutOfBar);
 
 /* ---- a fraction term in two halves: bx/a = bx/2a + bx/2a (a tool button, in equations with letters for numbers) ---- */
 export function opHalves(S, id) {

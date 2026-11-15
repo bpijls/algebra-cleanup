@@ -79,10 +79,15 @@ test('merging halves and taking a letter out of a root write their condition', (
   const [x, y] = ids(S);
   assert.equal(play(S, s => G.opPair(s, x.id, y.id)).ok, 'mergeHalf');
   assert.deepEqual(S.conds.map(c => c.rel), ['ge']);
-  const R = G.parseProblem('√(a·a·3)').S;
+  // with the shortcut, a pair of letters comes out in one tap; without it, a · a = a² and √(a²) = a write the same
+  const R = Object.assign(G.parseProblem('√(a·a·3)').S, { earned: ['rootOut'] });
   const as = ids(R).filter(f => f.k === 'v');
   assert.equal(play(R, s => G.opPair(s, as[0].id, as[1].id)).ok, 'rootOutIf');
   assert.equal(strip(G.stateHTML(R)), 'a√3');
+  const L = G.parseProblem('√(a^2)').S;
+  assert.equal(play(L, s => G.opExplode(s, L.parts[0].num[0].f[0].id)).ok, 'rootSquareIf');
+  assert.equal(strip(G.stateHTML(L)), 'a');
+  assert.deepEqual(L.conds.map(c => c.rel), ['ge']);
 });
 
 test('Done? names what is left: a negative power, or (as a power) a bar or a root', () => {

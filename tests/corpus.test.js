@@ -101,7 +101,13 @@ test('equations: a term only crosses the = by doing the same to both sides', () 
 test('equations: dragging a piece across the = undoes it on both sides', () => {
   const drag = (src, pick) => { const S = G.parseProblem(src).S; const r = G.opDrag(S, pick(S)); if (r && r.ok) G.normalize(S); return r && r.no ? r.no : strip(G.stateHTML(S)); };
   assert.equal(drag('3x+5=20', S => S.parts[0].num[1].f[0].id), '3x + 5 − 5 = 20 − 5');     // a term in a sum: take it away
-  assert.equal(drag('3x+5=20', S => S.parts[0].num[0].f[0].id), '3x + 5 − 3x = 20 − 3x');   // the 3 of 3x in a sum is still the term
+  assert.equal(drag('3x+5=20', S => S.parts[0].num[0].f[0].id), '[3x + 5/3 = [20/3');        // the 3 of 3x in a sum: divide by it
+  assert.equal(drag('3x+5=20', S => S.parts[0].num[0].f[1].id), '3x + 5 − 3x = 20 − 3x');   // its x is the term
+  assert.equal(drag('3x+5=20', S => S.parts[0].num[0].id), '3x + 5 − 3x = 20 − 3x');        // and so is the term itself
+  { const S = G.parseProblem('ax-cx=d-b', 'solve', 'x').S, c = S.parts[0].num[1].f.find(f => f.b === 'c');
+    assert.equal(G.opDrag(S, c.id).ok, 'balanceIf'); G.normalize(S);                           // a coefficient that doesn't help, allowed
+    assert.equal(strip(G.condHTML(S.conds[0])), 'c ≠ 0');
+    assert.equal(strip(G.stateHTML(S)), '[ax − cx/c = [d − b/c'); }                              // by c, not −c: the minus is the term's
   assert.equal(drag('3x=15', S => S.parts[0].num[0].f[0].id), '[3x/3 = [15/3');                // on its own: divide by the number
   assert.equal(drag('-3x=15', S => S.parts[0].num[0].f[0].id), '[3x/3 = [−15/3');            // by −3, so x keeps no minus
   assert.equal(drag('x/3=4', S => S.parts[0].den[0].f[0].id), '[3x/3 = 3·4');                   // below the bar: multiply

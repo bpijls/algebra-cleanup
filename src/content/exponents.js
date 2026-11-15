@@ -24,8 +24,8 @@ level('negexp.4', '3a^-2·2a^4',
   'Numbers and powers together. <i>a</i>⁴ and <i>a</i>⁻² don’t merge as they are: one is above the bar and one below.',
   'Getallen en machten door elkaar. <i>a</i>⁴ en <i>a</i>⁻² gaan niet zomaar samen: de een hoort boven de streep en de ander eronder.');
 level('negexp.5', 'a^3/a^5',
-  'Now the other way round: write the answer as <b>one power</b>, without a bar. Select a letter below the bar: a button moves it up, with a minus.',
-  'Nu andersom: schrijf het antwoord als <b>één macht</b>, zonder streep. Kies een letter onder de streep: een knop zet hem omhoog, met een min.', AS);
+  'Now the other way round: write the answer as <b>one power</b>, without a bar. Tap a letter below the bar twice: it can move up, with a minus.',
+  'Nu andersom: schrijf het antwoord als <b>één macht</b>, zonder streep. Tik twee keer op een letter onder de streep: hij kan omhoog, met een min.', AS);
 level('negexp.6', '6a^-3/(2a^2)',
   'One power again. Bring the bottom up, then the powers merge.',
   'Weer één macht. Haal de noemer omhoog, dan gaan de machten samen.', AS);

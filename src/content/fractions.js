@@ -1,7 +1,7 @@
 /* Fractions inside a sum, as skills: number fractions (½ + ⅓), square roots (√12 = 2√3, no root below the
    bar), fractions with letters (1/a + 1/b) and equations with fractions (x/3 + 2 = 5). The moves are in
    core/fractions.js and rules/pair.js. */
-import { defineLevel, defineSkill } from './registry.js';
+import { defineLevel, defineShortcut, defineSkill } from './registry.js';
 import { GEN, pick } from '../practice.js';
 import { parseProblem } from '../parse.js';
 
@@ -24,13 +24,15 @@ level('numfrac.4', '2-3/4', 'combine',
   'A whole number is a fraction too: 2 = 2/1. Expand it to quarters.',
   'Een heel getal is ook een breuk: 2 = 2/1. Breid het uit tot kwarten.');
 level('numfrac.5', '2/3·3/4', 'combine',
-  'Times: tap one fraction, then the other. Top times top, bottom times bottom. Then cancel what is equal.',
-  'Keer: tik de ene breuk en dan de andere. Teller keer teller, noemer keer noemer. Streep daarna weg wat gelijk is.');
+  'Times: tap a piece in one fraction, then a piece in the same row of the other. Top times top, bottom times bottom. Cancel what is equal across.',
+  'Keer: tik een stuk in de ene breuk en dan een stuk in dezelfde rij van de andere. Teller keer teller, noemer keer noemer. Streep weg wat gelijk is.');
 level('numfrac.6', '2/3:4/5', 'combine',
   'Dividing by a fraction: tap the : and see what it turns into.',
   'Delen door een breuk: tik op de : en kijk waar hij in verandert.');
 
 /* ---- square roots ---- */
+// √(2·2·3) → 2√3 in one tap, instead of √(4·3) → √4 · √3 → 2√3: only with the menu's shortcuts switch on
+defineShortcut('rootOut', { toggle: true });
 level('sqrt.1', '√12', 'simplify',
   'A root is a tile with a sum inside. Explode 12 under it, then tap the two equal numbers: a pair comes out as one, √(2·2) = 2.',
   'Een wortel is een tegel met een som erin. Laat 12 eronder ontploffen en tik de twee gelijke getallen: een paar komt eruit als één, √(2·2) = 2.');

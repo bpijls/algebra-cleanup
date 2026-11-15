@@ -1,23 +1,20 @@
-/* Rendering the board: a tile per piece, sides, branches, the tool bar. */
+/* Rendering the board: a tile per piece, sides, branches, the bottom bar. */
 import { expText, showsExp } from '../core/kinds/exponent.js';
 import { LEVELS, SKILLS, skillOfLevel } from '../content/registry.js';
 import { loneSquare } from '../core/balance.js';
 import { sumKey } from '../core/kinds/sums.js';
-import { canMerge, isOne, locate } from '../core/model.js';
-import { opGather, partnersOf } from '../core/moves.js';
+import { isOne, locate } from '../core/model.js';
+import { partnersOf } from '../core/moves.js';
 import { branchOf, isEquation, isRight, relOf } from '../core/problem.js';
-import { opExplode } from '../core/rules/engine.js';
 import { lang, t } from '../i18n.js';
-import { fx, mx, stateHTML, sumHTML } from '../render/text.js';
+import { fx, stateHTML } from '../render/text.js';
 import { balSync } from './balance.js';
 import { run } from './controller.js';
 import { SVGNS } from './input.js';
 import { fitBoard } from './layout.js';
-import { previewOf, showExpand, splitTermOf } from './split.js';
-import { expandTarget } from '../core/fractions.js';
 import { opToHalf, opToNeg } from '../core/exponents.js';
 import { opHalves } from '../core/divide.js';
-import { $, board, ui } from './state.js';
+import { $, board, store, ui } from './state.js';
 
 const VARCOL = { a: '--va', b: '--vb', x: '--vx', y: '--vy' };
 /* the picked bracket and its twins in other terms, when they can go outside brackets together */
@@ -42,7 +39,7 @@ function powEl(f) {
 const TILES = {};
 // extra move buttons for a selected piece, from topics: defineToolMove(id, (S, pieceId) => move). The button shows
 // what the move does (a dry run, like the others) and only appears when the move would be accepted.
-const TOOL_MOVES = [];
+export const TOOL_MOVES = [];
 export const defineToolMove = (id, move) => { TOOL_MOVES.push({ id, move }); };
 export const defineTile = (k, make) => { TILES[k] = make; };
 // written back as a power (levels with negative or half exponents): 1/a² = a⁻², √a = a^½
@@ -131,7 +128,7 @@ function sideEl(terms, partners) {
   terms.forEach((term, i) => {
     if (i > 0 || term.neg) { const s = document.createElement('span'); s.className = 'sign'; s.textContent = term.neg ? '−' : '+'; d.append(s); }
     const te = document.createElement('div');
-    te.className = 'term' + (terms.length === 1 ? ' solo' : '');
+    te.className = 'term' + (terms.length === 1 || term.f.length === 1 ? ' solo' : '') + (term.f.length === 1 ? ' one' : '');   // a box only groups a product
     te.dataset.tid = term.id;
     if (ui.sel && ui.sel.t === 't' && ui.sel.id === term.id) te.classList.add('sel');
     if (partners.has(term.id)) te.classList.add('partner');
@@ -146,6 +143,8 @@ function sideEl(terms, partners) {
   return d;
 }
 export function render() {
+  // any render but the strip's own preview closes the strip (split.js): the board shows the real state again
+  if (ui.strip && !ui.previewing) { ui.strip = null; $('slideStrip').hidden = true; $('slideStrip').replaceChildren(); board.classList.remove('previewing'); }
   const partners = partnersOf(ui.S, ui.sel);
   ui.block = blockOf(ui.S, ui.sel);
   ui.detached = new Set(isEquation(ui.S) && ui.S.goal !== 'prove' ? ui.S.parts.map(loneSquare).filter(Boolean).map(f => f.id) : []);
@@ -177,9 +176,9 @@ export function render() {
     fr.append(sideEl(P.num, partners));
     if (!isOne(P.den) || ui.S.op === '·') {
       let bar;
-      if (ui.S.parts.length === 1 || (isEquation(ui.S) && P.num.length > 1)) {
+      if (ui.S.parts.length === 1 || isEquation(ui.S)) {
         // one fraction: tap it to write it as top : bottom; a side of an equation with a sum on top: tap it to
-        // give each term a fraction of its own
+        // give each term a fraction of its own; with a piece of the top picked: that piece goes out in front
         bar = document.createElement('button'); bar.type = 'button'; bar.className = 'bar fbar'; bar.dataset.p = pi;
         bar.setAttribute('aria-label', 'fraction bar');
         if (ui.lastHint && ui.lastHint.bar && ui.lastHint.ids.includes(P.num[0].id)) bar.classList.add('hint');
@@ -198,6 +197,7 @@ export function render() {
   $('btnLevels').textContent = t('mapTitle');
   $('btnOwn').textContent = t('ownTitle');
   $('btnLang').textContent = lang === 'nl' ? 'English' : 'Nederlands';
+  { const on = store.get('shortcuts', false); $('btnShort').textContent = t(on ? 'shortcutsOn' : 'shortcutsOff'); $('btnShort').setAttribute('aria-checked', String(on)); }
   $('btnRestart').textContent = t('restart');
   $('brand').innerHTML = lang === 'nl' ? 'Algebra <span>Opruimen</span>' : 'Algebra <span>Cleanup</span>';
   $('btnPractice').textContent = t('practice');
@@ -233,50 +233,5 @@ export function render() {
     $('balGo').classList.toggle('hint', !!(ui.lastHint && ui.lastHint.balance && ui.lastHint.drag == null && ui.hintIds.has('op')));
     balSync(false);
   }
-  const fSel = !ui.balancing && ui.sel && ui.sel.t === 'f', tSel = !ui.balancing && ui.sel && ui.sel.t === 't';
-  // the move buttons show what they will do, worked out on a copy of the board
-  const exLabel = fSel && previewOf(s => opExplode(s, ui.sel.id));
-  $('btnExplode').hidden = !exLabel; if (exLabel) $('btnExplode').querySelector('span').innerHTML = exLabel;
-  let gatherable = false;
-  if (fSel) { const L = locate(ui.S, ui.sel.id); gatherable = L.term.f.filter(f => canMerge(L.f, f)).length >= 3; }
-  $('btnGather').hidden = !gatherable;
-  if (gatherable) $('btnGather').querySelector('span').innerHTML = previewOf(s => opGather(s, ui.sel.id));
-  // from a piece only when factoring (a lone −x is hard to hit as a term); elsewhere it would just be noise
-  const twoId = tSel || (fSel && (ui.S.goal === 'factor' || ui.S.goal === 'solve' || ui.S.goal === 'prove' || locate(ui.S, ui.sel.id)?.depth)) ? splitTermOf(ui.sel.id) : null;
-  $('btnSplitTwo').hidden = !twoId;
-  // expand a fraction (top and bottom times the same thing): the sheet picks what by
-  let ex = $('btnExpand');
-  if (!ex) {
-    ex = Object.assign(document.createElement('button'), { className: 'tool', id: 'btnExpand', type: 'button', innerHTML: '<span></span>' });
-    ex.onclick = () => ui.sel && showExpand(ui.sel.id);
-    $('btnSplitTwo').after(ex);
-  }
-  ex.hidden = !(fSel && expandTarget(ui.S, ui.sel.id)) || !!ui.S.exps;   // exponent levels have their own buttons, and the bar is narrow
-  ex.querySelector('span').textContent = t('expandBtn') + ' ×ⁿ⁄ₙ';
-  for (const tm of TOOL_MOVES) {
-    let b = $('tm-' + tm.id);
-    if (!b) {
-      b = Object.assign(document.createElement('button'), { className: 'tool preview', id: 'tm-' + tm.id, type: 'button', innerHTML: '<span></span>' });
-      b.onclick = () => ui.sel && run(s => tm.move(s, ui.sel.id));
-      $('btnSplitTwo').after(b);
-    }
-    const label = fSel && previewOf(s => tm.move(s, ui.sel.id));
-    b.hidden = !label; if (label) b.querySelector('span').innerHTML = label;
-  }
-  if (twoId) $('btnSplitTwo').querySelector('span').innerHTML = mx(sumHTML([locate(ui.S, twoId).term]) + ' = … + …');
-  shortenPreviews();
   document.documentElement.lang = lang;
-}
-// a label cut off by the bar drops its left side (the selected piece, which is on the board), so two buttons for
-// the same piece still read differently: = cos(a) · cos(a) and = 1 − sin²(a). The full label stays as aria-label.
-function shortenPreviews() {
-  for (const b of document.querySelectorAll('.tool.preview')) {
-    const sp = b.querySelector('span');
-    b.removeAttribute('aria-label');
-    if (b.hidden || !sp || sp.scrollWidth <= sp.clientWidth + 1) continue;
-    const m = sp.innerHTML.match(/^(<span class="mx">)([\s\S]*?) = ([\s\S]*)(<\/span>)$/);
-    if (!m) continue;
-    b.setAttribute('aria-label', sp.textContent);
-    sp.innerHTML = m[1] + '= ' + m[3] + m[4];
-  }
 }
